@@ -1,0 +1,9 @@
+services:
+  unrealircd:
+    build:
+      context: ./unrealircd
+      dockerfile: Dockerfile
+  atheme:
+    build:
+      context: ./atheme
+      dockerfile: Dockerfile
