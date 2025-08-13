@@ -63,6 +63,9 @@ RUN ./configure --prefix=/usr/local/atheme && \
 
 FROM base AS dev
 
+RUN groupadd --system --gid 1001 ircd && \
+    useradd --system --uid 1001 --gid ircd ircd
+
 RUN mkdir -p /usr/local
-COPY --from=builder /usr/local/atheme /usr/local/atheme
-COPY --from=builder /usr/local/unrealircd /usr/local/unrealircd
+COPY --from=builder --chown=ircd:ircd /usr/local/atheme /usr/local/atheme
+COPY --from=builder --chown=ircd:ircd /usr/local/unrealircd /usr/local/unrealircd
