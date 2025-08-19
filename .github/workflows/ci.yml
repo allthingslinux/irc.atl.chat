@@ -64,7 +64,7 @@ jobs:
       # REPOSITORY CHECKOUT
       # Full history not needed for linting current state
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # SMART CHANGE DETECTION
       # Detects Docker file changes to skip unnecessary runs
@@ -156,7 +156,7 @@ jobs:
       # REPOSITORY CHECKOUT
       # Shallow clone sufficient for validation current state
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # SMART CHANGE DETECTION
       # Only runs when Docker Compose files change
@@ -269,7 +269,7 @@ jobs:
       # REPOSITORY CHECKOUT
       # Full history not needed for security scanning
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # SMART CHANGE DETECTION FOR DOCKER FILES
       # Only scan if Docker-related files changed
