@@ -70,7 +70,7 @@ jobs:
       # Detects Docker file changes to skip unnecessary runs
       # Includes all Dockerfile variants and related files
       - name: Detect Docker file changes
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v46
         id: docker_changes
         with:
           files: |
@@ -162,7 +162,7 @@ jobs:
       # Only runs when Docker Compose files change
       # Improves CI performance for non-compose changes
       - name: Detect Docker Compose changes
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v46
         id: compose_changes
         with:
           files: |
@@ -274,7 +274,7 @@ jobs:
       # SMART CHANGE DETECTION FOR DOCKER FILES
       # Only scan if Docker-related files changed
       - name: Detect Docker changes for security scan
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v46
         id: security_changes
         with:
           files: |
