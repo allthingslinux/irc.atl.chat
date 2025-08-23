@@ -3,6 +3,8 @@ services:
     build:
       context: ./unrealircd
       dockerfile: Dockerfile
+    ports:
+      - '6697:6697'
   atheme:
     build:
       context: ./atheme
