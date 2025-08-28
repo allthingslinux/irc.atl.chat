@@ -2,7 +2,7 @@
 # Provides web-based administration interface for UnrealIRCd
 # Based on official documentation: https://www.unrealircd.org/docs/UnrealIRCd_webpanel
 
-FROM php:8.2-apache
+FROM php:8.2-fpm
 
 # Add metadata labels
 LABEL maintainer="AllThingsLinux IRC Infrastructure" \
@@ -13,31 +13,23 @@ LABEL maintainer="AllThingsLinux IRC Infrastructure" \
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true \
-    APACHE_DOCUMENT_ROOT=/var/www/html/unrealircd-webpanel
+    NGINX_DOCUMENT_ROOT=/var/www/html/unrealircd-webpanel
 
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git=1:2.39.2-1.1 \
-    curl=7.88.1-10+deb12u12 \
     unzip=6.0-28 \
     libzip-dev=1.9.2-1 \
-    libcurl4-openssl-dev=7.88.1-10+deb12u12 \
-    libonig-dev=6.9.8-1 \
-    libmbstring-dev=8.2.7-1 \
-    libxml2-dev=2.9.14+dfsg-1.1 \
-    libssl-dev=3.0.17-1~deb12u2 \
-    pkg-config=1.8.1-1 \
-    ca-certificates=20230311+deb12u1 && \
+    libssl-dev=3.0.17-1~deb13u1 \
+    ca-certificates=20230311+deb13u1 \
+    nginx=1.22.1-9+deb13u1 && \
     apt-get clean && \
     rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install PHP extensions
+# Install PHP extensions (many are already available in base image)
 RUN docker-php-ext-install \
     zip \
-    curl \
-    mbstring \
-    xml \
     pdo \
     pdo_mysql \
     mysqli
@@ -45,11 +37,9 @@ RUN docker-php-ext-install \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configure Apache
-RUN a2enmod rewrite && \
-    sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/000-default.conf && \
-    sed -ri -e 's!Directory /var/www/!Directory ${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf && \
-    echo "ServerName localhost" >> /etc/apache2/apache2.conf
+# Configure Nginx
+RUN rm -f /etc/nginx/sites-enabled/default && \
+    mkdir -p /var/log/nginx /var/cache/nginx
 
 # Create webpanel user
 RUN groupadd --system --gid 1001 webpanel && \
@@ -78,26 +68,25 @@ RUN chown -R webpanel:webpanel /var/www/html/unrealircd-webpanel && \
     chmod -R 775 /var/www/html/unrealircd-webpanel/data && \
     chmod -R 775 /var/www/html/unrealircd-webpanel/config
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-    # Wait for UnrealIRCd to be ready\n\
-    echo "Waiting for UnrealIRCd JSON-RPC API..."\n\
-    until curl -f "http://${UNREALIRCD_HOST:-ircd}:${UNREALIRCD_PORT:-8600}/" >/dev/null 2>&1; do\n\
-    echo "Waiting for UnrealIRCd..."\n\
-    sleep 5\n\
-    done\n\
-    echo "UnrealIRCd is ready!"\n\
-    \n\
-    # Start Apache in foreground\n\
-    exec apache2-foreground' > /usr/local/bin/start-webpanel.sh && \
-    chmod +x /usr/local/bin/start-webpanel.sh
+# Copy Nginx configuration
+COPY web/webpanel/nginx.conf /etc/nginx/sites-available/webpanel
+
+# Enable the site
+RUN ln -sf /etc/nginx/sites-available/webpanel /etc/nginx/sites-enabled/
+
+# Copy startup script
+COPY --chown=webpanel:webpanel scripts/start-webpanel.sh /usr/local/bin/start-webpanel
+RUN chmod +x /usr/local/bin/start-webpanel
 
 # Expose port
 EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost/unrealircd-webpanel/ || exit 1
+    CMD curl -f http://localhost/ || exit 1
+
+# Switch to webpanel user for execution
+USER webpanel:webpanel
 
 # Default command
 CMD ["/usr/local/bin/start-webpanel.sh"]

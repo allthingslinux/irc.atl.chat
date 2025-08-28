@@ -5,6 +5,8 @@
 # Documentation
 README.md
 *.md
+# Keep nginx.conf for Docker build
+!nginx.conf
 
 # IDE files
 .vscode/

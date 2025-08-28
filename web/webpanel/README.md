@@ -31,7 +31,7 @@ The webpanel automatically configures itself during the first run. You can custo
 
 - **UnrealIRCd**: Must be running with JSON-RPC enabled (port 8600)
 - **PHP 8.2+**: With required extensions (zip, curl, mbstring, etc.)
-- **Apache**: Web server for hosting the interface
+- **Nginx**: Web server for hosting the interface
 
 ## Security
 
