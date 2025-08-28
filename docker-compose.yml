@@ -1,11 +1,112 @@
+version: '3.8'
+
 services:
-  unrealircd:
+  ircd:
     build:
-      context: ./unrealircd
+      context: .
       dockerfile: Dockerfile
+      target: runtime
+      args:
+        UNREALIRCD_VERSION: "6.1.10"
+        ATHEME_VERSION: "7.2.12"
+    container_name: ircd
+    restart: unless-stopped
     ports:
-      - '6697:6697'
+      - '6667:6667'  # Standard IRC port
+      - '6697:6697'  # IRC over SSL/TLS
+      - '8600:8600'  # JSON-RPC API for webpanel
+    volumes:
+      - ircd_data:/usr/local/unrealircd/data
+      - ircd_logs:/usr/local/unrealircd/logs
+      - ./unrealircd/conf:/usr/local/unrealircd/conf:ro
+      - ircd_modules:/usr/local/unrealircd/modules
+      - ircd_contrib:/usr/local/unrealircd/contrib
+    environment:
+      - TZ=UTC
+    networks:
+      - irc_network
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "unrealircd"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   atheme:
     build:
-      context: ./atheme
+      context: .
       dockerfile: Dockerfile
+      target: runtime
+      args:
+        UNREALIRCD_VERSION: "6.1.10"
+        ATHEME_VERSION: "7.2.12"
+    container_name: atheme
+    restart: unless-stopped
+    volumes:
+      - atheme_data:/usr/local/atheme/data
+      - atheme_logs:/usr/local/atheme/logs
+      - ./services/atheme:/usr/local/atheme/etc:ro
+    environment:
+      - TZ=UTC
+      - ATHEME_CONF=/usr/local/atheme/etc/atheme.conf
+      - ATHEME_DATA=/usr/local/atheme/data
+    networks:
+      - irc_network
+    depends_on:
+      ircd:
+        condition: service_healthy
+    command: ["/usr/local/bin/start-services", "start"]
+
+  webpanel:
+    build:
+      context: ./web/webpanel
+      dockerfile: Dockerfile
+    container_name: webpanel
+    restart: unless-stopped
+    ports:
+      - '8080:80'  # Web interface
+    volumes:
+      - webpanel_data:/var/www/html/unrealircd-webpanel/data
+      - webpanel_config:/var/www/html/unrealircd-webpanel/config
+    environment:
+      - TZ=UTC
+      - UNREALIRCD_HOST=ircd
+      - UNREALIRCD_PORT=8600
+      - UNREALIRCD_RPC_USER=adminpanel
+      - UNREALIRCD_RPC_PASSWORD=webpanel_password_2024
+    networks:
+      - irc_network
+    depends_on:
+      ircd:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/unrealircd-webpanel/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  ircd_data:
+    driver: local
+  ircd_logs:
+    driver: local
+  ircd_modules:
+    driver: local
+  ircd_contrib:
+    driver: local
+  atheme_data:
+    driver: local
+  atheme_logs:
+    driver: local
+  webpanel_data:
+    driver: local
+  webpanel_config:
+    driver: local
+
+networks:
+  irc_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
