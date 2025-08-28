@@ -2,7 +2,7 @@
 FROM debian:bookworm-slim AS base
 
 # Add metadata labels
-LABEL maintainer="AllThingsLinux IRC Infrastructure" \
+LABEL maintainer="All Things Linux IRC Infrastructure" \
     description="Optimized IRC services with UnrealIRCd and Atheme" \
     version="1.0.0" \
     org.opencontainers.image.source="https://github.com/allthingslinux/irc.atl.chat"
