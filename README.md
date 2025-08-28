@@ -52,13 +52,13 @@ This project provides a complete, production-ready IRC infrastructure with:
 ### **Architecture**
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Web Browser  │────│   WebPanel      │────│   UnrealIRCd   │
-│   Port 8080    │    │   (PHP/Apache)  │    │   Port 8600    │
+│   Web Browser   │────│   WebPanel      │────│   UnrealIRCd    │
+│   Port 8080     │    │  (PHP/Apache)   │    │   Port 8600     │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
                               │
                               ▼
                        ┌─────────────────┐
-                       │   Atheme        │
+                       │    Atheme       │
                        │   Services      │
                        └─────────────────┘
 ```
