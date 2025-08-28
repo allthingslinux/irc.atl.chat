@@ -40,7 +40,7 @@ This project provides a complete, production-ready IRC infrastructure with:
 ### **Core Services**
 - **UnrealIRCd 6.1.10**: Modern IRC server with contrib modules support
 - **Atheme 7.2.12**: IRC services (NickServ, ChanServ, OperServ, etc.)
-- **WebPanel**: Web-based administration interface
+- **WebPanel**: Web-based administration interface (Nginx + PHP-FPM)
 - **KiwiIRC**: Web-based IRC client
 
 ### **Advanced Features**
@@ -65,7 +65,28 @@ This project provides a complete, production-ready IRC infrastructure with:
 
 ## Quick Start
 
-### Build the Image
+### Using Make (Recommended)
+```bash
+# Show all available commands
+make help
+
+# Quick start (build and run everything)
+make quick-start
+
+# Start services
+make up
+
+# Check status
+make status
+
+# View logs
+make logs
+
+# Stop services
+make down
+```
+
+### Using Scripts Directly
 ```bash
 # Build with default settings
 ./scripts/build.sh

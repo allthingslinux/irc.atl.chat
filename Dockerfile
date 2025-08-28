@@ -142,6 +142,7 @@ COPY --chown=ircd:ircd scripts/start-services.sh /usr/local/bin/start-services
 # Copy module management scripts
 COPY --chown=ircd:ircd scripts/manage-modules.sh /usr/local/bin/manage-modules
 COPY --chown=ircd:ircd scripts/module-config.sh /usr/local/bin/module-config
+COPY --chown=ircd:ircd scripts/start-webpanel.sh /usr/local/bin/start-webpanel
 
 # Set proper permissions and create necessary symlinks
 RUN chmod 755 /usr/local/atheme/bin/* /usr/local/unrealircd/bin/* && \

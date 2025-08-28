@@ -59,8 +59,8 @@ services:
 
   webpanel:
     build:
-      context: ./web/webpanel
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: web/webpanel/Dockerfile
     container_name: webpanel
     restart: unless-stopped
     ports:
