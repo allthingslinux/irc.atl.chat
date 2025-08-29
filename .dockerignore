@@ -14,12 +14,15 @@ Dockerfile*
 .dockerignore
 
 # Development and CI files
+<<<<<<< Updated upstream
 scripts/
 # Keep required scripts for Docker build
 !scripts/start-services.sh
 !scripts/manage-modules.sh
 !scripts/module-config.sh
 !scripts/start-webpanel.sh
+=======
+>>>>>>> Stashed changes
 renovate.json
 .github/
 .vscode/

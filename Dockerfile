@@ -18,6 +18,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
+<<<<<<< Updated upstream
     build-essential \
     gdb \
     gettext \
@@ -31,16 +32,38 @@ RUN apt-get update && \
     wget \
     ca-certificates \
     git \
+=======
+    build-essential=12.9 \
+    gdb=13.1-3 \
+    gettext=0.21-12 \
+    libargon2-dev=0~20171227-0.3+deb12u1 \
+    libc-ares-dev=1.18.1-3 \
+    libcurl4-openssl-dev=7.88.1-10+deb12u12 \
+    libpcre2-dev=10.42-1 \
+    libssl-dev=3.0.17-1~deb12u2 \
+    libsodium-dev=1.0.18-1 \
+    pkg-config=1.8.1-1 \
+    wget=1.21.3-1+deb12u1 \
+    ca-certificates=20230311 \
+    git=1:2.39.5-0+deb12u2 \
+>>>>>>> Stashed changes
     # Additional Atheme dependencies for better functionality
     libidn2-dev \
     nettle-dev \
     libqrencode-dev \
     # Development tools for better builds
+<<<<<<< Updated upstream
     autoconf \
     automake \
     libtool \
     # Perl development libraries for Atheme Perl support
     libperl-dev && \
+=======
+    autoconf=2.71-3 \
+    automake=1:1.16.5-1.3 \
+    libperl-dev=5.36.0-7+deb12u2 \
+    libtool=2.4.7-7~deb12u1 && \
+>>>>>>> Stashed changes
     apt-get clean && \
     rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

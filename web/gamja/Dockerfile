@@ -2,12 +2,11 @@
 FROM node:current-alpine3.22@sha256:51dbfc749ec3018c7d4bf8b9ee65299ff9a908e38918ce163b0acfcd5dd931d9 AS base
 
 LABEL maintainer="AllThingsLinux IRC Infrastructure" \
-    description="UnrealIRCd WebPanel - Web-based administration interface" \
+    description="Gamja - Lightweight IRC web client" \
     version="1.0.0" \
     org.opencontainers.image.source="https://github.com/allthingslinux/irc.atl.chat"
 
 ENV GAMJA_VERSION="1.0.0-beta.11"
-ENV GAMJA_PORT=8080
 
 RUN addgroup -S gamja && \
     adduser -S -G gamja gamja

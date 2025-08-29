@@ -2,7 +2,7 @@
 # Provides web-based administration interface for UnrealIRCd
 # Based on official documentation: https://www.unrealircd.org/docs/UnrealIRCd_webpanel
 
-FROM php:8.2-fpm
+FROM php:8.4-fpm-bookworm@sha256:e6bc23796dbcd21c987d7b45fcd1263d1287217ea66ccddf03597309a1c0e4ed
 
 # Add metadata labels
 LABEL maintainer="AllThingsLinux IRC Infrastructure" \
@@ -17,6 +17,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Install system dependencies
 RUN apt-get update && \
+<<<<<<< Updated upstream
     apt-get install -y --no-install-recommends \
     git \
     unzip \
@@ -24,6 +25,15 @@ RUN apt-get update && \
     libssl-dev \
     ca-certificates \
     nginx && \
+=======
+    apt-get install -y --no-install-recommends --allow-downgrades \
+    git=1:2.39.5-0+deb12u2 \
+    unzip=6.0-28 \
+    libzip-dev=1.7.3-1+b1 \
+    libssl-dev=3.0.17-1~deb12u2 \
+    ca-certificates=20230311 \
+    nginx=1.22.1-9+deb12u2 && \
+>>>>>>> Stashed changes
     apt-get clean && \
     rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
