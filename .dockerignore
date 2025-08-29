@@ -15,7 +15,10 @@ Dockerfile*
 
 # Development and CI files
 scripts/
-# Keep webpanel startup script for Docker build
+# Keep required scripts for Docker build
+!scripts/start-services.sh
+!scripts/manage-modules.sh
+!scripts/module-config.sh
 !scripts/start-webpanel.sh
 renovate.json
 .github/

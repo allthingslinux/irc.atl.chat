@@ -18,12 +18,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Install system dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    git=1:2.39.2-1.1 \
-    unzip=6.0-28 \
-    libzip-dev=1.9.2-1 \
-    libssl-dev=3.0.17-1~deb13u1 \
-    ca-certificates=20230311+deb13u1 \
-    nginx=1.22.1-9+deb13u1 && \
+    git \
+    unzip \
+    libzip-dev \
+    libssl-dev \
+    ca-certificates \
+    nginx && \
     apt-get clean && \
     rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

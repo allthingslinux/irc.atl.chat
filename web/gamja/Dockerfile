@@ -34,8 +34,8 @@ RUN npm install --omit=dev
 FROM base AS dev
 
 COPY --from=builder --chown=gamja:gamja /var/www/html/gamja/ /var/www/html/gamja
-COPY --chown=gamja:gamja conf/config.json /var/www/html/gamja/config.json
+COPY --chown=gamja:gamja web/gamja/conf/config.json /var/www/html/gamja/config.json
 
 WORKDIR /var/www/html/gamja
 
-EXPOSE GAMJA_PORT
+EXPOSE 8080
