@@ -17,15 +17,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Install system dependencies
 RUN apt-get update && \
-<<<<<<< Updated upstream
-    apt-get install -y --no-install-recommends \
-    git \
-    unzip \
-    libzip-dev \
-    libssl-dev \
-    ca-certificates \
-    nginx && \
-=======
     apt-get install -y --no-install-recommends --allow-downgrades \
     git=1:2.39.5-0+deb12u2 \
     unzip=6.0-28 \
@@ -33,7 +24,6 @@ RUN apt-get update && \
     libssl-dev=3.0.17-1~deb12u2 \
     ca-certificates=20230311 \
     nginx=1.22.1-9+deb12u2 && \
->>>>>>> Stashed changes
     apt-get clean && \
     rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
