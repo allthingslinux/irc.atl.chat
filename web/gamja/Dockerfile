@@ -23,7 +23,7 @@ WORKDIR /var/www/html
 USER gamja:gamja
 
 RUN wget -q "https://codeberg.org/emersion/gamja/archive/v${GAMJA_VERSION}.tar.gz" && \
-    tar xvf v${GAMJA_VERSION}.tar.gz
+    tar xvf "v${GAMJA_VERSION}.tar.gz"
 
 WORKDIR /var/www/html/gamja
 

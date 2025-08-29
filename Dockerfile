@@ -18,19 +18,6 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-    build-essential \
-    gdb \
-    gettext \
-    libargon2-dev \
-    libc-ares-dev \
-    libcurl4-openssl-dev \
-    libpcre2-dev \
-    libssl-dev \
-    libsodium-dev \
-    pkg-config \
-    wget \
-    ca-certificates \
-    git \
     build-essential=12.9 \
     gdb=13.1-3 \
     gettext=0.21-12 \
@@ -45,9 +32,9 @@ RUN apt-get update && \
     ca-certificates=20230311 \
     git=1:2.39.5-0+deb12u2 \
     # Additional Atheme dependencies for better functionality
-    libidn2-dev \
-    nettle-dev \
-    libqrencode-dev \
+    libidn2-dev=2.3.3-1 \
+    nettle-dev=3.8.1-2 \
+    libqrencode-dev=4.1.1-1 \
     # Development tools for better builds
     autoconf=2.71-3 \
     automake=1:1.16.5-1.3 \
