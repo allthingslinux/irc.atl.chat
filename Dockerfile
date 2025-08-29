@@ -32,7 +32,7 @@ RUN apt-get update && \
     ca-certificates=20230311 \
     git=1:2.39.5-0+deb12u2 \
     # Additional Atheme dependencies for better functionality
-    libidn2-dev=2.3.3-1 \
+    libidn2-dev=2.3.3-1+b1 \
     nettle-dev=3.8.1-2 \
     libqrencode-dev=4.1.1-1 \
     # Development tools for better builds
