@@ -113,6 +113,8 @@ services:
     restart: always
     volumes:
       - /opt/thelounge:/var/opt/thelounge # bind lounge config from the host's file system
+    depends_on:
+      - ircd
 volumes:
   ircd_data:
     driver: local
