@@ -297,7 +297,7 @@ jobs:
         run: |
           if [ -f "Containerfile" ]; then
             echo "Building Docker image for security scanning..."
-            docker build -t irc-security-scan:latest .
+            docker build -t irc-security-scan:latest -f=Containerfile .
             echo "✅ Docker image built successfully"
           else
             echo "❌ No Containerfile found in root directory"
