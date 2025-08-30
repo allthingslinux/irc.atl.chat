@@ -1,3 +1,5 @@
+---
+
 name: irc.atl.chat
 
 services:
@@ -19,14 +21,14 @@ services:
     environment:
       - TZ=UTC
     ports:
-      - '6667:6667' # Standard IRC port
-      - '6697:6697' # IRC over SSL/TLS
-      - '8600' # JSON-RPC API for webpanel
+      - '6667:6667'  # Standard IRC port
+      - '6697:6697'  # IRC over SSL/TLS
+      - '8600'  # JSON-RPC API for webpanel
     networks:
       - irc_network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "pgrep", "-f", "unrealircd" ]
+      test: ["CMD", "pgrep", "-f", "unrealircd"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -54,7 +56,7 @@ services:
       - ATHEME_DATA=/usr/local/atheme/data
     networks:
       - irc_network
-    command: [ "/usr/local/bin/start-services", "start" ]
+    command: ["/usr/local/bin/start-services", "start"]
     restart: unless-stopped
 
   webpanel:
@@ -75,12 +77,12 @@ services:
       - UNREALIRCD_RPC_USER=adminpanel
       - UNREALIRCD_RPC_PASSWORD=webpanel_password_2024
     ports:
-      - '8080:80' # Web interface
+      - '8080:80'  # Web interface
     networks:
       - irc_network
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost/unrealircd-webpanel/" ]
+      test: ["CMD", "curl", "-f", "http://localhost/unrealircd-webpanel/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -100,7 +102,7 @@ services:
       - '8081:80'
     restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost/gamja/" ]
+      test: ["CMD", "curl", "-f", "http://localhost/gamja/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -112,7 +114,7 @@ services:
       ircd:
         condition: service_healthy
     volumes:
-      - /opt/thelounge:/var/opt/thelounge # bind lounge config from the host's file system
+      - /opt/thelounge:/var/opt/thelounge  # bind lounge config from the host's file system
     ports:
       - '9000:9000'
     restart: unless-stopped
