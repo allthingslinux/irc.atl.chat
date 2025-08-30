@@ -110,7 +110,7 @@ services:
     container_name: thelounge
     ports:
       - '9000:9000'
-    restart: unless-stopped
+    restart: always
     volumes:
       - /opt/thelounge:/var/opt/thelounge # bind lounge config from the host's file system
 volumes:
