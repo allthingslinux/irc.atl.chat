@@ -146,10 +146,10 @@ COPY --chown=ircd:ircd scripts/manage-modules.sh /usr/local/bin/manage-modules
 COPY --chown=ircd:ircd scripts/module-config.sh /usr/local/bin/module-config
 COPY --chown=ircd:ircd scripts/start-webpanel.sh /usr/local/bin/start-webpanel
 
-# Set proper permissions and create necessary symlinks
+# Set proper permissions and create necessary syamlinks
 RUN chmod 755 /usr/local/atheme/bin/* /usr/local/unrealircd/bin/* && \
     chown -R ircd:ircd /var/log /var/run && \
-    # Create symlinks for easier access
+    # Create syamlinks for easier access
     ln -sf /usr/local/atheme/bin/atheme-services /usr/local/bin/atheme-services && \
     ln -sf /usr/local/unrealircd/bin/unrealircd /usr/local/bin/unrealircd && \
     # Ensure proper ownership of configuration directories

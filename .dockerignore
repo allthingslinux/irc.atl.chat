@@ -9,7 +9,7 @@ docs/
 README*
 
 # Docker files
-compose.yml
+compose.yaml
 Containerfile*
 .dockerignore
 

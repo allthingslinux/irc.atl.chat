@@ -76,7 +76,7 @@ jobs:
           files: |
             **/Containerfile*
             **/.dockerignore
-            compose*.yml
+            compose*.yaml
             compose*.yaml
 
       # EARLY TERMINATION FOR UNCHANGED FILES
@@ -166,9 +166,9 @@ jobs:
         id: compose_changes
         with:
           files: |
-            compose*.yml
             compose*.yaml
-            compose*.yml
+            compose*.yaml
+            compose*.yaml
             compose*.yaml
 
       # EARLY TERMINATION FOR UNCHANGED FILES
@@ -186,7 +186,7 @@ jobs:
         id: compose-files
         run: |
           # Find all compose files in the repository
-          compose_files=$(find . -name "compose*.yml" -o -name "compose*.yaml" -o -name "compose*.yml" -o -name "compose*.yaml" | grep -v ".git")
+          compose_files=$(find . -name "compose*.yaml" -o -name "compose*.yaml" -o -name "compose*.yaml" -o -name "compose*.yaml" | grep -v ".git")
           if [ -n "$compose_files" ]; then
             echo "found=true" >> $GITHUB_OUTPUT
             echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -228,7 +228,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y yamllint
 
           # Create yamllint config for Docker Compose specifics
-          cat > .yamllint.yml << EOF
+          cat > .yamllint.yaml << EOF
           extends: default
           rules:
             line-length:
@@ -242,7 +242,7 @@ jobs:
           echo "${{ steps.compose-files.outputs.files }}" | while IFS= read -r file; do
             if [ -n "$file" ]; then
               echo "Running yamllint on $file..."
-              yamllint -c .yamllint.yml "$file"
+              yamllint -c .yamllint.yaml "$file"
             fi
           done
 
@@ -279,7 +279,7 @@ jobs:
         with:
           files: |
             **/Containerfile*
-            compose*.yml
+            compose*.yaml
             compose*.yaml
 
       # EARLY TERMINATION FOR UNCHANGED DOCKER FILES
