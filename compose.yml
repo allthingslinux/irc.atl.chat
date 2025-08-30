@@ -4,7 +4,7 @@ services:
   ircd:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
       target: runtime
       args:
         UNREALIRCD_VERSION: "6.1.10"
@@ -35,7 +35,7 @@ services:
   atheme:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Containerfile
       target: runtime
       args:
         UNREALIRCD_VERSION: "6.1.10"
@@ -60,7 +60,7 @@ services:
   webpanel:
     build:
       context: .
-      dockerfile: web/webpanel/Dockerfile
+      dockerfile: web/webpanel/Containerfile
     container_name: webpanel
     depends_on:
       ircd:
@@ -89,7 +89,7 @@ services:
   gamja:
     build:
       context: .
-      dockerfile: web/gamja/Dockerfile
+      dockerfile: web/gamja/Containerfile
     container_name: gamja
     depends_on:
       ircd:

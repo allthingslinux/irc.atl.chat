@@ -10,7 +10,7 @@ README*
 
 # Docker files
 docker-compose.yml
-Dockerfile*
+Containerfile*
 .dockerignore
 
 # Development and CI files
