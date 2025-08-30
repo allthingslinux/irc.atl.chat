@@ -4,7 +4,7 @@ This directory contains the UnrealIRCd WebPanel - a web-based administration int
 
 ## Files
 
-- **`Dockerfile`** - Container build configuration for the webpanel
+- **`Containerfile`** - Container build configuration for the webpanel
 - **`config.php`** - PHP configuration file for the webpanel (template)
 
 ## What is the WebPanel?

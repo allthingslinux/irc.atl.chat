@@ -3,13 +3,13 @@
 # ==============================================================================
 #
 # This workflow handles Docker and infrastructure validation for the IRC server
-# project. It runs comprehensive linting on Dockerfiles, Docker Compose files,
+# project. It runs comprehensive linting on Containerfiles, Docker Compose files,
 # and performs security scanning to ensure infrastructure quality.
 #
 # WORKFLOW FEATURES:
 # ------------------
 # 1. Smart file change detection to skip unnecessary jobs
-# 2. Parallel execution for different linting categories  
+# 2. Parallel execution for different linting categories
 # 3. Comprehensive Docker linting with Hadolint
 # 4. Docker Compose syntax validation with modern docker compose
 # 5. Security vulnerability scanning with Trivy
@@ -46,20 +46,20 @@ concurrency:
 
 jobs:
   # ============================================================================
-  # DOCKERFILE LINTING - Static Analysis and Best Practices
+  # CONTAINERFILE LINTING - Static Analysis and Best Practices
   # ============================================================================
   # Purpose: Ensures Docker best practices and security through Hadolint
   # Tools: Hadolint with SARIF output for GitHub Security integration
   # Optimization: Only runs when Docker files change or on manual trigger
   # ============================================================================
-  dockerfile-lint:
-    name: Dockerfile Linting
+  containerfile-lint:
+    name: Containerfile Linting
     runs-on: ubuntu-latest
     permissions:
       contents: read              # Required for checkout
       security-events: write     # Required for SARIF upload
       actions: read              # Required for GitHub token
-    
+
     steps:
       # REPOSITORY CHECKOUT
       # Full history not needed for linting current state
@@ -68,16 +68,16 @@ jobs:
 
       # SMART CHANGE DETECTION
       # Detects Docker file changes to skip unnecessary runs
-      # Includes all Dockerfile variants and related files
+      # Includes all Containerfile variants and related files
       - name: Detect Docker file changes
         uses: tj-actions/changed-files@v46
         id: docker_changes
         with:
           files: |
-            **/Dockerfile*
+            **/Containerfile*
             **/.dockerignore
-            docker-compose*.yml
-            docker-compose*.yaml
+            compose*.yaml
+            compose*.yaml
 
       # EARLY TERMINATION FOR UNCHANGED FILES
       # Skips Hadolint setup if no relevant files changed
@@ -85,46 +85,46 @@ jobs:
       - name: Skip if no Docker changes
         if: steps.docker_changes.outputs.any_changed != 'true' && github.event_name != 'workflow_dispatch'
         run: |
-          echo "✅ No Docker files changed, skipping Dockerfile linting"
+          echo "✅ No Docker files changed, skipping Containerfile linting"
           echo "💡 To force run checks, use workflow_dispatch trigger"
 
-      # DOCKERFILE DISCOVERY
-      # Finds all Dockerfiles in the repository for comprehensive linting
-      - name: Find Dockerfiles
+      # CONTAINERFILE DISCOVERY
+      # Finds all Containerfiles in the repository for comprehensive linting
+      - name: Find Containerfiles
         if: steps.docker_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
-        id: dockerfiles
+        id: containerfiles
         run: |
-          # Find all Dockerfiles in the repository
-          dockerfiles=$(find . -name "Dockerfile*" -type f | grep -v ".git")
-          if [ -n "$dockerfiles" ]; then
+          # Find all Containerfiles in the repository
+          containerfiles=$(find . -name "Containerfile*" -type f | grep -v ".git")
+          if [ -n "$containerfiles" ]; then
             echo "found=true" >> $GITHUB_OUTPUT
             echo "files<<EOF" >> $GITHUB_OUTPUT
-            echo "$dockerfiles" >> $GITHUB_OUTPUT
+            echo "$containerfiles" >> $GITHUB_OUTPUT
             echo "EOF" >> $GITHUB_OUTPUT
-            echo "Found Dockerfiles:"
-            echo "$dockerfiles"
+            echo "Found Containerfiles:"
+            echo "$containerfiles"
           else
             echo "found=false" >> $GITHUB_OUTPUT
-            echo "No Dockerfiles found"
+            echo "No Containerfiles found"
           fi
 
       # HADOLINT SECURITY ANALYSIS
       # Comprehensive linting with SARIF output for GitHub Security
       # Ignores specific rules that may conflict with multi-stage builds
-      - name: Lint Dockerfiles with Hadolint (Security Report)
-        if: steps.dockerfiles.outputs.found == 'true'
+      - name: Lint Containerfiles with Hadolint (Security Report)
+        if: steps.containerfiles.outputs.found == 'true'
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: './Dockerfile'
+          dockerfile: './Containerfile'
           failure-threshold: warning
           format: sarif
           output-file: hadolint-results.sarif
 
       # SECURITY INTEGRATION
       # Uploads results to GitHub Security tab for centralized view
-      # Always runs if Dockerfiles found, even if linting fails
+      # Always runs if Containerfiles found, even if linting fails
       - name: Upload Hadolint results to GitHub Security
-        if: steps.dockerfiles.outputs.found == 'true' && always()
+        if: steps.containerfiles.outputs.found == 'true' && always()
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: hadolint-results.sarif
@@ -132,11 +132,11 @@ jobs:
       # CONSOLE OUTPUT FOR IMMEDIATE FEEDBACK
       # Provides immediate feedback in workflow logs
       # Helps developers see issues without navigating to Security tab
-      - name: Lint Dockerfiles with Hadolint (Console Output)
-        if: steps.dockerfiles.outputs.found == 'true'
+      - name: Lint Containerfiles with Hadolint (Console Output)
+        if: steps.containerfiles.outputs.found == 'true'
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: './Dockerfile'
+          dockerfile: './Containerfile'
           failure-threshold: warning
 
   # ============================================================================
@@ -146,12 +146,12 @@ jobs:
   # Tools: Docker Compose config validation and yamllint for YAML syntax
   # Optimization: Only runs when Compose files change or on manual trigger
   # ============================================================================
-  docker-compose-lint:
+  compose-lint:
     name: Docker Compose Linting
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    
+
     steps:
       # REPOSITORY CHECKOUT
       # Shallow clone sufficient for validation current state
@@ -166,9 +166,9 @@ jobs:
         id: compose_changes
         with:
           files: |
-            docker-compose*.yml
-            docker-compose*.yaml
-            compose*.yml
+            compose*.yaml
+            compose*.yaml
+            compose*.yaml
             compose*.yaml
 
       # EARLY TERMINATION FOR UNCHANGED FILES
@@ -185,8 +185,8 @@ jobs:
         if: steps.compose_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
         id: compose-files
         run: |
-          # Find all docker-compose files in the repository
-          compose_files=$(find . -name "docker-compose*.yml" -o -name "docker-compose*.yaml" -o -name "compose*.yml" -o -name "compose*.yaml" | grep -v ".git")
+          # Find all compose files in the repository
+          compose_files=$(find . -name "compose*.yaml" -o -name "compose*.yaml" -o -name "compose*.yaml" -o -name "compose*.yaml" | grep -v ".git")
           if [ -n "$compose_files" ]; then
             echo "found=true" >> $GITHUB_OUTPUT
             echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -205,7 +205,7 @@ jobs:
       - name: Validate Docker Compose syntax
         if: steps.compose-files.outputs.found == 'true'
         run: |
-          # Validate each docker-compose file using modern docker compose
+          # Validate each compose file using modern docker compose
           echo "${{ steps.compose-files.outputs.files }}" | while IFS= read -r file; do
             if [ -n "$file" ]; then
               echo "Validating $file..."
@@ -226,9 +226,9 @@ jobs:
         run: |
           # Install yamllint for YAML syntax validation
           sudo apt-get update && sudo apt-get install -y yamllint
-          
+
           # Create yamllint config for Docker Compose specifics
-          cat > .yamllint.yml << EOF
+          cat > .yamllint.yaml << EOF
           extends: default
           rules:
             line-length:
@@ -237,12 +237,12 @@ jobs:
             truthy:
               allowed-values: ['true', 'false', 'yes', 'no']  # Docker Compose uses various boolean formats
           EOF
-          
-          # Validate each docker-compose file with yamllint
+
+          # Validate each compose file with yamllint
           echo "${{ steps.compose-files.outputs.files }}" | while IFS= read -r file; do
             if [ -n "$file" ]; then
               echo "Running yamllint on $file..."
-              yamllint -c .yamllint.yml "$file"
+              yamllint -c .yamllint.yaml "$file"
             fi
           done
 
@@ -264,7 +264,7 @@ jobs:
     # Only run on pull requests to avoid resource waste on every push
     # Manual trigger available for security audits
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-    
+
     steps:
       # REPOSITORY CHECKOUT
       # Full history not needed for security scanning
@@ -278,9 +278,9 @@ jobs:
         id: security_changes
         with:
           files: |
-            **/Dockerfile*
-            docker-compose*.yml
-            docker-compose*.yaml
+            **/Containerfile*
+            compose*.yaml
+            compose*.yaml
 
       # EARLY TERMINATION FOR UNCHANGED DOCKER FILES
       # Skip security scan if no Docker files changed (unless manual trigger)
@@ -295,13 +295,13 @@ jobs:
       - name: Build Docker image for security scanning
         if: steps.security_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
-          if [ -f "Dockerfile" ]; then
+          if [ -f "Containerfile" ]; then
             echo "Building Docker image for security scanning..."
-            docker build -t irc-security-scan:latest .
+            docker build -t irc-security-scan:latest -f=Containerfile .
             echo "✅ Docker image built successfully"
           else
-            echo "❌ No Dockerfile found in root directory"
-            echo "Security scan requires a Dockerfile to analyze"
+            echo "❌ No Containerfile found in root directory"
+            echo "Security scan requires a Containerfile to analyze"
             exit 1
           fi
 

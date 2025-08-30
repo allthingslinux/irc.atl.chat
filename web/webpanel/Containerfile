@@ -1,4 +1,4 @@
-# UnrealIRCd WebPanel Dockerfile
+# UnrealIRCd WebPanel Containerfile
 # Provides web-based administration interface for UnrealIRCd
 # Based on official documentation: https://www.unrealircd.org/docs/UnrealIRCd_webpanel
 

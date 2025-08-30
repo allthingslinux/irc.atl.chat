@@ -9,8 +9,8 @@ docs/
 README*
 
 # Docker files
-docker-compose.yml
-Dockerfile*
+compose.yaml
+Containerfile*
 .dockerignore
 
 # Development and CI files
