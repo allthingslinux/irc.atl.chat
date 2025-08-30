@@ -120,9 +120,7 @@ services:
 networks:
   irc_network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+
 volumes:
   ircd_data:
     driver: local
