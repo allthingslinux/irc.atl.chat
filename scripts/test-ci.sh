@@ -29,7 +29,7 @@ fi
 echo ""
 echo -e "${YELLOW}📦 Testing Docker Compose Linting...${NC}"
 echo "----------------------------------------"
-if act push -j docker-compose-lint --verbose; then
+if act push -j compose-lint --verbose; then
     echo -e "${GREEN}✅ Docker Compose linting test PASSED${NC}"
 else
     echo -e "${RED}❌ Docker Compose linting test FAILED${NC}"
@@ -57,6 +57,6 @@ echo ""
 echo -e "${GREEN}🎉 Testing complete!${NC}"
 echo "To run individual tests:"
 echo "  act push -j containerfile-lint"
-echo "  act push -j docker-compose-lint"
+echo "  act push -j compose-lint"
 echo "  act pull_request -j docker-security-scan"
 echo "  act push  # run all push jobs"

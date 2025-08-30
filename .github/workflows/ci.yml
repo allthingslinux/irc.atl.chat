@@ -76,8 +76,8 @@ jobs:
           files: |
             **/Containerfile*
             **/.dockerignore
-            docker-compose*.yml
-            docker-compose*.yaml
+            compose*.yml
+            compose*.yaml
 
       # EARLY TERMINATION FOR UNCHANGED FILES
       # Skips Hadolint setup if no relevant files changed
@@ -146,7 +146,7 @@ jobs:
   # Tools: Docker Compose config validation and yamllint for YAML syntax
   # Optimization: Only runs when Compose files change or on manual trigger
   # ============================================================================
-  docker-compose-lint:
+  compose-lint:
     name: Docker Compose Linting
     runs-on: ubuntu-latest
     permissions:
@@ -166,8 +166,8 @@ jobs:
         id: compose_changes
         with:
           files: |
-            docker-compose*.yml
-            docker-compose*.yaml
+            compose*.yml
+            compose*.yaml
             compose*.yml
             compose*.yaml
 
@@ -185,8 +185,8 @@ jobs:
         if: steps.compose_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
         id: compose-files
         run: |
-          # Find all docker-compose files in the repository
-          compose_files=$(find . -name "docker-compose*.yml" -o -name "docker-compose*.yaml" -o -name "compose*.yml" -o -name "compose*.yaml" | grep -v ".git")
+          # Find all compose files in the repository
+          compose_files=$(find . -name "compose*.yml" -o -name "compose*.yaml" -o -name "compose*.yml" -o -name "compose*.yaml" | grep -v ".git")
           if [ -n "$compose_files" ]; then
             echo "found=true" >> $GITHUB_OUTPUT
             echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -205,7 +205,7 @@ jobs:
       - name: Validate Docker Compose syntax
         if: steps.compose-files.outputs.found == 'true'
         run: |
-          # Validate each docker-compose file using modern docker compose
+          # Validate each compose file using modern docker compose
           echo "${{ steps.compose-files.outputs.files }}" | while IFS= read -r file; do
             if [ -n "$file" ]; then
               echo "Validating $file..."
@@ -238,7 +238,7 @@ jobs:
               allowed-values: ['true', 'false', 'yes', 'no']  # Docker Compose uses various boolean formats
           EOF
 
-          # Validate each docker-compose file with yamllint
+          # Validate each compose file with yamllint
           echo "${{ steps.compose-files.outputs.files }}" | while IFS= read -r file; do
             if [ -n "$file" ]; then
               echo "Running yamllint on $file..."
@@ -279,8 +279,8 @@ jobs:
         with:
           files: |
             **/Containerfile*
-            docker-compose*.yml
-            docker-compose*.yaml
+            compose*.yml
+            compose*.yaml
 
       # EARLY TERMINATION FOR UNCHANGED DOCKER FILES
       # Skip security scan if no Docker files changed (unless manual trigger)
