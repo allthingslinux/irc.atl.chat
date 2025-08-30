@@ -81,7 +81,9 @@ start_unrealircd() {
     fi
 
     # Start UnrealIRCd in foreground mode
-    nohup "${UNREALIRCD_BIN}" -F >/dev/null 2>&1 &
+    nohup "${UNREALIRCD_BIN}" -F 2>&1 | while read -r line; do
+        print_status "$line"
+    done
     local unrealircd_pid=$!
 
     # Wait for UnrealIRCd to start
