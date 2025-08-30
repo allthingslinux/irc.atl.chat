@@ -105,7 +105,14 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-
+  thelounge:
+    image: thelounge/thelounge:4@sha256:c2aa0916203b298ffaf3a36c4eb60ef73c1006448d430e218d37840472e84e50
+    container_name: thelounge
+    ports:
+      - '9000:9000'
+    restart: unless-stopped
+    volumes:
+      - /opt/thelounge:/var/opt/thelounge # bind lounge config from the host's file system
 volumes:
   ircd_data:
     driver: local
