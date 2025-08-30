@@ -10,11 +10,6 @@ services:
         UNREALIRCD_VERSION: "6.1.10"
         ATHEME_VERSION: "7.2.12"
     container_name: ircd
-    restart: unless-stopped
-    ports:
-      - '6667:6667'  # Standard IRC port
-      - '6697:6697'  # IRC over SSL/TLS
-      - '8600:8600'  # JSON-RPC API for webpanel
     volumes:
       - ircd_data:/usr/local/unrealircd/data
       - ircd_logs:/usr/local/unrealircd/logs
@@ -23,10 +18,15 @@ services:
       - ircd_contrib:/usr/local/unrealircd/contrib
     environment:
       - TZ=UTC
+    ports:
+      - '6667:6667' # Standard IRC port
+      - '6697:6697' # IRC over SSL/TLS
+      - '8600:8600' # JSON-RPC API for webpanel
     networks:
       - irc_network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "unrealircd"]
+      test: [ "CMD", "pgrep", "-f", "unrealircd" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -41,7 +41,9 @@ services:
         UNREALIRCD_VERSION: "6.1.10"
         ATHEME_VERSION: "7.2.12"
     container_name: atheme
-    restart: unless-stopped
+    depends_on:
+      ircd:
+        condition: service_healthy
     volumes:
       - atheme_data:/usr/local/atheme/data
       - atheme_logs:/usr/local/atheme/logs
@@ -52,19 +54,17 @@ services:
       - ATHEME_DATA=/usr/local/atheme/data
     networks:
       - irc_network
-    depends_on:
-      ircd:
-        condition: service_healthy
-    command: ["/usr/local/bin/start-services", "start"]
+    command: [ "/usr/local/bin/start-services", "start" ]
+    restart: unless-stopped
 
   webpanel:
     build:
       context: .
       dockerfile: web/webpanel/Dockerfile
     container_name: webpanel
-    restart: unless-stopped
-    ports:
-      - '8080:80'  # Web interface
+    depends_on:
+      ircd:
+        condition: service_healthy
     volumes:
       - webpanel_data:/var/www/html/unrealircd-webpanel/data
       - webpanel_config:/var/www/html/unrealircd-webpanel/config
@@ -74,13 +74,13 @@ services:
       - UNREALIRCD_PORT=8600
       - UNREALIRCD_RPC_USER=adminpanel
       - UNREALIRCD_RPC_PASSWORD=webpanel_password_2024
+    ports:
+      - '8080:80' # Web interface
     networks:
       - irc_network
-    depends_on:
-      ircd:
-        condition: service_healthy
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/unrealircd-webpanel/"]
+      test: [ "CMD", "curl", "-f", "http://localhost/unrealircd-webpanel/" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -91,16 +91,16 @@ services:
       context: .
       dockerfile: web/gamja/Dockerfile
     container_name: gamja
-    restart: unless-stopped
-    ports:
-      - '8081:80'
-    environment:
-      - TZ=UTC
     depends_on:
       ircd:
         condition: service_healthy
+    environment:
+      - TZ=UTC
+    ports:
+      - '8081:80'
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/gamja/"]
+      test: [ "CMD", "curl", "-f", "http://localhost/gamja/" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -111,11 +111,18 @@ services:
     depends_on:
       ircd:
         condition: service_healthy
-    ports:
-      - '9000:9000'
-    restart: always
     volumes:
       - /opt/thelounge:/var/opt/thelounge # bind lounge config from the host's file system
+    ports:
+      - '9000:9000'
+    restart: unless-stopped
+
+networks:
+  irc_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 volumes:
   ircd_data:
     driver: local
@@ -133,10 +140,3 @@ volumes:
     driver: local
   webpanel_config:
     driver: local
-
-networks:
-  irc_network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
