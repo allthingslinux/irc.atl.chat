@@ -337,10 +337,10 @@ lint:
 	fi
 	@if command -v hadolint >/dev/null 2>&1; then \
 		echo -e "$(BLUE)[INFO]$(NC) Running hadolint..."; \
-		hadolint Dockerfile web/webpanel/Dockerfile; \
+		hadolint Containerfile web/webpanel/Containerfile; \
 		echo -e "$(GREEN)[SUCCESS]$(NC) Hadolint completed!"; \
 	else \
-		echo -e "$(YELLOW)[WARNING]$(NC) hadolint not found. Install it for Dockerfile validation."; \
+		echo -e "$(YELLOW)[WARNING]$(NC) hadolint not found. Install it for Containerfile validation."; \
 	fi
 
 # ============================================================================
