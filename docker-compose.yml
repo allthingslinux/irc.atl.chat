@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   ircd:
     build:
@@ -93,7 +91,7 @@ services:
     container_name: gamja
     restart: unless-stopped
     ports:
-      - '8080:80'
+      - '8081:80'
     environment:
       - TZ=UTC
     depends_on:
