@@ -21,7 +21,7 @@ services:
     ports:
       - '6667:6667' # Standard IRC port
       - '6697:6697' # IRC over SSL/TLS
-      - '8600:8600' # JSON-RPC API for webpanel
+      - '8600' # JSON-RPC API for webpanel
     networks:
       - irc_network
     restart: unless-stopped
