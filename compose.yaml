@@ -120,12 +120,6 @@ services:
       - '9000:9000'
     restart: unless-stopped
 
-  certbot:
-    image: certbot/certbot@sha256:bb352a8197c4fa107ad9d955982a1c517524fc71bec2ae6a78d9afcc1e668186
-    container_name: certbot
-    volumes:
-      - ./certs:/etc/letsencrypt
-
 networks:
   irc_network:
     driver: bridge
