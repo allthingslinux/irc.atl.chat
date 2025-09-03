@@ -207,5 +207,3 @@ volumes:
     driver: local
   webpanel_config:
     driver: local
-  .runtime/certs:
-    driver: local
