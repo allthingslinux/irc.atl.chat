@@ -1,3 +1,4 @@
 .vscode
 .runtime
+.env
 cloudflare-credentials.ini
