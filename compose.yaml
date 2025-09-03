@@ -141,8 +141,8 @@ services:
       --no-eff-email
       --expand
       --non-interactive
-      -d ${PROSODY_DOMAIN:-example.com}
-      -d "*.${PROSODY_DOMAIN:-example.com}"
+      -d ${IRC_DOMAIN:-example.com}
+      -d "*.${IRC_DOMAIN:-example.com}"
     networks:
       - irc_network
 
