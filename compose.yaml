@@ -18,6 +18,7 @@ services:
       - ./unrealircd/conf:/usr/local/unrealircd/conf:ro
       - ircd_modules:/usr/local/unrealircd/modules
       - ircd_contrib:/usr/local/unrealircd/contrib
+      - .runtime/certs:/etc/letsencrypt:ro
     environment:
       - TZ=UTC
     ports:
