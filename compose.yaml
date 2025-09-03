@@ -51,6 +51,7 @@ services:
       - atheme_data:/usr/local/atheme/data
       - atheme_logs:/usr/local/atheme/logs
       - ./services/atheme:/usr/local/atheme/etc:ro
+      - ./unrealircd/conf:/usr/local/unrealircd/conf:ro
     environment:
       - TZ=UTC
       - ATHEME_CONF=/usr/local/atheme/etc/atheme.conf
