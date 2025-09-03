@@ -113,7 +113,7 @@ jobs:
       # Ignores specific rules that may conflict with multi-stage builds
       - name: Lint Containerfiles with Hadolint (Security Report)
         if: steps.containerfiles.outputs.found == 'true'
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.2.0
         with:
           dockerfile: './Containerfile'
           failure-threshold: warning
@@ -134,7 +134,7 @@ jobs:
       # Helps developers see issues without navigating to Security tab
       - name: Lint Containerfiles with Hadolint (Console Output)
         if: steps.containerfiles.outputs.found == 'true'
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.2.0
         with:
           dockerfile: './Containerfile'
           failure-threshold: warning
