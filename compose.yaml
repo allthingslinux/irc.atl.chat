@@ -183,7 +183,7 @@ services:
       - irc_network
     restart: unless-stopped
     depends_on:
-      - irc-prosody
+      - ircd
 
 networks:
   irc_network:
