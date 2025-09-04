@@ -34,6 +34,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    depends_on:
+      irc-certbot:
+        condition: service_completed_successfully
 
   atheme:
     build:
