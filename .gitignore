@@ -1,2 +1,36 @@
 .vscode
 certs
+
+# Private environment files with sensitive data
+env.local
+.env.local
+.env.production.local
+
+# Cloudflare credentials
+cloudflare-credentials.ini
+
+# Runtime data
+.runtime/
+!runtime/
+runtime/*/
+!runtime/.gitkeep
+
+# SSL certificates and keys
+*.pem
+*.key
+*.crt
+
+# Docker volumes
+ircd_data/
+ircd_logs/
+ircd_modules/
+ircd_contrib/
+atheme_data/
+atheme_logs/
+webpanel_data/
+webpanel_config/
+
+# Temporary files
+*.tmp
+*.swp
+*.bak

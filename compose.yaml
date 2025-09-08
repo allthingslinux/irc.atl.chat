@@ -3,7 +3,7 @@
 name: irc.atl.chat
 
 services:
-  ircd:
+  unrealircd:
     build:
       context: .
       dockerfile: Containerfile
@@ -11,28 +11,160 @@ services:
       args:
         UNREALIRCD_VERSION: "6.1.10"
         ATHEME_VERSION: "7.2.12"
-    container_name: ircd
+    container_name: unrealircd
+    hostname: unrealircd
+    restart: unless-stopped
+    init: true
+    command: ["/usr/local/bin/unrealircd", "-F"]
+
+    # Security configuration
+    security_opt:
+      - no-new-privileges:true
+
+    # Logging configuration
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+        compress: "true"
+
+    # Volume mounts
     volumes:
-      - ircd_data:/usr/local/unrealircd/data
-      - ircd_logs:/usr/local/unrealircd/logs
       - ./unrealircd/conf:/usr/local/unrealircd/conf:ro
-      - ircd_modules:/usr/local/unrealircd/modules
-      - ircd_contrib:/usr/local/unrealircd/contrib
+      - ./scripts:/opt/irc/scripts:ro
+      - unrealircd_data:/usr/local/unrealircd/data
+      - unrealircd_logs:/usr/local/unrealircd/logs
+    # Use the ircd user (non-root) for security
+    user: 1001:1001
+
+    # Environment configuration
+    env_file:
+      - path: .env.production
+        required: false
+      - path: .env.local
+        required: false
     environment:
       - TZ=UTC
+
+    # Port mappings
     ports:
-      - '6667:6667'  # Standard IRC port
-      - '6697:6697'  # IRC over SSL/TLS
-      - '8600'  # JSON-RPC API for webpanel
+      - '${IRC_PORT:-6667}:6667'  # Standard IRC port
+      - '${IRC_TLS_PORT:-6697}:6697'  # IRC over SSL/TLS
+      - '${IRC_SERVER_PORT:-6900}:6900'  # Server-to-server TLS
+      - '${IRC_RPC_PORT:-8600}:8600'  # JSON-RPC API
+
+    # Health monitoring
+    healthcheck:
+      test: ['CMD', '/opt/irc/scripts/health-check.sh']
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 30s
+
+    # Production resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+
+    # Network configuration
     networks:
       - irc_network
+
+    # Graceful shutdown
+    stop_grace_period: 60s
+
+  # ============================================================================
+  # CERTBOT - SSL CERTIFICATE MANAGER (Standalone)
+  # ============================================================================
+  certbot:
+    image: certbot/dns-cloudflare:latest
+    container_name: certbot-manager
+    hostname: certbot-manager
     restart: unless-stopped
+
+    # Environment from main project
+    env_file:
+      - path: .env.production
+        required: false
+      - path: .env.local
+        required: false
+
+    # Persistent certificate storage
+    volumes:
+      - certbot_conf:/etc/letsencrypt
+      - certbot_logs:/var/log/letsencrypt
+      - certbot_work:/var/lib/letsencrypt
+      - ./cloudflare-credentials.ini:/etc/letsencrypt/cloudflare-credentials.ini:ro
+      - ./scripts/certbot:/usr/local/bin/certbot-scripts:ro
+
+    # Network access for DNS challenges
+    networks:
+      - certbot_network
+
+    # Health check
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "unrealircd"]
+      test: ["CMD", "certbot", "certificates"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================================
+  # CERTIFICATE DISTRIBUTION (Automatic Sync)
+  # ============================================================================
+  cert-sync:
+    image: alpine:latest
+    container_name: cert-sync
+    hostname: cert-sync
+    restart: unless-stopped
+
+    # Dependencies
+    depends_on:
+      certbot:
+        condition: service_healthy
+
+    # Volume mounts
+    volumes:
+      - certbot_conf:/etc/letsencrypt:ro
+      - ./.runtime/certs:/app/certs
+
+    # Sync certificates
+    command: >
+      sh -c "
+        apk add --no-cache inotify-tools &&
+        mkdir -p /app/certs &&
+        while true; do
+          # Copy latest certificates
+          if [ -d /etc/letsencrypt/live ]; then
+            cp -r /etc/letsencrypt/live/* /app/certs/ 2>/dev/null || true
+          fi
+          sleep 3600  # Check every hour
+        done
+      "
+
+    # Network
+    networks:
+      - certbot_network
+
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 
   atheme:
     build:
@@ -43,8 +175,9 @@ services:
         UNREALIRCD_VERSION: "6.1.10"
         ATHEME_VERSION: "7.2.12"
     container_name: atheme
+    hostname: atheme
     depends_on:
-      ircd:
+      unrealircd:
         condition: service_healthy
     volumes:
       - atheme_data:/usr/local/atheme/data
@@ -56,23 +189,24 @@ services:
       - ATHEME_DATA=/usr/local/atheme/data
     networks:
       - irc_network
-    command: ["/usr/local/bin/start-services", "start"]
+    command: ["/usr/local/bin/atheme-services", "-c", "/usr/local/atheme/etc/atheme.conf"]
     restart: unless-stopped
 
-  webpanel:
+  unrealircd-webpanel:
     build:
       context: .
       dockerfile: web/webpanel/Containerfile
-    container_name: webpanel
+    container_name: unrealircd-webpanel
+    hostname: unrealircd-webpanel
     depends_on:
-      ircd:
+      unrealircd:
         condition: service_healthy
     volumes:
-      - webpanel_data:/var/www/html/unrealircd-webpanel/data
-      - webpanel_config:/var/www/html/unrealircd-webpanel/config
+      - unrealircd-webpanel_data:/var/www/html/unrealircd-webpanel/data
+      - unrealircd-webpanel_config:/var/www/html/unrealircd-webpanel/config
     environment:
       - TZ=UTC
-      - UNREALIRCD_HOST=ircd
+      - UNREALIRCD_HOST=unrealircd
       - UNREALIRCD_PORT=8600
       - UNREALIRCD_RPC_USER=adminpanel
       - UNREALIRCD_RPC_PASSWORD=webpanel_password_2024
@@ -93,13 +227,18 @@ services:
       context: .
       dockerfile: web/gamja/Containerfile
     container_name: gamja
+    hostname: gamja
     depends_on:
-      ircd:
+      unrealircd:
         condition: service_healthy
     environment:
       - TZ=UTC
+    volumes:
+      - ./web/gamja:/var/www/html/gamja:ro
     ports:
       - '8081:80'
+    networks:
+      - irc_network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/gamja/"]
@@ -111,11 +250,14 @@ services:
   thelounge:
     image: thelounge/thelounge:4@sha256:c2aa0916203b298ffaf3a36c4eb60ef73c1006448d430e218d37840472e84e50
     container_name: thelounge
+    hostname: thelounge
     depends_on:
-      ircd:
+      unrealircd:
         condition: service_healthy
     volumes:
-      - /opt/thelounge:/var/opt/thelounge  # bind lounge config from the host's file system
+      - ./web/thelounge:/var/opt/thelounge:ro
+    networks:
+      - irc_network
     ports:
       - '9000:9000'
     restart: unless-stopped
@@ -124,20 +266,43 @@ networks:
   irc_network:
     driver: bridge
 
+  # ============================================================================
+  # CERTIFICATE NETWORKS
+  # ============================================================================
+  certbot_network:
+    name: certbot_network
+    driver: bridge
+
 volumes:
-  ircd_data:
+  unrealircd_data:
     driver: local
-  ircd_logs:
+  unrealircd_logs:
     driver: local
-  ircd_modules:
+  unrealircd_modules:
     driver: local
-  ircd_contrib:
+  unrealircd_contrib:
     driver: local
   atheme_data:
     driver: local
   atheme_logs:
     driver: local
-  webpanel_data:
+  unrealircd-webpanel_data:
     driver: local
-  webpanel_config:
+  unrealircd-webpanel_config:
     driver: local
+  thelounge_data:
+    driver: local
+
+  # ============================================================================
+  # CERTIFICATE VOLUMES (Persistent Storage)
+  # ============================================================================
+  certbot_conf:
+    driver: local
+    name: certbot_conf
+  certbot_logs:
+    driver: local
+    name: certbot_logs
+  certbot_work:
+    driver: local
+    name: certbot_work
+  

@@ -270,7 +270,7 @@ webpanel:
 	@echo "IRC Server: localhost:6667 (standard) / localhost:6697 (SSL)"
 	@echo "JSON-RPC API: localhost:8600 (internal)"
 	@echo ""
-	@echo "Default RPC credentials:"
+	@echo "Default RPC credentials:"33333333
 	@echo "  User: adminpanel"
 	@echo "  Password: webpanel_password_2024"
 	@echo ""
@@ -464,3 +464,99 @@ check-module: ## Check if MODULE variable is set
 		echo "Usage: make <target> MODULE=<module-name>"; \
 		exit 1; \
 	fi
+
+# ============================================================================
+# SSL/TLS MANAGEMENT
+# ============================================================================
+
+setup-ssl: ## Setup SSL certificates with Let's Encrypt (ONE-TIME MANUAL SETUP)
+	@echo -e "$(PURPLE)=== ONE-TIME SSL Certificate Setup ===$(NC)"
+	@echo -e "$(YELLOW)[IMPORTANT]$(NC) This is MANUAL one-time setup for initial certificates"
+	@echo -e "$(BLUE)[INFO]$(NC) Make sure cloudflare-credentials.ini is configured first!"
+	@echo -e "$(BLUE)[INFO]$(NC) Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini"
+	@echo -e "$(BLUE)[INFO]$(NC) and fill in your Cloudflare credentials."
+	@echo -e "$(BLUE)[INFO]$(NC) After this, certificates renew AUTOMATICALLY every 30 days"
+	@echo
+	$(DOCKER_COMPOSE) --profile cert-issue up unrealircd-certbot
+
+ssl-renew: ## Renew SSL certificates
+	@echo -e "$(PURPLE)=== Renewing SSL Certificates ===$(NC)"
+	$(DOCKER_COMPOSE) up unrealircd-certbot-renew
+
+ssl-check: ## Check SSL certificate status
+	@echo -e "$(PURPLE)=== SSL Certificate Status ===$(NC)"
+	@./scripts/cert-monitor.sh status
+
+ssl-monitor: ## Run SSL certificate monitoring (manual command - monitoring runs automatically)
+	@echo -e "$(PURPLE)=== Manual SSL Certificate Monitoring ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Certificate monitoring runs AUTOMATICALLY with unrealircd-cert-monitor container"
+	@echo -e "$(BLUE)[INFO]$(NC) This command is for manual monitoring/testing only"
+	@echo -e "$(BLUE)[INFO]$(NC) Use 'make ssl-check' for quick status check"
+	@echo
+	@./scripts/cert-monitor.sh monitor
+
+# ============================================================================
+# CERTIFICATE MANAGEMENT (Integrated)
+# ============================================================================
+
+certbot-up: ## Start certificate manager
+	@echo -e "$(PURPLE)=== Starting Certificate Manager ===$(NC)"
+	$(DOCKER_COMPOSE) up -d certbot cert-sync
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Certificate manager started!"
+
+certbot-down: ## Stop certificate manager
+	@echo -e "$(PURPLE)=== Stopping Certificate Manager ===$(NC)"
+	$(DOCKER_COMPOSE) down certbot cert-sync
+
+certbot-status: ## Check certificate manager status
+	@echo -e "$(PURPLE)=== Certificate Manager Status ===$(NC)"
+	$(DOCKER_COMPOSE) ps certbot cert-sync
+
+certbot-logs: ## View certificate manager logs
+	@echo -e "$(PURPLE)=== Certificate Manager Logs ===$(NC)"
+	$(DOCKER_COMPOSE) logs -f certbot cert-sync
+
+certbot-issue: ## Issue new certificates
+	@echo -e "$(PURPLE)=== Issuing Certificates ===$(NC)"
+	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh issue
+
+certbot-renew: ## Renew certificates
+	@echo -e "$(PURPLE)=== Renewing Certificates ===$(NC)"
+	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh renew
+
+certbot-status-check: ## Check certificate status
+	@echo -e "$(PURPLE)=== Certificate Status ===$(NC)"
+	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh status
+
+ssl-issue: ## Issue new SSL certificate (manual)
+	@echo -e "$(PURPLE)=== Issuing New SSL Certificate ===$(NC)"
+	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh issue
+
+# ============================================================================
+# ENVIRONMENT SETUP
+# ============================================================================
+
+setup-env: ## Setup environment files
+	@echo -e "$(PURPLE)=== Setting up Environment ===$(NC)"
+	@./scripts/setup-environment.sh
+
+generate-oper-password: ## Generate new IRC operator password hash
+	@echo -e "$(PURPLE)=== Generating IRC Operator Password ===$(NC)"
+	@./scripts/generate-oper-password.sh
+
+setup-private-env: ## Setup private environment file with sensitive data
+	@echo -e "$(PURPLE)=== Setting up Private Environment ===$(NC)"
+	@if [ ! -f ".env.local" ]; then \
+		cp env.example .env.local; \
+		echo -e "$(GREEN)[SUCCESS]$(NC) Created .env.local from template"; \
+		echo -e "$(YELLOW)[WARNING]$(NC) Please edit .env.local with your sensitive data"; \
+		echo -e "$(BLUE)[INFO]$(NC) Use 'make generate-oper-password' to create secure operator passwords"; \
+	else \
+		echo -e "$(YELLOW)[WARNING]$(NC) .env.local already exists"; \
+	fi
+
+setup: ## Complete setup (runtime + start services)
+	@echo -e "$(PURPLE)=== Complete Setup ===$(NC)"
+	@mkdir -p .runtime/certs .runtime/logs
+	@echo -e "$(GREEN)[SUCCESS]$(NC) IRC server setup complete!"
+	@echo -e "$(BLUE)[INFO]$(NC) Run 'make setup-ssl' to configure SSL certificates"

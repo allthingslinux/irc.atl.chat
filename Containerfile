@@ -113,7 +113,6 @@ RUN ./configure \
     --enable-compiler-sanitizers \
     --disable-heap-allocator \
     --disable-linker-defs \
-    --enable-fhs-paths \
     --enable-large-net \
     --enable-contrib \
     --enable-nls \
@@ -146,15 +145,12 @@ COPY --chown=ircd:ircd scripts/manage-modules.sh /usr/local/bin/manage-modules
 COPY --chown=ircd:ircd scripts/module-config.sh /usr/local/bin/module-config
 COPY --chown=ircd:ircd scripts/start-webpanel.sh /usr/local/bin/start-webpanel
 
-# Set proper permissions and create necessary syamlinks
+# Set proper permissions and create necessary symlinks
 RUN chmod 755 /usr/local/atheme/bin/* /usr/local/unrealircd/bin/* && \
     chown -R ircd:ircd /var/log /var/run && \
-    # Create syamlinks for easier access
+    # Create symlinks for easier access
     ln -sf /usr/local/atheme/bin/atheme-services /usr/local/bin/atheme-services && \
     ln -sf /usr/local/unrealircd/bin/unrealircd /usr/local/bin/unrealircd && \
-    # Ensure proper ownership of configuration directories
-    mkdir -p /usr/local/atheme/etc /usr/local/unrealircd/conf && \
-    chown -R ircd:ircd /usr/local/atheme/etc /usr/local/unrealircd/conf && \
     # Create Atheme database directory
     mkdir -p /usr/local/atheme/var && \
     chown -R ircd:ircd /usr/local/atheme/var
