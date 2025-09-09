@@ -88,6 +88,9 @@ services:
     hostname: certbot-manager
     restart: unless-stopped
 
+    # Keep container running
+    entrypoint: ["sleep", "infinity"]
+
     # Environment from main project
     env_file:
       - path: .env.production
