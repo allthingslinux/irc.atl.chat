@@ -17,18 +17,6 @@ services:
     init: true
     command: ["/usr/local/bin/unrealircd", "-F"]
 
-    # Security configuration
-    security_opt:
-      - no-new-privileges:true
-
-    # Logging configuration
-    logging:
-      driver: json-file
-      options:
-        max-size: "50m"
-        max-file: "5"
-        compress: "true"
-
     # Volume mounts
     volumes:
       - ./unrealircd/conf:/usr/local/unrealircd/conf:ro
@@ -40,8 +28,6 @@ services:
 
     # Environment configuration
     env_file:
-      - path: .env.production
-        required: false
       - path: .env.local
         required: false
     environment:
@@ -62,16 +48,6 @@ services:
       retries: 3
       start_period: 30s
 
-    # Production resource limits
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-          cpus: '2.0'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
-
     # Network configuration
     networks:
       - irc_network
@@ -89,8 +65,6 @@ services:
 
     # Environment from main project
     env_file:
-      - path: .env.production
-        required: false
       - path: .env.local
         required: false
 
@@ -102,14 +76,6 @@ services:
     # Network access for DNS challenges
     networks:
       - irc_network
-
-    # Logging
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-
 
   # atheme:
   #   build:
@@ -137,75 +103,75 @@ services:
   #   command: ["/usr/local/bin/atheme-services", "-c", "/usr/local/atheme/etc/atheme-minimal.conf"]
   #   restart: unless-stopped
 
-  unrealircd-webpanel:
-    build:
-      context: .
-      dockerfile: web/webpanel/Containerfile
-    container_name: unrealircd-webpanel
-    hostname: unrealircd-webpanel
-    depends_on:
-      unrealircd:
-        condition: service_healthy
-    volumes:
-      - unrealircd-webpanel_data:/var/www/html/unrealircd-webpanel/data
-      - unrealircd-webpanel_config:/var/www/html/unrealircd-webpanel/config
-    environment:
-      - TZ=UTC
-      - UNREALIRCD_HOST=unrealircd
-      - UNREALIRCD_PORT=8600
-      - UNREALIRCD_RPC_USER=adminpanel
-      - UNREALIRCD_RPC_PASSWORD=webpanel_password_2024
-    ports:
-      - '8080:80'  # Web interface
-    networks:
-      - irc_network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/unrealircd-webpanel/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+  # unrealircd-webpanel:
+  #   build:
+  #     context: .
+  #     dockerfile: web/webpanel/Containerfile
+  #   container_name: unrealircd-webpanel
+  #   hostname: unrealircd-webpanel
+  #   depends_on:
+  #     unrealircd:
+  #       condition: service_healthy
+  #   volumes:
+  #     - unrealircd-webpanel_data:/var/www/html/unrealircd-webpanel/data
+  #     - unrealircd-webpanel_config:/var/www/html/unrealircd-webpanel/config
+  #   environment:
+  #     - TZ=UTC
+  #     - UNREALIRCD_HOST=unrealircd
+  #     - UNREALIRCD_PORT=8600
+  #     - UNREALIRCD_RPC_USER=adminpanel
+  #     - UNREALIRCD_RPC_PASSWORD=webpanel_password_2024
+  #   ports:
+  #     - '8080:80'  # Web interface
+  #   networks:
+  #     - irc_network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost/unrealircd-webpanel/"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 60s
 
-  gamja:
-    build:
-      context: .
-      dockerfile: web/gamja/Containerfile
-    container_name: gamja
-    hostname: gamja
-    depends_on:
-      unrealircd:
-        condition: service_healthy
-    environment:
-      - TZ=UTC
-    volumes:
-      - ./web/gamja:/var/www/html/gamja:ro
-    ports:
-      - '8081:80'
-    networks:
-      - irc_network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/gamja/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+  # gamja:
+  #   build:
+  #     context: .
+  #     dockerfile: web/gamja/Containerfile
+  #   container_name: gamja
+  #   hostname: gamja
+  #   depends_on:
+  #     unrealircd:
+  #       condition: service_healthy
+  #   environment:
+  #     - TZ=UTC
+  #   volumes:
+  #     - ./web/gamja:/var/www/html/gamja:ro
+  #   ports:
+  #     - '8081:80'
+  #   networks:
+  #     - irc_network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost/gamja/"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 60s
 
-  thelounge:
-    image: thelounge/thelounge:4@sha256:c2aa0916203b298ffaf3a36c4eb60ef73c1006448d430e218d37840472e84e50
-    container_name: thelounge
-    hostname: thelounge
-    depends_on:
-      unrealircd:
-        condition: service_healthy
-    volumes:
-      - thelounge_data:/var/opt/thelounge
-    networks:
-      - irc_network
-    ports:
-      - '9000:9000'
-    restart: unless-stopped
+  # thelounge:
+  #   image: thelounge/thelounge:4@sha256:c2aa0916203b298ffaf3a36c4eb60ef73c1006448d430e218d37840472e84e50
+  #   container_name: thelounge
+  #   hostname: thelounge
+  #   depends_on:
+  #     unrealircd:
+  #       condition: service_healthy
+  #   volumes:
+  #     - thelounge_data:/var/opt/thelounge
+  #   networks:
+  #     - irc_network
+  #   ports:
+  #     - '9000:9000'
+  #   restart: unless-stopped
 
 networks:
   irc_network:
@@ -220,15 +186,15 @@ volumes:
     driver: local
   unrealircd_contrib:
     driver: local
-  atheme_data:
+  # atheme_data:
     driver: local
-  atheme_logs:
+  # atheme_logs:
     driver: local
-  unrealircd-webpanel_data:
+  # unrealircd-webpanel_data:
     driver: local
-  unrealircd-webpanel_config:
+  # unrealircd-webpanel_config:
     driver: local
-  thelounge_data:
+  # thelounge_data:
     driver: local
   letsencrypt_data:
     driver: local
