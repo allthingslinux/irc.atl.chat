@@ -128,9 +128,9 @@ renew_certificates() {
             log_info "Current certificates will remain valid until they expire"
             log_info "Run 'make ssl-renew' after the rate limit resets to renew"
         else
-            log_error "Failed to renew SSL certificates"
-            log_info "Check the error above and try again"
-            return 1
+            log_warn "SSL certificate renewal failed!"
+            log_info "Automatically generating self-signed certificate as fallback..."
+            generate_self_signed_certificate
         fi
     fi
 }
