@@ -182,11 +182,11 @@ IRC Clients ↔ UnrealIRCd (irc.atl.chat) ↔ Atheme Services (services.atl.chat
 - **Secure server linking** with password authentication
 - **U-line protection** preventing service disruption
 
-## 🔑 **SSL Certificate Management**
+## 🔑 **SSL Certificate Management (Simplified)**
 
-The setup includes **fully automated SSL/TLS certificate management**:
+The setup includes **simplified SSL/TLS certificate management**:
 
-### **Automated Setup**
+### **Quick Setup**
 ```bash
 # 1. Configure Cloudflare credentials
 cp cloudflare-credentials.ini.template cloudflare-credentials.ini
@@ -197,7 +197,7 @@ LETSENCRYPT_EMAIL=admin@yourdomain.com
 IRC_DOMAIN=irc.yourdomain.com
 
 # 3. Issue certificates automatically
-make setup-ssl
+make ssl-setup
 
 # 4. Everything is ready!
 make up
@@ -205,52 +205,29 @@ make up
 
 ### **What Happens Automatically**
 ✅ **Certificate Issuance**: Let's Encrypt with Cloudflare DNS challenges
-✅ **30-Day Renewal**: Automatic certificate renewal
+✅ **Direct Integration**: Certificates copied directly to UnrealIRCd
 ✅ **IRC Server Reload**: Configuration reloads automatically after renewal
-✅ **Persistent Storage**: Certificates survive container restarts
-✅ **Health Monitoring**: 24/7 certificate status monitoring
+✅ **Simple Management**: Single script handles all SSL operations
 
 ### **Manual Certificate Management**
 ```bash
 # Check certificate status
-make ssl-check
+make ssl-status
 
 # Force renewal
 make ssl-renew
 
-# View certificate logs
-make ssl-monitor
+# Direct script usage
+./scripts/ssl-manager.sh status
+./scripts/ssl-manager.sh renew
 ```
 
-### 📊 **Comparison**
-
-| Feature | Standalone Manager | Integrated Approach |
-|---------|-------------------|-------------------|
-| **Complexity** | Medium | Simple |
-| **Production Ready** | ✅ High | ⚠️ Medium |
-| **Separation** | ✅ Excellent | ⚠️ Good |
-| **Persistence** | ✅ Excellent | ⚠️ Good |
-| **Monitoring** | ✅ Dedicated | ⚠️ Basic |
-| **Multi-Service** | ✅ Excellent | ❌ Limited |
-| **Setup Time** | ⏱️ Longer | ⚡ Faster |
-
-### 🔧 **Manual Commands**
+### 🔧 **Available Commands**
 
 ```bash
-# === STANDALONE MANAGER ===
-make certbot-up              # Start certificate manager
-make certbot-down            # Stop certificate manager
-make certbot-status          # Check manager status
-make certbot-logs            # View manager logs
-make certbot-issue           # Issue certificates
-make certbot-renew           # Renew certificates
-make certbot-status-check    # Check certificate status
-
-# === INTEGRATED APPROACH ===
-make setup-ssl               # Setup certificates
-make ssl-renew               # Manual renewal
-make ssl-check               # Check status
-make ssl-monitor             # Start monitoring
+make ssl-setup              # Setup certificates (one-time)
+make ssl-renew              # Renew certificates
+make ssl-status             # Check certificate status
 ```
 
 ### 📋 **Prerequisites (Both Approaches)**

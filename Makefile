@@ -368,29 +368,15 @@ help-docker:
 help-ssl:
 	@echo "SSL/TLS Certificate Management Commands:"
 	@echo ""
-	@echo "=== STANDALONE MANAGER ==="
-	@echo "  certbot-up          - Start certificate manager"
-	@echo "  certbot-down        - Stop certificate manager"
-	@echo "  certbot-status      - Check manager status"
-	@echo "  certbot-logs        - View manager logs"
-	@echo "  certbot-issue       - Issue certificates"
-	@echo "  certbot-renew       - Renew certificates"
-	@echo "  certbot-status-check - Check certificate status"
+	@echo "Simplified SSL Management:"
+	@echo "  ssl-setup           - Setup certificates (one-time)"
+	@echo "  ssl-renew           - Renew certificates"
+	@echo "  ssl-status          - Check certificate status"
 	@echo ""
-	@echo "=== INTEGRATED APPROACH ==="
-	@echo "  setup-ssl           - Setup certificates (one-time)"
-	@echo "  ssl-renew            - Manual renewal"
-	@echo "  ssl-check            - Check status"
-	@echo "  ssl-monitor           - Start monitoring"
-	@echo "  ssl-issue             - Issue new SSL certificate"
-	@echo "  ssl-fix-existing      - Fix existing certificates"
-	@echo ""
-	@echo "Usage examples:"
-	@echo "  make setup-ssl       # Initial certificate setup"
-	@echo "  make ssl-fix-existing # Fix existing certificates"
-	@echo "  make ssl-check       # Check certificate status"
-	@echo "  make certbot-up      # Start certificate manager"
-	@echo "  make ssl-renew       # Renew certificates"
+	@echo "Quick Start:"
+	@echo "  make ssl-setup      # Initial certificate setup"
+	@echo "  make ssl-status     # Check certificate status"
+	@echo "  make ssl-renew      # Renew certificates"
 
 # Docker operations
 docker-build:
@@ -494,123 +480,24 @@ check-module: ## Check if MODULE variable is set
 	fi
 
 # ============================================================================
-# SSL/TLS MANAGEMENT
+# SSL/TLS MANAGEMENT (Simplified)
 # ============================================================================
 
-setup-ssl: ## Setup SSL certificates with Let's Encrypt (ONE-TIME MANUAL SETUP)
-	@echo -e "$(PURPLE)=== ONE-TIME SSL Certificate Setup ===$(NC)"
-	@echo -e "$(YELLOW)[IMPORTANT]$(NC) This is MANUAL one-time setup for initial certificates"
+ssl-setup: ## Setup SSL certificates (one-time setup)
+	@echo -e "$(PURPLE)=== SSL Certificate Setup ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Make sure cloudflare-credentials.ini is configured first!"
 	@echo -e "$(BLUE)[INFO]$(NC) Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini"
 	@echo -e "$(BLUE)[INFO]$(NC) and fill in your Cloudflare credentials."
-	@echo -e "$(BLUE)[INFO]$(NC) After this, certificates renew AUTOMATICALLY every 30 days"
 	@echo
-	@echo -e "$(BLUE)[INFO]$(NC) Starting certbot service to issue certificates..."
-	$(DOCKER_COMPOSE) up -d certbot
-	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certbot service to be ready..."
-	@for i in $$(seq 1 30); do \
-		if $(DOCKER_COMPOSE) exec certbot echo "Service ready" >/dev/null 2>&1; then \
-			echo -e "$(GREEN)[SUCCESS]$(NC) Certbot service is ready!"; \
-			break; \
-		fi; \
-		if [ $$i -eq 30 ]; then \
-			echo -e "$(RED)[ERROR]$(NC) Certbot service failed to start properly"; \
-			exit 1; \
-		fi; \
-		sleep 2; \
-	done
-	@echo -e "$(BLUE)[INFO]$(NC) Issuing certificates..."
-	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh issue
-	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificates to be synced..."
-	@sleep 10
-	@echo -e "$(BLUE)[INFO]$(NC) Copying CA bundle for HTTPS client..."
-	@cp unrealircd/default/tls/curl-ca-bundle.crt unrealircd/conf/tls/ 2>/dev/null || true
-	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load new certificates..."
-	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
-	@echo -e "$(GREEN)[SUCCESS]$(NC) SSL certificate setup completed!"
+	@./scripts/ssl-manager.sh issue
 
 ssl-renew: ## Renew SSL certificates
 	@echo -e "$(PURPLE)=== Renewing SSL Certificates ===$(NC)"
-	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh renew
-	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificates to be synced..."
-	@sleep 10
-	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load renewed certificates..."
-	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
-	@echo -e "$(GREEN)[SUCCESS]$(NC) SSL certificate renewal completed!"
+	@./scripts/ssl-manager.sh renew
 
-ssl-check: ## Check SSL certificate status
+ssl-status: ## Check SSL certificate status
 	@echo -e "$(PURPLE)=== SSL Certificate Status ===$(NC)"
-	@./scripts/cert-monitor.sh status
-
-ssl-monitor: ## Run SSL certificate monitoring (manual command - monitoring runs automatically)
-	@echo -e "$(PURPLE)=== Manual SSL Certificate Monitoring ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Certificate monitoring runs AUTOMATICALLY with certbot container"
-	@echo -e "$(BLUE)[INFO]$(NC) This command is for manual monitoring/testing only"
-	@echo -e "$(BLUE)[INFO]$(NC) Use 'make ssl-check' for quick status check"
-	@echo
-	@./scripts/cert-monitor.sh monitor
-
-# ============================================================================
-# CERTIFICATE MANAGEMENT (Integrated)
-# ============================================================================
-
-certbot-up: ## Start certificate manager
-	@echo -e "$(PURPLE)=== Starting Certificate Manager ===$(NC)"
-	$(DOCKER_COMPOSE) up -d certbot cert-sync
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Certificate manager started!"
-
-certbot-down: ## Stop certificate manager
-	@echo -e "$(PURPLE)=== Stopping Certificate Manager ===$(NC)"
-	$(DOCKER_COMPOSE) stop certbot cert-sync
-
-certbot-status: ## Check certificate manager status
-	@echo -e "$(PURPLE)=== Certificate Manager Status ===$(NC)"
-	$(DOCKER_COMPOSE) ps certbot cert-sync
-
-certbot-logs: ## View certificate manager logs
-	@echo -e "$(PURPLE)=== Certificate Manager Logs ===$(NC)"
-	$(DOCKER_COMPOSE) logs -f certbot cert-sync
-
-certbot-issue: ## Issue new certificates
-	@echo -e "$(PURPLE)=== Issuing Certificates ===$(NC)"
-	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh issue
-
-certbot-renew: ## Renew certificates
-	@echo -e "$(PURPLE)=== Renewing Certificates ===$(NC)"
-	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh renew
-	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificates to be synced..."
-	@sleep 10
-	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load renewed certificates..."
-	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Certificate renewal completed!"
-
-certbot-status-check: ## Check certificate status
-	@echo -e "$(PURPLE)=== Certificate Status ===$(NC)"
-	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh status
-
-ssl-issue: ## Issue new SSL certificate (manual)
-	@echo -e "$(PURPLE)=== Issuing New SSL Certificate ===$(NC)"
-	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh issue
-	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificates to be synced..."
-	@sleep 10
-	@echo -e "$(BLUE)[INFO]$(NC) Copying CA bundle for HTTPS client..."
-	@cp unrealircd/default/tls/curl-ca-bundle.crt unrealircd/conf/tls/ 2>/dev/null || true
-	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load new certificates..."
-	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
-	@echo -e "$(GREEN)[SUCCESS]$(NC) SSL certificate issuance completed!"
-
-ssl-fix-existing: ## Fix existing certificates (copy from certbot to UnrealIRCd)
-	@echo -e "$(PURPLE)=== Fixing Existing SSL Certificates ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) This will copy existing certificates from certbot to UnrealIRCd"
-	@echo -e "$(BLUE)[INFO]$(NC) Starting cert-sync container to copy certificates..."
-	@$(DOCKER_COMPOSE) up -d cert-sync
-	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificate sync..."
-	@sleep 15
-	@echo -e "$(BLUE)[INFO]$(NC) Copying CA bundle for HTTPS client..."
-	@cp unrealircd/default/tls/curl-ca-bundle.crt unrealircd/conf/tls/ 2>/dev/null || true
-	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load certificates..."
-	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Existing SSL certificates have been fixed!"
+	@./scripts/ssl-manager.sh status
 
 # ============================================================================
 # ENVIRONMENT SETUP
