@@ -506,7 +506,17 @@ setup-ssl: ## Setup SSL certificates with Let's Encrypt (ONE-TIME MANUAL SETUP)
 	@echo -e "$(BLUE)[INFO]$(NC) Starting certbot service to issue certificates..."
 	$(DOCKER_COMPOSE) up -d certbot
 	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certbot service to be ready..."
-	@timeout 60 bash -c 'until $(DOCKER_COMPOSE) exec certbot echo "Service ready" >/dev/null 2>&1; do sleep 2; done' || (echo -e "$(RED)[ERROR]$(NC) Certbot service failed to start properly" && exit 1)
+	@for i in $$(seq 1 30); do \
+		if $(DOCKER_COMPOSE) exec certbot echo "Service ready" >/dev/null 2>&1; then \
+			echo -e "$(GREEN)[SUCCESS]$(NC) Certbot service is ready!"; \
+			break; \
+		fi; \
+		if [ $$i -eq 30 ]; then \
+			echo -e "$(RED)[ERROR]$(NC) Certbot service failed to start properly"; \
+			exit 1; \
+		fi; \
+		sleep 2; \
+	done
 	@echo -e "$(BLUE)[INFO]$(NC) Issuing certificates..."
 	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh issue
 	@echo -e "$(GREEN)[SUCCESS]$(NC) SSL certificate setup completed!"
