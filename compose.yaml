@@ -160,6 +160,10 @@ services:
               if [ -d \"\$$domain_dir\" ]; then
                 cp \"\$$domain_dir/fullchain.pem\" /app/unrealircd-tls/server.cert.pem 2>/dev/null || true
                 cp \"\$$domain_dir/privkey.pem\" /app/unrealircd-tls/server.key.pem 2>/dev/null || true
+                chmod 644 /app/unrealircd-tls/server.cert.pem 2>/dev/null || true
+                chmod 600 /app/unrealircd-tls/server.key.pem 2>/dev/null || true
+                chown 1001:1001 /app/unrealircd-tls/server.cert.pem 2>/dev/null || true
+                chown 1001:1001 /app/unrealircd-tls/server.key.pem 2>/dev/null || true
               fi
             done
           fi

@@ -383,9 +383,11 @@ help-ssl:
 	@echo "  ssl-check            - Check status"
 	@echo "  ssl-monitor           - Start monitoring"
 	@echo "  ssl-issue             - Issue new SSL certificate"
+	@echo "  ssl-fix-existing      - Fix existing certificates"
 	@echo ""
 	@echo "Usage examples:"
 	@echo "  make setup-ssl       # Initial certificate setup"
+	@echo "  make ssl-fix-existing # Fix existing certificates"
 	@echo "  make ssl-check       # Check certificate status"
 	@echo "  make certbot-up      # Start certificate manager"
 	@echo "  make ssl-renew       # Renew certificates"
@@ -589,6 +591,26 @@ certbot-status-check: ## Check certificate status
 ssl-issue: ## Issue new SSL certificate (manual)
 	@echo -e "$(PURPLE)=== Issuing New SSL Certificate ===$(NC)"
 	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh issue
+	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificates to be synced..."
+	@sleep 10
+	@echo -e "$(BLUE)[INFO]$(NC) Copying CA bundle for HTTPS client..."
+	@cp unrealircd/default/tls/curl-ca-bundle.crt unrealircd/conf/tls/ 2>/dev/null || true
+	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load new certificates..."
+	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
+	@echo -e "$(GREEN)[SUCCESS]$(NC) SSL certificate issuance completed!"
+
+ssl-fix-existing: ## Fix existing certificates (copy from certbot to UnrealIRCd)
+	@echo -e "$(PURPLE)=== Fixing Existing SSL Certificates ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) This will copy existing certificates from certbot to UnrealIRCd"
+	@echo -e "$(BLUE)[INFO]$(NC) Starting cert-sync container to copy certificates..."
+	@$(DOCKER_COMPOSE) up -d cert-sync
+	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificate sync..."
+	@sleep 15
+	@echo -e "$(BLUE)[INFO]$(NC) Copying CA bundle for HTTPS client..."
+	@cp unrealircd/default/tls/curl-ca-bundle.crt unrealircd/conf/tls/ 2>/dev/null || true
+	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load certificates..."
+	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Existing SSL certificates have been fixed!"
 
 # ============================================================================
 # ENVIRONMENT SETUP
