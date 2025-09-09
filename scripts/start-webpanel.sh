@@ -36,25 +36,9 @@ WAIT_INTERVAL="${WAIT_INTERVAL:-5}"   # 5 seconds between checks
 
 print_status "Starting UnrealIRCd WebPanel..."
 
-# Wait for UnrealIRCd JSON-RPC API to be ready
-print_status "Waiting for UnrealIRCd JSON-RPC API at ${UNREALIRCD_HOST}:${UNREALIRCD_PORT}..."
-
-wait_time=0
-while [ $wait_time -lt "$MAX_WAIT_TIME" ]; do
-    if curl -f "http://${UNREALIRCD_HOST}:${UNREALIRCD_PORT}/" >/dev/null 2>&1; then
-        print_success "UnrealIRCd JSON-RPC API is ready!"
-        break
-    fi
-    
-    print_status "Waiting for UnrealIRCd... (${wait_time}s elapsed)"
-    sleep "$WAIT_INTERVAL"
-    wait_time=$((wait_time + WAIT_INTERVAL))
-done
-
-if [ $wait_time -ge "$MAX_WAIT_TIME" ]; then
-    print_error "Timeout waiting for UnrealIRCd JSON-RPC API after ${MAX_WAIT_TIME} seconds"
-    exit 1
-fi
+# Skip JSON-RPC API check for now - start WebPanel directly
+print_status "Starting WebPanel without JSON-RPC API check..."
+print_warning "Note: WebPanel may need manual configuration to connect to UnrealIRCd"
 
 # Start PHP-FPM
 print_status "Starting PHP-FPM..."

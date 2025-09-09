@@ -183,31 +183,31 @@ services:
         max-file: "3"
 
 
-  atheme:
-    build:
-      context: .
-      dockerfile: Containerfile
-      target: runtime
-      args:
-        UNREALIRCD_VERSION: "6.1.10"
-        ATHEME_VERSION: "7.2.12"
-    container_name: atheme
-    hostname: atheme
-    depends_on:
-      unrealircd:
-        condition: service_healthy
-    volumes:
-      - atheme_data:/usr/local/atheme/data
-      - atheme_logs:/usr/local/atheme/logs
-      - ./services/atheme:/usr/local/atheme/etc:ro
-    environment:
-      - TZ=UTC
-      - ATHEME_CONF=/usr/local/atheme/etc/atheme.conf
-      - ATHEME_DATA=/usr/local/atheme/data
-    networks:
-      - irc_network
-    command: ["/usr/local/bin/atheme-services", "-c", "/usr/local/atheme/etc/atheme.conf"]
-    restart: unless-stopped
+  # atheme:
+  #   build:
+  #     context: .
+  #     dockerfile: Containerfile
+  #     target: runtime
+  #     args:
+  #       UNREALIRCD_VERSION: "6.1.10"
+  #       ATHEME_VERSION: "7.2.12"
+  #   container_name: atheme
+  #   hostname: atheme
+  #   depends_on:
+  #     unrealircd:
+  #       condition: service_healthy
+  #   volumes:
+  #     - atheme_data:/usr/local/atheme/data
+  #     - atheme_logs:/usr/local/atheme/logs
+  #     - ./services/atheme:/usr/local/atheme/etc:ro
+  #   environment:
+  #     - TZ=UTC
+  #     - ATHEME_CONF=/usr/local/atheme/etc/atheme-minimal.conf
+  #     - ATHEME_DATA=/usr/local/atheme/data
+  #   networks:
+  #     - irc_network
+  #   command: ["/usr/local/bin/atheme-services", "-c", "/usr/local/atheme/etc/atheme-minimal.conf"]
+  #   restart: unless-stopped
 
   unrealircd-webpanel:
     build:
@@ -272,7 +272,7 @@ services:
       unrealircd:
         condition: service_healthy
     volumes:
-      - ./web/thelounge:/var/opt/thelounge:ro
+      - thelounge_data:/var/opt/thelounge
     networks:
       - irc_network
     ports:

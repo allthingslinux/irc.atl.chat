@@ -37,13 +37,14 @@ RUN docker-php-ext-install \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Configure Nginx
-RUN rm -f /etc/nginx/sites-enabled/default && \
-    mkdir -p /var/log/nginx /var/cache/nginx
-
 # Create webpanel user
 RUN groupadd --system --gid 1001 webpanel && \
     useradd --create-home --system --uid 1001 --gid webpanel webpanel
+
+# Configure Nginx
+RUN rm -f /etc/nginx/sites-enabled/default && \
+    mkdir -p /var/log/nginx /var/cache/nginx /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi /var/lib/nginx/uwsgi /var/lib/nginx/scgi /run && \
+    chown -R webpanel:webpanel /var/log/nginx /var/cache/nginx /var/lib/nginx /run
 
 # Set working directory
 WORKDIR /var/www/html
@@ -75,8 +76,8 @@ COPY web/webpanel/nginx.conf /etc/nginx/sites-available/webpanel
 RUN ln -sf /etc/nginx/sites-available/webpanel /etc/nginx/sites-enabled/
 
 # Copy startup script
-COPY --chown=webpanel:webpanel scripts/start-webpanel.sh /usr/local/bin/start-webpanel
-RUN chmod +x /usr/local/bin/start-webpanel
+COPY --chown=webpanel:webpanel scripts/start-webpanel.sh /usr/local/bin/start-webpanel.sh
+RUN chmod +x /usr/local/bin/start-webpanel.sh
 
 # Expose port
 EXPOSE 80
