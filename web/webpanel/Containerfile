@@ -2,7 +2,7 @@
 # Provides web-based administration interface for UnrealIRCd
 # Based on official documentation: https://www.unrealircd.org/docs/UnrealIRCd_webpanel
 
-FROM php:8.4-fpm-bookworm@sha256:e6bc23796dbcd21c987d7b45fcd1263d1287217ea66ccddf03597309a1c0e4ed
+FROM php:8.4-fpm-bookworm@sha256:a23a83fccf6b7e4afeecf76adb19c5b3f1dbde9a3d258a8d093b17239063e10a
 
 # Add metadata labels
 LABEL maintainer="AllThingsLinux IRC Infrastructure" \
