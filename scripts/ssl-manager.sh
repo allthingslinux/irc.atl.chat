@@ -6,6 +6,28 @@
 # Single script to handle all SSL certificate operations
 # ============================================================================
 
+# find .env.local in current or parent dirs
+find_env_file() {
+  dir="$PWD"
+  while true; do
+    if [ -f "$dir/.env.local" ]; then
+      echo "$dir/.env.local"
+      return 0
+    fi
+    [ "$dir" = "/" ] && return 1
+    dir="$(dirname "$dir")"
+  done
+}
+
+if envfile=$(find_env_file); then
+  # automatically export all vars
+  set -o allexport
+  source "$envfile"
+  set +o allexport
+else
+  echo "warning: .env.local not found" >&2
+fi
+
 set -euo pipefail
 
 # Configuration
