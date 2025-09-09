@@ -123,20 +123,36 @@ copy_certificates() {
         return 0
     fi
     
-    # Try to copy from Let's Encrypt directory (if running on host)
-    local letsencrypt_dir="/etc/letsencrypt/live/$DOMAIN"
-    if [[ -d "$letsencrypt_dir" ]]; then
-        cp "$letsencrypt_dir/fullchain.pem" "$TLS_DIR/server.cert.pem"
-        cp "$letsencrypt_dir/privkey.pem" "$TLS_DIR/server.key.pem"
+    # Try to copy from Docker container first
+    log_info "Looking for certificates in certbot container..."
+    if docker compose run --rm certbot test -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" 2>/dev/null; then
+        log_info "Found certificates in certbot container, copying..."
+        
+        # Copy certificate from container
+        docker compose run --rm certbot cat "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" > "$TLS_DIR/server.cert.pem"
+        docker compose run --rm certbot cat "/etc/letsencrypt/live/$DOMAIN/privkey.pem" > "$TLS_DIR/server.key.pem"
         
         # Set proper permissions
         chmod 644 "$TLS_DIR/server.cert.pem"
         chmod 600 "$TLS_DIR/server.key.pem"
         
-        log_success "Certificates copied from Let's Encrypt directory to $TLS_DIR"
+        log_success "Certificates copied from certbot container to $TLS_DIR"
     else
-        log_warn "No certificates found to copy from Let's Encrypt directory"
-        log_info "Run 'make ssl-setup' to issue new certificates"
+        # Try to copy from Let's Encrypt directory (if running on host)
+        local letsencrypt_dir="/etc/letsencrypt/live/$DOMAIN"
+        if [[ -d "$letsencrypt_dir" ]]; then
+            cp "$letsencrypt_dir/fullchain.pem" "$TLS_DIR/server.cert.pem"
+            cp "$letsencrypt_dir/privkey.pem" "$TLS_DIR/server.key.pem"
+            
+            # Set proper permissions
+            chmod 644 "$TLS_DIR/server.cert.pem"
+            chmod 600 "$TLS_DIR/server.key.pem"
+            
+            log_success "Certificates copied from Let's Encrypt directory to $TLS_DIR"
+        else
+            log_warn "No certificates found to copy"
+            log_info "Certificates may have been issued but not accessible for copying"
+        fi
     fi
 }
 
