@@ -94,6 +94,9 @@ issue_certificates() {
     
     # Run certbot container to issue certificates
     if docker compose run --rm certbot certonly \
+        --config-dir /etc/letsencrypt \
+        --work-dir /etc/letsencrypt \
+        --logs-dir /etc/letsencrypt \
         --dns-cloudflare \
         --dns-cloudflare-credentials=/etc/letsencrypt/cloudflare-credentials.ini \
         --dns-cloudflare-propagation-seconds=60 \
@@ -137,6 +140,9 @@ renew_certificates() {
     
     # Run certbot container to renew certificates
     if docker compose run --rm certbot renew \
+        --config-dir /etc/letsencrypt \
+        --work-dir /etc/letsencrypt \
+        --logs-dir /etc/letsencrypt \
         --quiet \
         --no-random-sleep-on-renew 2>&1 | tee /tmp/certbot_renew_output.log; then
         
@@ -191,12 +197,12 @@ copy_certificates() {
     
     # Try to copy from Docker container first
     log_info "Looking for certificates in certbot container..."
-    if docker compose run --rm certbot test -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" 2>/dev/null; then
+    if docker compose run --rm --entrypoint="" certbot ls "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" >/dev/null 2>&1; then
         log_info "Found certificates in certbot container, copying..."
         
         # Copy certificate from container
-        docker compose run --rm certbot cat "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" > "$TLS_DIR/server.cert.pem"
-        docker compose run --rm certbot cat "/etc/letsencrypt/live/$DOMAIN/privkey.pem" > "$TLS_DIR/server.key.pem"
+        docker compose run --rm --entrypoint="" certbot cat "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" > "$TLS_DIR/server.cert.pem"
+        docker compose run --rm --entrypoint="" certbot cat "/etc/letsencrypt/live/$DOMAIN/privkey.pem" > "$TLS_DIR/server.key.pem"
         
         # Set proper permissions and ownership
         chmod 644 "$TLS_DIR/server.cert.pem"
