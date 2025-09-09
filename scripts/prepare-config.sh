@@ -34,15 +34,10 @@ log_error() {
 
 # Function to prepare configuration
 prepare_config() {
-    local config_file="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf"
-    local temp_file="/tmp/unrealircd.conf.tmp"
+    local unreal_config="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf"
+    local atheme_config="$PROJECT_ROOT/services/atheme/atheme.conf"
     
-    if [ ! -f "$config_file" ]; then
-        log_error "Configuration file not found: $config_file"
-        exit 1
-    fi
-    
-    log_info "Preparing UnrealIRCd configuration with environment variables..."
+    log_info "Preparing IRC configuration files with environment variables..."
     
     # Check if envsubst is available
     if ! command -v envsubst >/dev/null 2>&1; then
@@ -60,13 +55,29 @@ prepare_config() {
         log_info "Environment variables loaded"
     fi
     
-    # Substitute environment variables
-    envsubst < "$config_file" > "$temp_file"
+    # Prepare UnrealIRCd configuration
+    if [ -f "$unreal_config" ]; then
+        log_info "Preparing UnrealIRCd configuration..."
+        local temp_file="/tmp/unrealircd.conf.tmp"
+        envsubst < "$unreal_config" > "$temp_file"
+        mv "$temp_file" "$unreal_config"
+        log_success "UnrealIRCd configuration prepared"
+    else
+        log_warning "UnrealIRCd configuration file not found: $unreal_config"
+    fi
     
-    # Replace the original file
-    mv "$temp_file" "$config_file"
+    # Prepare Atheme configuration
+    if [ -f "$atheme_config" ]; then
+        log_info "Preparing Atheme configuration..."
+        local temp_file="/tmp/atheme.conf.tmp"
+        envsubst < "$atheme_config" > "$temp_file"
+        mv "$temp_file" "$atheme_config"
+        log_success "Atheme configuration prepared"
+    else
+        log_warning "Atheme configuration file not found: $atheme_config"
+    fi
     
-    log_success "Configuration prepared successfully"
+    log_success "All configuration files prepared successfully"
     
     # Show substituted values for verification
     log_info "Substituted values:"
@@ -75,6 +86,7 @@ prepare_config() {
     echo "  IRC_CLOAK_PREFIX: ${IRC_CLOAK_PREFIX:-'not set'}"
     echo "  IRC_ADMIN_NAME: ${IRC_ADMIN_NAME:-'not set'}"
     echo "  IRC_ADMIN_EMAIL: ${IRC_ADMIN_EMAIL:-'not set'}"
+    echo "  IRC_SERVICES_SERVER: ${IRC_SERVICES_SERVER:-'not set'}"
 }
 
 # Main function
