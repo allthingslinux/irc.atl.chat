@@ -221,9 +221,13 @@ make ssl-renew
 # Setup certificates (only if none exist)
 make ssl-setup
 
+# Generate self-signed certificate (fallback)
+make ssl-self-signed
+
 # Direct script usage
 ./scripts/ssl-manager.sh status
 ./scripts/ssl-manager.sh renew
+./scripts/ssl-manager.sh self-signed
 ```
 
 ### 🔧 **Available Commands**
@@ -232,7 +236,16 @@ make ssl-setup
 make ssl-setup              # Setup certificates (only if none exist)
 make ssl-renew              # Renew certificates (only if needed)
 make ssl-status             # Check certificate status
+make ssl-self-signed        # Generate self-signed certificate (fallback)
 ```
+
+### 🚨 **Rate Limit Handling**
+
+If you hit Let's Encrypt rate limits, the system will automatically:
+- ✅ **Detect rate limit errors** during certificate issuance
+- ✅ **Generate self-signed certificates** as a fallback
+- ✅ **Provide clear guidance** on when to retry with Let's Encrypt
+- ✅ **Keep your IRC server running** with SSL support
 
 ### 📋 **Prerequisites**
 

@@ -372,12 +372,16 @@ help-ssl:
 	@echo "  ssl-setup           - Setup certificates (only if none exist)"
 	@echo "  ssl-renew           - Renew certificates (only if needed)"
 	@echo "  ssl-status          - Check certificate status"
+	@echo "  ssl-self-signed     - Generate self-signed certificate (fallback)"
 	@echo ""
 	@echo "Quick Start:"
 	@echo "  1. Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini"
 	@echo "  2. Add your Cloudflare API token to cloudflare-credentials.ini"
 	@echo "  3. make ssl-setup   # Initial certificate setup (safe to run multiple times)"
 	@echo "  4. make ssl-status  # Check certificate status"
+	@echo ""
+	@echo "Fallback Options:"
+	@echo "  make ssl-self-signed # Generate self-signed cert if Let's Encrypt fails"
 
 # Docker operations
 docker-build:
@@ -499,6 +503,10 @@ ssl-renew: ## Renew SSL certificates
 ssl-status: ## Check SSL certificate status
 	@echo -e "$(PURPLE)=== SSL Certificate Status ===$(NC)"
 	@./scripts/ssl-manager.sh status
+
+ssl-self-signed: ## Generate self-signed certificate (fallback)
+	@echo -e "$(PURPLE)=== Generating Self-Signed Certificate ===$(NC)"
+	@./scripts/ssl-manager.sh self-signed
 
 # ============================================================================
 # ENVIRONMENT SETUP

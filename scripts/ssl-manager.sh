@@ -71,7 +71,7 @@ issue_certificates() {
     log_info "Issuing SSL certificates for $DOMAIN..."
     
     # Run certbot container to issue certificates
-    docker compose run --rm certbot certonly \
+    if docker compose run --rm certbot certonly \
         --dns-cloudflare \
         --dns-cloudflare-credentials=/etc/letsencrypt/cloudflare-credentials.ini \
         --dns-cloudflare-propagation-seconds=60 \
@@ -81,12 +81,23 @@ issue_certificates() {
         --expand \
         --non-interactive \
         -d "$DOMAIN" \
-        -d "*.$DOMAIN"
-    
-    # Copy certificates to UnrealIRCd TLS directory
-    copy_certificates
-    
-    log_success "SSL certificates issued successfully!"
+        -d "*.$DOMAIN" 2>&1 | tee /tmp/certbot_output.log; then
+        
+        # Copy certificates to UnrealIRCd TLS directory
+        copy_certificates
+        log_success "SSL certificates issued successfully!"
+    else
+        # Check if we hit the rate limit
+        if grep -q "too many certificates" /tmp/certbot_output.log; then
+            log_warn "Let's Encrypt rate limit reached!"
+            log_info "Automatically generating self-signed certificate as fallback..."
+            generate_self_signed_certificate
+        else
+            log_error "Failed to issue SSL certificates"
+            log_info "Check the error above and try again"
+            return 1
+        fi
+    fi
 }
 
 # Renew existing certificates
@@ -103,14 +114,44 @@ renew_certificates() {
     log_info "Renewing SSL certificates..."
     
     # Run certbot container to renew certificates
-    docker compose run --rm certbot renew \
+    if docker compose run --rm certbot renew \
         --quiet \
-        --no-random-sleep-on-renew
+        --no-random-sleep-on-renew 2>&1 | tee /tmp/certbot_renew_output.log; then
+        
+        # Copy renewed certificates
+        copy_certificates
+        log_success "SSL certificates renewed successfully!"
+    else
+        # Check if we hit the rate limit
+        if grep -q "too many certificates" /tmp/certbot_renew_output.log; then
+            log_warn "Let's Encrypt rate limit reached!"
+            log_info "Current certificates will remain valid until they expire"
+            log_info "Run 'make ssl-renew' after the rate limit resets to renew"
+        else
+            log_error "Failed to renew SSL certificates"
+            log_info "Check the error above and try again"
+            return 1
+        fi
+    fi
+}
+
+# Generate self-signed certificate as fallback
+generate_self_signed_certificate() {
+    log_info "Generating self-signed certificate for $DOMAIN..."
     
-    # Copy renewed certificates
-    copy_certificates
+    # Create TLS directory if it doesn't exist
+    mkdir -p "$TLS_DIR"
     
-    log_success "SSL certificates renewed successfully!"
+    # Generate self-signed certificate
+    openssl req -x509 -newkey rsa:4096 -keyout "$TLS_DIR/server.key.pem" -out "$TLS_DIR/server.cert.pem" -days 365 -nodes -subj "/CN=$DOMAIN" 2>/dev/null
+    
+    # Set proper permissions
+    chmod 644 "$TLS_DIR/server.cert.pem"
+    chmod 600 "$TLS_DIR/server.key.pem"
+    
+    log_success "Self-signed certificate generated successfully!"
+    log_warn "This is a self-signed certificate - browsers will show security warnings"
+    log_info "Run 'make ssl-renew' after the Let's Encrypt rate limit resets to get a trusted certificate"
 }
 
 # Copy certificates from certbot to UnrealIRCd TLS directory
@@ -213,11 +254,13 @@ show_usage() {
     echo "  status    - Check certificate status"
     echo "  copy      - Copy certificates to UnrealIRCd directory"
     echo "  restart   - Restart UnrealIRCd to load certificates"
+    echo "  self-signed - Generate self-signed certificate (fallback)"
     echo ""
     echo "Examples:"
     echo "  $0 issue     # Issue new certificates"
     echo "  $0 renew     # Renew existing certificates"
     echo "  $0 status    # Check certificate status"
+    echo "  $0 self-signed # Generate self-signed certificate"
 }
 
 # Main function
@@ -242,6 +285,10 @@ main() {
             copy_certificates
             ;;
         "restart")
+            restart_unrealircd
+            ;;
+        "self-signed")
+            generate_self_signed_certificate
             restart_unrealircd
             ;;
         "help"|"--help"|"-h")

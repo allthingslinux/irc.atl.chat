@@ -94,10 +94,9 @@ services:
       - path: .env.local
         required: false
 
-    # Volume mounts - persist certificates and access UnrealIRCd TLS directory
+    # Volume mounts - persist certificates and credentials
     volumes:
       - letsencrypt_data:/etc/letsencrypt
-      - ./unrealircd/conf/tls:/etc/letsencrypt/unrealircd:rw
       - ./cloudflare-credentials.ini:/etc/letsencrypt/cloudflare-credentials.ini:ro
 
     # Network access for DNS challenges
