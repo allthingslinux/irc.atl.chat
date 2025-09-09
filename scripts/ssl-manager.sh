@@ -145,9 +145,12 @@ generate_self_signed_certificate() {
     # Generate self-signed certificate
     openssl req -x509 -newkey rsa:4096 -keyout "$TLS_DIR/server.key.pem" -out "$TLS_DIR/server.cert.pem" -days 365 -nodes -subj "/CN=$DOMAIN" 2>/dev/null
     
-    # Set proper permissions
+    # Set proper permissions and ownership
     chmod 644 "$TLS_DIR/server.cert.pem"
-    chmod 600 "$TLS_DIR/server.key.pem"
+    chmod 644 "$TLS_DIR/server.key.pem"  # Make readable by container user
+    chmod 755 "$TLS_DIR"  # Make directory accessible
+    # Try to set ownership, but don't fail if we can't
+    chown 1001:1001 "$TLS_DIR/server.cert.pem" "$TLS_DIR/server.key.pem" 2>/dev/null || true
     
     log_success "Self-signed certificate generated successfully!"
     log_warn "This is a self-signed certificate - browsers will show security warnings"
@@ -173,9 +176,12 @@ copy_certificates() {
         docker compose run --rm certbot cat "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" > "$TLS_DIR/server.cert.pem"
         docker compose run --rm certbot cat "/etc/letsencrypt/live/$DOMAIN/privkey.pem" > "$TLS_DIR/server.key.pem"
         
-        # Set proper permissions
+        # Set proper permissions and ownership
         chmod 644 "$TLS_DIR/server.cert.pem"
-        chmod 600 "$TLS_DIR/server.key.pem"
+        chmod 644 "$TLS_DIR/server.key.pem"  # Make readable by container user
+        chmod 755 "$TLS_DIR"  # Make directory accessible
+        # Try to set ownership, but don't fail if we can't
+        chown 1001:1001 "$TLS_DIR/server.cert.pem" "$TLS_DIR/server.key.pem" 2>/dev/null || true
         
         log_success "Certificates copied from certbot container to $TLS_DIR"
     else
@@ -185,9 +191,12 @@ copy_certificates() {
             cp "$letsencrypt_dir/fullchain.pem" "$TLS_DIR/server.cert.pem"
             cp "$letsencrypt_dir/privkey.pem" "$TLS_DIR/server.key.pem"
             
-            # Set proper permissions
+            # Set proper permissions and ownership
             chmod 644 "$TLS_DIR/server.cert.pem"
-            chmod 600 "$TLS_DIR/server.key.pem"
+            chmod 644 "$TLS_DIR/server.key.pem"  # Make readable by container user
+            chmod 755 "$TLS_DIR"  # Make directory accessible
+            # Try to set ownership, but don't fail if we can't
+            chown 1001:1001 "$TLS_DIR/server.cert.pem" "$TLS_DIR/server.key.pem" 2>/dev/null || true
             
             log_success "Certificates copied from Let's Encrypt directory to $TLS_DIR"
         else
