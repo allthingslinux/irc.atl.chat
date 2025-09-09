@@ -187,15 +187,15 @@ volumes:
   unrealircd_contrib:
     driver: local
   # atheme_data:
-    driver: local
+    # driver: local
   # atheme_logs:
-    driver: local
+    # driver: local
   # unrealircd-webpanel_data:
-    driver: local
+    # driver: local
   # unrealircd-webpanel_config:
-    driver: local
+    # driver: local
   # thelounge_data:
-    driver: local
+    # driver: local
   letsencrypt_data:
     driver: local
   
