@@ -87,6 +87,7 @@ prepare_config() {
     echo "  IRC_ADMIN_NAME: ${IRC_ADMIN_NAME:-'not set'}"
     echo "  IRC_ADMIN_EMAIL: ${IRC_ADMIN_EMAIL:-'not set'}"
     echo "  IRC_SERVICES_SERVER: ${IRC_SERVICES_SERVER:-'not set'}"
+    echo "  IRC_ROOT_DOMAIN: ${IRC_ROOT_DOMAIN:-'not set'}"
 }
 
 # Main function

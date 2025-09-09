@@ -31,7 +31,7 @@ fi
 set -euo pipefail
 
 # Configuration
-DOMAIN="${IRC_DOMAIN:-irc.atl.chat}"
+DOMAIN="${IRC_ROOT_DOMAIN:-atl.dev}"
 EMAIL="${LETSENCRYPT_EMAIL:-admin@allthingslinux.org}"
 TLS_DIR="./unrealircd/conf/tls"
 CREDENTIALS_FILE="./cloudflare-credentials.ini"
