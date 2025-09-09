@@ -1,4 +1,4 @@
-.PHONY: help help-build help-services help-modules help-webpanel help-dev help-docker help-test
+.PHONY: help help-build help-services help-modules help-webpanel help-dev help-docker help-ssl help-test
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  make help-webpanel  - WebPanel management commands"
 	@echo "  make help-dev       - Development and testing commands"
 	@echo "  make help-docker    - Docker management commands"
+	@echo "  make help-ssl       - SSL/TLS certificate management commands"
 	@echo ""
 	@echo "Quick start:"
 	@echo "  make quick-start    - Build and start all services"
@@ -363,6 +364,31 @@ help-docker:
 	@echo "  make docker-build NO_CACHE=1    # Build without cache"
 	@echo "  make docker-clean               # Clean containers and images"
 	@echo "  make docker-clean-all VOLUMES=1 # Full cleanup with volumes"
+
+help-ssl:
+	@echo "SSL/TLS Certificate Management Commands:"
+	@echo ""
+	@echo "=== STANDALONE MANAGER ==="
+	@echo "  certbot-up          - Start certificate manager"
+	@echo "  certbot-down        - Stop certificate manager"
+	@echo "  certbot-status      - Check manager status"
+	@echo "  certbot-logs        - View manager logs"
+	@echo "  certbot-issue       - Issue certificates"
+	@echo "  certbot-renew       - Renew certificates"
+	@echo "  certbot-status-check - Check certificate status"
+	@echo ""
+	@echo "=== INTEGRATED APPROACH ==="
+	@echo "  setup-ssl           - Setup certificates (one-time)"
+	@echo "  ssl-renew            - Manual renewal"
+	@echo "  ssl-check            - Check status"
+	@echo "  ssl-monitor           - Start monitoring"
+	@echo "  ssl-issue             - Issue new SSL certificate"
+	@echo ""
+	@echo "Usage examples:"
+	@echo "  make setup-ssl       # Initial certificate setup"
+	@echo "  make ssl-check       # Check certificate status"
+	@echo "  make certbot-up      # Start certificate manager"
+	@echo "  make ssl-renew       # Renew certificates"
 
 # Docker operations
 docker-build:
