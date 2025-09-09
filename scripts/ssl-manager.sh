@@ -59,6 +59,15 @@ check_prerequisites() {
 
 # Issue new certificates
 issue_certificates() {
+    log_info "Checking if certificates already exist..."
+    
+    # Check if certificates already exist and are valid
+    if check_status >/dev/null 2>&1; then
+        log_info "Valid certificates already exist for $DOMAIN"
+        log_info "Use 'make ssl-renew' if you need to renew them"
+        return 0
+    fi
+    
     log_info "Issuing SSL certificates for $DOMAIN..."
     
     # Run certbot container to issue certificates
@@ -82,6 +91,15 @@ issue_certificates() {
 
 # Renew existing certificates
 renew_certificates() {
+    log_info "Checking certificate status before renewal..."
+    
+    # Check if certificates exist
+    if ! check_status >/dev/null 2>&1; then
+        log_error "No valid certificates found to renew"
+        log_info "Use 'make ssl-setup' to issue new certificates first"
+        return 1
+    fi
+    
     log_info "Renewing SSL certificates..."
     
     # Run certbot container to renew certificates

@@ -215,8 +215,11 @@ make up
 # Check certificate status
 make ssl-status
 
-# Force renewal
+# Renew certificates (only if needed)
 make ssl-renew
+
+# Setup certificates (only if none exist)
+make ssl-setup
 
 # Direct script usage
 ./scripts/ssl-manager.sh status
@@ -226,8 +229,8 @@ make ssl-renew
 ### 🔧 **Available Commands**
 
 ```bash
-make ssl-setup              # Setup certificates (one-time)
-make ssl-renew              # Renew certificates
+make ssl-setup              # Setup certificates (only if none exist)
+make ssl-renew              # Renew certificates (only if needed)
 make ssl-status             # Check certificate status
 ```
 

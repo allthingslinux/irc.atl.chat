@@ -369,14 +369,14 @@ help-ssl:
 	@echo "SSL/TLS Certificate Management Commands:"
 	@echo ""
 	@echo "Simplified SSL Management:"
-	@echo "  ssl-setup           - Setup certificates (one-time)"
-	@echo "  ssl-renew           - Renew certificates"
+	@echo "  ssl-setup           - Setup certificates (only if none exist)"
+	@echo "  ssl-renew           - Renew certificates (only if needed)"
 	@echo "  ssl-status          - Check certificate status"
 	@echo ""
 	@echo "Quick Start:"
 	@echo "  1. Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini"
 	@echo "  2. Add your Cloudflare API token to cloudflare-credentials.ini"
-	@echo "  3. make ssl-setup   # Initial certificate setup"
+	@echo "  3. make ssl-setup   # Initial certificate setup (safe to run multiple times)"
 	@echo "  4. make ssl-status  # Check certificate status"
 
 # Docker operations
