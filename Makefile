@@ -481,7 +481,7 @@ setup-ssl: ## Setup SSL certificates with Let's Encrypt (ONE-TIME MANUAL SETUP)
 
 ssl-renew: ## Renew SSL certificates
 	@echo -e "$(PURPLE)=== Renewing SSL Certificates ===$(NC)"
-	$(DOCKER_COMPOSE) up unrealircd-certbot-renew
+	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh renew
 
 ssl-check: ## Check SSL certificate status
 	@echo -e "$(PURPLE)=== SSL Certificate Status ===$(NC)"
@@ -489,7 +489,7 @@ ssl-check: ## Check SSL certificate status
 
 ssl-monitor: ## Run SSL certificate monitoring (manual command - monitoring runs automatically)
 	@echo -e "$(PURPLE)=== Manual SSL Certificate Monitoring ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Certificate monitoring runs AUTOMATICALLY with unrealircd-cert-monitor container"
+	@echo -e "$(BLUE)[INFO]$(NC) Certificate monitoring runs AUTOMATICALLY with certbot container"
 	@echo -e "$(BLUE)[INFO]$(NC) This command is for manual monitoring/testing only"
 	@echo -e "$(BLUE)[INFO]$(NC) Use 'make ssl-check' for quick status check"
 	@echo
@@ -506,7 +506,7 @@ certbot-up: ## Start certificate manager
 
 certbot-down: ## Stop certificate manager
 	@echo -e "$(PURPLE)=== Stopping Certificate Manager ===$(NC)"
-	$(DOCKER_COMPOSE) down certbot cert-sync
+	$(DOCKER_COMPOSE) stop certbot cert-sync
 
 certbot-status: ## Check certificate manager status
 	@echo -e "$(PURPLE)=== Certificate Manager Status ===$(NC)"
