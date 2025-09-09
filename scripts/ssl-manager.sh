@@ -44,7 +44,7 @@ check_prerequisites() {
     # Check if credentials file exists
     if [[ ! -f "$CREDENTIALS_FILE" ]]; then
         log_error "Cloudflare credentials file not found: $CREDENTIALS_FILE"
-        log_info "Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini and fill in your credentials"
+        log_info "Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini and add your API token"
         exit 1
     fi
     

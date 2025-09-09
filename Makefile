@@ -374,9 +374,10 @@ help-ssl:
 	@echo "  ssl-status          - Check certificate status"
 	@echo ""
 	@echo "Quick Start:"
-	@echo "  make ssl-setup      # Initial certificate setup"
-	@echo "  make ssl-status     # Check certificate status"
-	@echo "  make ssl-renew      # Renew certificates"
+	@echo "  1. Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini"
+	@echo "  2. Add your Cloudflare API token to cloudflare-credentials.ini"
+	@echo "  3. make ssl-setup   # Initial certificate setup"
+	@echo "  4. make ssl-status  # Check certificate status"
 
 # Docker operations
 docker-build:
@@ -487,7 +488,7 @@ ssl-setup: ## Setup SSL certificates (one-time setup)
 	@echo -e "$(PURPLE)=== SSL Certificate Setup ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Make sure cloudflare-credentials.ini is configured first!"
 	@echo -e "$(BLUE)[INFO]$(NC) Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini"
-	@echo -e "$(BLUE)[INFO]$(NC) and fill in your Cloudflare credentials."
+	@echo -e "$(BLUE)[INFO]$(NC) and add your Cloudflare API token."
 	@echo
 	@./scripts/ssl-manager.sh issue
 

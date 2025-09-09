@@ -188,8 +188,9 @@ The setup includes **simplified SSL/TLS certificate management**:
 
 ### **Quick Setup**
 ```bash
-# 1. Configure Cloudflare credentials
+# 1. Configure Cloudflare API token
 cp cloudflare-credentials.ini.template cloudflare-credentials.ini
+# Edit cloudflare-credentials.ini and add your API token
 chmod 600 cloudflare-credentials.ini
 
 # 2. Set environment variables
@@ -230,11 +231,12 @@ make ssl-renew              # Renew certificates
 make ssl-status             # Check certificate status
 ```
 
-### 📋 **Prerequisites (Both Approaches)**
+### 📋 **Prerequisites**
 
-1. **Cloudflare Account** with DNS hosting
+1. **Cloudflare Account** with DNS hosting for your domain
 2. **API Token** from https://dash.cloudflare.com/profile/api-tokens
-   - Required permission: `Zone:DNS:Edit` for your domain
+   - Create a token with **Zone:DNS:Edit** permissions for your domain
+   - Copy the token and paste it into `cloudflare-credentials.ini`
 3. **Domain Configuration** pointing to your server
 
 ### ⚙️ **Environment Variables**
