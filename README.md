@@ -53,7 +53,7 @@ The setup uses **secure environment variable management** with separation of pub
 #### **Public Configuration** (`.env.example`)
 Non-sensitive settings that can be committed to version control.
 
-#### **Private Configuration** (`.env.local`) 🔐
+#### **Private Configuration** (`.env`) 🔐
 **Sensitive data that MUST NEVER be committed**. This file contains:
 - IRC operator passwords
 - SSL certificate credentials
@@ -158,7 +158,7 @@ IRC Clients ↔ UnrealIRCd (irc.atl.chat) ↔ Atheme Services (services.atl.chat
 ## 🔐 **Security Features**
 
 ### External Sensitive Data
-- IRC operator passwords stored in `.env.local` (not committed)
+- IRC operator passwords stored in `.env` (not committed)
 - SSL certificates managed externally
 - Database credentials (if used) stored securely
 
@@ -257,7 +257,7 @@ If you hit Let's Encrypt rate limits, the system will automatically:
 
 ### ⚙️ **Environment Variables**
 
-Add to `.env.local`:
+Add to `.env`:
 ```bash
 # Required for both approaches
 LETSENCRYPT_EMAIL=admin@yourdomain.com
@@ -292,7 +292,7 @@ CLOUDFLARE_API_KEY=your-api-token-here
 irc.atl.chat/
 ├── compose.yaml              # 🎯 Main Docker Compose (everything integrated)
 ├── Containerfile             # Docker build instructions
-├── .env.local                 # 🔑 Private environment variables
+├── .env                       # 🔑 Private environment variables
 ├── cloudflare-credentials.ini # 🔐 Cloudflare API credentials
 └── scripts/
     ├── certbot/              # Certificate management scripts
@@ -386,7 +386,7 @@ docker compose exec atheme /usr/local/atheme/bin/atheme-services -c /usr/local/a
 # 1. Generate secure operator password
 make generate-oper-password
 
-# 2. The hash is automatically added to .env.local
+# 2. The hash is automatically added to .env
 # 3. Restart to apply changes
 make restart
 ```
@@ -503,7 +503,7 @@ irc.atl.chat/
 │   ├── generate-oper-password.sh # Password generator
 │   └── health-check.sh        # Health monitoring
 ├── 🔧 Makefile                # Management commands
-├── 📝 .env.local              # 🔑 Private environment (gitignored)
+├── 📝 .env                    # 🔑 Private environment (gitignored)
 ├── 🔐 cloudflare-credentials.ini # Cloudflare DNS credentials
 ├── 📊 README.md               # This documentation
 └── 📁 .runtime/               # Runtime data
@@ -541,7 +541,7 @@ Docker Compose
 - ✅ **U-line protection** preventing service disruption
 
 ### **Best Practices**
-1. **🔐 Never commit sensitive data** - Use `.env.local` for all secrets
+1. **🔐 Never commit sensitive data** - Use `.env` for all secrets
 2. **🔑 Use generated passwords** - Always use `make generate-oper-password`
 3. **🔒 Keep certificates updated** - Automatic renewal every 30 days
 4. **💾 Regular backups** - Services database contains user registrations
@@ -566,9 +566,9 @@ make restart
 
 #### **Environment Variables Issues**
 ```bash
-# Check if .env.local exists and has content
-ls -la .env.local
-cat .env.local
+# Check if .env exists and has content
+ls -la .env
+cat .env
 
 # Validate environment loading
 docker compose exec unrealircd env | grep -E "(IRC_|ATHEME_)"

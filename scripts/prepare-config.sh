@@ -45,18 +45,25 @@ prepare_config() {
         exit 1
     fi
     
-    # Load environment variables from .env.local if it exists
-    if [ -f "$PROJECT_ROOT/.env.local" ]; then
-        log_info "Loading environment variables from .env.local"
+    # Load environment variables from .env if it exists
+    if [ -f "$PROJECT_ROOT/.env" ]; then
+        log_info "Loading environment variables from .env"
         # Use set -a to automatically export all variables
         set -a
-        source "$PROJECT_ROOT/.env.local"
+        source "$PROJECT_ROOT/.env"
         set +a
         log_info "Environment variables loaded"
     fi
     
     # Prepare UnrealIRCd configuration
-    if [ -f "$unreal_config" ]; then
+    local unreal_template="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf.template"
+    if [ -f "$unreal_template" ]; then
+        log_info "Preparing UnrealIRCd configuration from template..."
+        local temp_file="/tmp/unrealircd.conf.tmp"
+        envsubst < "$unreal_template" > "$temp_file"
+        mv "$temp_file" "$unreal_config"
+        log_success "UnrealIRCd configuration prepared from template"
+    elif [ -f "$unreal_config" ]; then
         log_info "Preparing UnrealIRCd configuration..."
         local temp_file="/tmp/unrealircd.conf.tmp"
         envsubst < "$unreal_config" > "$temp_file"
@@ -64,6 +71,7 @@ prepare_config() {
         log_success "UnrealIRCd configuration prepared"
     else
         log_warning "UnrealIRCd configuration file not found: $unreal_config"
+        log_warning "Template file not found: $unreal_template"
     fi
     
     # Prepare Atheme configuration
@@ -88,6 +96,8 @@ prepare_config() {
     echo "  IRC_ADMIN_EMAIL: ${IRC_ADMIN_EMAIL:-'not set'}"
     echo "  IRC_SERVICES_SERVER: ${IRC_SERVICES_SERVER:-'not set'}"
     echo "  IRC_ROOT_DOMAIN: ${IRC_ROOT_DOMAIN:-'not set'}"
+    echo "  IRC_SERVICES_PASSWORD: ${IRC_SERVICES_PASSWORD:-'not set'}"
+    echo "  IRC_OPER_PASSWORD: ${IRC_OPER_PASSWORD:-'not set'}"
 }
 
 # Main function

@@ -522,13 +522,13 @@ generate-oper-password: ## Generate new IRC operator password hash
 
 setup-private-env: ## Setup private environment file with sensitive data
 	@echo -e "$(PURPLE)=== Setting up Private Environment ===$(NC)"
-	@if [ ! -f ".env.local" ]; then \
-		cp env.example .env.local; \
-		echo -e "$(GREEN)[SUCCESS]$(NC) Created .env.local from template"; \
-		echo -e "$(YELLOW)[WARNING]$(NC) Please edit .env.local with your sensitive data"; \
+	@if [ ! -f ".env" ]; then \
+		cp env.example .env; \
+		echo -e "$(GREEN)[SUCCESS]$(NC) Created .env from template"; \
+		echo -e "$(YELLOW)[WARNING]$(NC) Please edit .env with your sensitive data"; \
 		echo -e "$(BLUE)[INFO]$(NC) Use 'make generate-oper-password' to create secure operator passwords"; \
 	else \
-		echo -e "$(YELLOW)[WARNING]$(NC) .env.local already exists"; \
+		echo -e "$(YELLOW)[WARNING]$(NC) .env already exists"; \
 	fi
 
 setup: ## Complete setup (runtime + start services)

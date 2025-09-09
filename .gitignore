@@ -2,9 +2,7 @@
 certs
 
 # Private environment files with sensitive data
-env.local
-.env.local
-.env.production.local
+.env
 
 # Cloudflare credentials
 cloudflare-credentials.ini

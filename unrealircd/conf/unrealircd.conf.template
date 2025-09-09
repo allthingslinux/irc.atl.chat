@@ -1,7 +1,7 @@
 /* Configuration file for UnrealIRCd 6
  *
  * This is a template that uses environment variable substitution.
- * The prepare-config.sh script will substitute  with actual values.
+ * The prepare-config.sh script will substitute ${VARIABLE} with actual values.
  *
  * BEFORE YOU PROCEED:
  * Important: all lines, except { and } end with an ;
@@ -31,16 +31,16 @@ loadmodule "cloak_sha256";
 
 /* Server Configuration */
 me {
-	name "irc.atl.dev";
-	info "atl.dev IRC Server";
+	name "${IRC_DOMAIN}";
+	info "${IRC_NETWORK_NAME} IRC Server";
 	sid "001";
 }
 
 /* Admin Configuration */
 admin {
-	"All Things Linux Admin";
+	"${IRC_ADMIN_NAME}";
 	"admin";
-	"admin@allthingslinux.org";
+	"${IRC_ADMIN_EMAIL}";
 }
 
 /* Clients and servers are put in class { } blocks, we define them here. */
@@ -98,8 +98,8 @@ listen {
 set {
 	tls {
 		/* Use SSL certificate paths from environment variables */
-		certificate "/usr/local/unrealircd/conf/tls/server.cert.pem";
-		key "/usr/local/unrealircd/conf/tls/server.key.pem";
+		certificate "${IRC_SSL_CERT_PATH}";
+		key "${IRC_SSL_KEY_PATH}";
 
 		/* Modern TLS protocols and ciphers for security */
 		protocols "TLSv1.2,+TLSv1.3";
@@ -117,25 +117,25 @@ set {
 }
 
 /* Link block for services */
-link services.atl.dev {
+link ${IRC_SERVICES_SERVER} {
 	incoming {
 		mask *;
 	}
 
 	outgoing {
 		bind-ip *;
-		hostname services.atl.dev;
+		hostname ${IRC_SERVICES_SERVER};
 		port 6900;
 		options { tls; }
 	}
 
-	password "test1234"; /* Services link password */
+	password "${IRC_SERVICES_PASSWORD}"; /* Services link password */
 	class servers;
 }
 
 /* U-lines give services special privileges */
 ulines {
-	services.atl.dev;
+	${IRC_SERVICES_SERVER};
 }
 
 /* Ban nicknames that are reserved for services */
@@ -248,7 +248,7 @@ blacklist dronebl {
 	}
 	action gline;
 	ban-time 24h;
-	reason "Proxy/Drone detected. Check https://dronebl.org/lookup?ip= for details.";
+	reason "Proxy/Drone detected. Check https://dronebl.org/lookup?ip=$ip for details.";
 }
 
 blacklist efnetrbl {
@@ -259,19 +259,19 @@ blacklist efnetrbl {
 	}
 	action gline;
 	ban-time 24h;
-	reason "Proxy/Drone/TOR detected. Check https://rbl.efnetrbl.org/?i= for details.";
+	reason "Proxy/Drone/TOR detected. Check https://rbl.efnetrbl.org/?i=$ip for details.";
 }
 
 /* Network configuration */
 set {
-	network-name 		"atl.dev";
-	default-server 		"irc.atl.dev";
-	services-server 	"services.atl.dev";
-	stats-server 		"irc.atl.dev";
+	network-name 		"${IRC_NETWORK_NAME}";
+	default-server 		"${IRC_DOMAIN}";
+	services-server 	"${IRC_SERVICES_SERVER}";
+	stats-server 		"${IRC_DOMAIN}";
 
 	/* Normal defaults */
 	help-channel 		"#support";
-	cloak-prefix		"atl";
+	cloak-prefix		"${IRC_CLOAK_PREFIX}";
 	prefix-quit 		"quit";
 
 	/* Cloak keys - these should be generated securely */
@@ -286,15 +286,15 @@ set {
 oper admin {
 	class opers;
 	mask *@*;
-	password "$argon2id$v=19$m=6144,t=2,p=2$WXOLpTE+DPDr8q6OBVTx3w$bqXpBsaAK6lkXfR/IPn+TcE0VJEKjUFD7xordE6pFSo";
+	password "${IRC_OPER_PASSWORD}";
 	operclass netadmin-with-override;
 	swhois "is the Network Administrator";
-	vhost "admin.irc.atl.dev";
+	vhost "admin.${IRC_DOMAIN}";
 }
 
 /* Server specific configuration */
 set {
-	kline-address 'admin@allthingslinux.org'; /* e-mail or URL shown when a user is banned */
+	kline-address '${IRC_ADMIN_EMAIL}'; /* e-mail or URL shown when a user is banned */
 
 	modes-on-connect "+ixw"; /* when users connect, they will get these user modes */
 	modes-on-oper "+xws"; /* when someone becomes IRCOp they'll get these modes */

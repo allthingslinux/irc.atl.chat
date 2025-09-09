@@ -28,7 +28,7 @@ services:
 
     # Environment configuration
     env_file:
-      - path: .env.local
+      - path: .env
         required: false
     environment:
       - TZ=UTC
@@ -65,7 +65,7 @@ services:
 
     # Environment from main project
     env_file:
-      - path: .env.local
+      - path: .env
         required: false
 
     # Volume mounts - persist certificates and credentials

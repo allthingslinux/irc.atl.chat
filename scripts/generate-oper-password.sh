@@ -62,13 +62,13 @@ generate_password() {
         echo "$hash"
         echo "================================================================="
         echo
-        log_info "Add this hash to your env.local file:"
+        log_info "Add this hash to your .env file:"
         echo "IRC_OPER_PASSWORD=\"$hash\""
         echo
-        log_info "Or update your env.local file directly:"
-        echo "echo 'IRC_OPER_PASSWORD=\"$hash\"' >> env.local"
+        log_info "Or update your .env file directly:"
+        echo "echo 'IRC_OPER_PASSWORD=\"$hash\"' >> .env"
         echo
-        log_warning "Make sure env.local is in your .gitignore file!"
+        log_warning "Make sure .env is in your .gitignore file!"
     else
         log_error "Failed to generate password hash"
         exit 1
@@ -96,7 +96,7 @@ show_usage() {
     echo
     echo "After generating the hash:"
     echo "  1. Copy the hash from the output"
-    echo "  2. Add it to your env.local file:"
+    echo "  2. Add it to your .env file:"
     echo "     IRC_OPER_PASSWORD=\"\$hash\""
     echo "  3. Restart the IRC container:"
     echo "     docker compose restart ircd"
