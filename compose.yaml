@@ -142,16 +142,26 @@ services:
     volumes:
       - certbot_conf:/etc/letsencrypt:ro
       - ./.runtime/certs:/app/certs
+      - ./unrealircd/conf/tls:/app/unrealircd-tls
 
     # Sync certificates
     command: >
       sh -c "
         apk add --no-cache inotify-tools &&
-        mkdir -p /app/certs &&
+        mkdir -p /app/certs /app/unrealircd-tls &&
         while true; do
-          # Copy latest certificates
+          # Copy latest certificates to runtime directory
           if [ -d /etc/letsencrypt/live ]; then
             cp -r /etc/letsencrypt/live/* /app/certs/ 2>/dev/null || true
+          fi
+          # Copy certificates to UnrealIRCd TLS directory
+          if [ -d /etc/letsencrypt/live ]; then
+            for domain_dir in /etc/letsencrypt/live/*; do
+              if [ -d \"\$$domain_dir\" ]; then
+                cp \"\$$domain_dir/fullchain.pem\" /app/unrealircd-tls/server.cert.pem 2>/dev/null || true
+                cp \"\$$domain_dir/privkey.pem\" /app/unrealircd-tls/server.key.pem 2>/dev/null || true
+              fi
+            done
           fi
           sleep 3600  # Check every hour
         done

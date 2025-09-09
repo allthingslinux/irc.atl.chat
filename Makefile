@@ -519,11 +519,22 @@ setup-ssl: ## Setup SSL certificates with Let's Encrypt (ONE-TIME MANUAL SETUP)
 	done
 	@echo -e "$(BLUE)[INFO]$(NC) Issuing certificates..."
 	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh issue
+	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificates to be synced..."
+	@sleep 10
+	@echo -e "$(BLUE)[INFO]$(NC) Copying CA bundle for HTTPS client..."
+	@cp unrealircd/default/tls/curl-ca-bundle.crt unrealircd/conf/tls/ 2>/dev/null || true
+	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load new certificates..."
+	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
 	@echo -e "$(GREEN)[SUCCESS]$(NC) SSL certificate setup completed!"
 
 ssl-renew: ## Renew SSL certificates
 	@echo -e "$(PURPLE)=== Renewing SSL Certificates ===$(NC)"
 	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh renew
+	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificates to be synced..."
+	@sleep 10
+	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load renewed certificates..."
+	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
+	@echo -e "$(GREEN)[SUCCESS]$(NC) SSL certificate renewal completed!"
 
 ssl-check: ## Check SSL certificate status
 	@echo -e "$(PURPLE)=== SSL Certificate Status ===$(NC)"
@@ -565,6 +576,11 @@ certbot-issue: ## Issue new certificates
 certbot-renew: ## Renew certificates
 	@echo -e "$(PURPLE)=== Renewing Certificates ===$(NC)"
 	$(DOCKER_COMPOSE) exec certbot /usr/local/bin/certbot-scripts/entrypoint.sh renew
+	@echo -e "$(BLUE)[INFO]$(NC) Waiting for certificates to be synced..."
+	@sleep 10
+	@echo -e "$(BLUE)[INFO]$(NC) Restarting UnrealIRCd to load renewed certificates..."
+	@$(DOCKER_COMPOSE) restart unrealircd >/dev/null 2>&1 || true
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Certificate renewal completed!"
 
 certbot-status-check: ## Check certificate status
 	@echo -e "$(PURPLE)=== Certificate Status ===$(NC)"
