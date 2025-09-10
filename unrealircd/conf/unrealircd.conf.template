@@ -204,6 +204,32 @@ allow {
 	maxperip 5;
 }
 
+/* Authentication Requirements - Uncomment and customize as needed */
+
+/* Example 1: Require authentication for users from specific ISPs/countries
+require authentication {
+	mask *@*.suspicious-isp.com;
+	reason "Many troublemakers from this provider. Please authenticate with your registered account.";
+};
+*/
+
+/* Example 2: Require authentication for everyone (closed server)
+require authentication {
+	mask *@*;
+	reason "This server requires authentication. Please register an account first.";
+};
+*/
+
+/* Example 3: Require authentication for all except trusted countries
+require authentication {
+	mask {
+		mask *;
+		exclude-country { US; CA; GB; DE; FR; AU; }
+	}
+	reason "Authentication required from your location. Please register an account.";
+};
+*/
+
 /* Ban nicknames that are reserved for services */
 ban nick {
 	mask "*ChanServ*";
@@ -345,6 +371,7 @@ set {
 	default-server 		"${IRC_DOMAIN}";
 	services-server 	"${IRC_SERVICES_SERVER}";
 	stats-server 		"${IRC_DOMAIN}";
+	sasl-server 		"${IRC_SERVICES_SERVER}";
 
 	/* Normal defaults */
 	help-channel 		"#support";
@@ -398,6 +425,8 @@ set {
 		hide-ulines; /* hide U-lines in /MAP and /LINKS */
 		show-connect-info; /* show "looking up your hostname" messages on connect */
 	}
+
+	/* Authentication prompt is enabled by default via the authprompt module */
 
 	maxchannelsperuser 10; /* maximum number of channels a user may /JOIN */
 
@@ -572,4 +601,54 @@ set {
  * - +K = No /KNOCK allowed
  * - +i = Invite only
  * - +m = Moderated (only voiced+ can talk)
+ */
+
+/*
+ * SASL AUTHENTICATION GUIDE
+ * =========================
+ * 
+ * SASL allows users to authenticate to services before they are fully online.
+ * This configuration enables SASL support with modern SCRAM-SHA-256 authentication.
+ * 
+ * BENEFITS:
+ * - Universal identification method (no need for /NS IDENTIFY)
+ * - Early authentication receives proper vhost and modes
+ * - Can join registered-only channels immediately
+ * - Works during connection throttling attacks
+ * - Enables selective authentication requirements
+ * 
+ * CLIENT SETUP EXAMPLES:
+ * 
+ * mIRC:
+ * - File -> Select Server -> Edit -> Login Method: SASL (/CAP)
+ * - Enter your services password
+ * 
+ * irssi:
+ * - /NETWORK ADD -sasl_username yourname -sasl_password yourpass -sasl_mechanism SCRAM-SHA-256 NetworkName
+ * 
+ * HexChat:
+ * - Network List -> Edit -> Login method: SASL (username + password)
+ * - Enter your services username and password
+ * 
+ * TESTING SASL:
+ * - Connect to server and run: /QUOTE CAP LS
+ * - Look for 'sasl' in the capability list
+ * - If present, SASL is working correctly
+ * 
+ * SOFT BANS (Dynamic Authentication Requirements):
+ * IRCOps can require authentication dynamically using soft bans:
+ * - /GLINE %*@*.suspicious-domain.com 0 Please authenticate to access this server
+ * - /KLINE %*@192.168.1.* 0 Authentication required from your IP range
+ * The % prefix makes the ban only affect unauthenticated users.
+ * 
+ * AUTHENTICATION TYPES SUPPORTED:
+ * - SCRAM-SHA-256 (most secure, recommended)
+ * - SCRAM-SHA-1 (legacy compatibility)
+ * - PLAIN (basic, use only over TLS)
+ * 
+ * SECURITY NOTES:
+ * - Always use TLS when possible to protect credentials
+ * - SCRAM mechanisms are much more secure than PLAIN
+ * - Consider requiring authentication for proxy/VPN users
+ * - Monitor for authentication bypass attempts
  */

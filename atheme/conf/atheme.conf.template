@@ -153,6 +153,7 @@ loadmodule "modules/infoserv/main";             /* Core components */
 
 loadmodule "modules/saslserv/authcookie";       /* AUTHCOOKIE mechanism (for IRIS) */
 loadmodule "modules/saslserv/plain";            /* PLAIN mechanism */
+loadmodule "modules/saslserv/scram";            /* SCRAM-SHA mechanisms (more secure) */
 
 loadmodule "modules/groupserv/main";			/* Core components */
 loadmodule "modules/groupserv/acsnolimit";		/* ACSNOLIMIT command */
@@ -298,10 +299,12 @@ crypto {
 	#argon2_hashlen = 64;
 	#scrypt_memlimit = 14;
 	#scrypt_opslimit = 524288;
-	#pbkdf2v2_digest = "SHA2-512";
-	#pbkdf2v2_rounds = 64000;
-	#pbkdf2v2_saltlen = 32;
-	#scram_mechanisms = "SCRAM-SHA-1,SCRAM-SHA-256,SCRAM-SHA-512";
+	
+	/* Configure pbkdf2v2 for SCRAM-SHA-256 support */
+	pbkdf2v2_digest = "SCRAM-SHA-256";
+	pbkdf2v2_rounds = 64000;
+	pbkdf2v2_saltlen = 32;
+	
 	#bcrypt_cost = 7;
 	#crypt3_sha2_256_rounds = 5000;
 	#crypt3_sha2_512_rounds = 5000;
