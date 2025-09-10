@@ -153,7 +153,7 @@ loadmodule "modules/infoserv/main";             /* Core components */
 
 loadmodule "modules/saslserv/authcookie";       /* AUTHCOOKIE mechanism (for IRIS) */
 loadmodule "modules/saslserv/plain";            /* PLAIN mechanism */
-loadmodule "modules/saslserv/scram";            /* SCRAM-SHA mechanisms (more secure) */
+loadmodule "modules/saslserv/scram-sha";        /* SCRAM-SHA mechanisms (more secure) */
 
 loadmodule "modules/groupserv/main";			/* Core components */
 loadmodule "modules/groupserv/acsnolimit";		/* ACSNOLIMIT command */
