@@ -18,7 +18,7 @@ LABEL maintainer="All Things Linux IRC Infrastructure" \
     org.opencontainers.image.licenses="GPL-3.0" \
     org.opencontainers.image.vendor="All Things Linux"
 
-# 🔒 SECURITY: Configure non-interactive environment
+# SECURITY: Configure non-interactive environment
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true \
     # Define versions as environment variables for better caching
@@ -31,6 +31,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # 🚀 OPTIMIZATION: Single layer package installation with enhanced security
 # 🔒 SECURITY: Use specific package versions and verify GPG keys
 # 📦 EFFICIENCY: Combined operations to minimize layers
+
 # hadolint ignore=DL3008,DL3009,DL3015
 RUN set -eux; \
     # Update package lists
@@ -39,41 +40,32 @@ RUN set -eux; \
     apt-get upgrade -y --no-install-recommends; \
     # Install all dependencies in one command to reduce layers
     apt-get install -y --no-install-recommends \
-    # 🔧 Core build tools and compilers (essential)
     build-essential \
     gcc \
     g++ \
     make \
-    # 🐛 Debugging tools (development only)
     gdb \
-    # 🌍 Internationalization support
     gettext \
-    # 🔐 Cryptography and security libraries
     libargon2-dev \
     libc-ares-dev \
     libcurl4-openssl-dev \
     libpcre2-dev \
     libssl-dev \
     libsodium-dev \
-    # 🛠️ Build system tools
     pkg-config \
     autoconf \
     automake \
     libtool \
-    # 📥 Download utilities
     wget \
     curl \
     ca-certificates \
-    # 📚 Version control
     git \
-    # 🎯 Atheme-specific dependencies
     libidn2-dev \
     nettle-dev \
     libqrencode-dev \
     libperl-dev \
-    # 🧹 System utilities for cleanup
     procps && \
-    # 🧽 AGGRESSIVE CLEANUP: Remove all unnecessary files to minimize size
+    # AGGRESSIVE CLEANUP: Remove all unnecessary files to minimize size
     apt-get clean && \
     apt-get autoremove -y && \
     rm -rf /var/cache/apt/archives/* \
@@ -88,11 +80,11 @@ RUN set -eux; \
 # ================================================================================
 # BUILDER STAGE - Optimized compilation with security hardening
 # ================================================================================
-# 🚀 OPTIMIZATION: Separate stage for compilation, discarded in final image
+# OPTIMIZATION: Separate stage for compilation, discarded in final image
 FROM base AS builder
 
-# 🔒 SECURITY: Create dedicated build user (never build as root)
-# 📦 EFFICIENCY: Combined user/directory creation in single layer
+# SECURITY: Create dedicated build user (never build as root)
+# EFFICIENCY: Combined user/directory creation in single layer
 RUN set -eux; \
     groupadd --system --gid 1001 builder; \
     useradd --create-home --system --uid 1001 --gid builder builder; \
@@ -226,7 +218,7 @@ RUN ./configure \
 # OPTIMIZATION: Only includes runtime dependencies, ~50% smaller than builder
 FROM debian:bookworm-slim AS runtime
 
-# 🔒 SECURITY: Minimal runtime environment
+# SECURITY: Minimal runtime environment
 ENV DEBIAN_FRONTEND=noninteractive \
     # Disable core dumps for security
     DAEMON_UID=1001 \
@@ -268,16 +260,16 @@ RUN set -eux; \
 # ================================================================================
 # COPY COMPILED BINARIES - Transfer only essential files from builder
 # ================================================================================
-# 🚀 OPTIMIZATION: Copy only what we need, minimizing image size
-# 🔒 SECURITY: Maintain proper ownership throughout
+# OPTIMIZATION: Copy only what we need, minimizing image size
+# SECURITY: Maintain proper ownership throughout
 COPY --from=builder --chown=ircd:ircd /usr/local/atheme /usr/local/atheme
 COPY --from=builder --chown=ircd:ircd /usr/local/unrealircd /usr/local/unrealircd
 
 # ================================================================================
 # SETUP SCRIPTS AND PERMISSIONS - Optimized single layer
 # ================================================================================
-# 🚀 OPTIMIZATION: Combine all setup operations in single layer
-# 🔒 SECURITY: Minimal privileges, proper ownership
+# OPTIMIZATION: Combine all setup operations in single layer
+# SECURITY: Minimal privileges, proper ownership
 RUN set -eux; \
     # Copy all management scripts
     mkdir -p /opt/irc/scripts; \
@@ -295,7 +287,7 @@ RUN set -eux; \
     # Clean up any temporary files
     rm -rf /tmp/* /var/tmp/* 2>/dev/null || true
 
-# 🔒 SECURITY: Switch to non-root user immediately
+# SECURITY: Switch to non-root user immediately
 USER ircd:ircd
 
 # 📍 Set working directory
@@ -315,14 +307,14 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # ================================================================================
 # ENVIRONMENT CONFIGURATION - Optimized runtime environment
 # ================================================================================
-# 🚀 OPTIMIZATION: Group related environment variables
+# OPTIMIZATION: Group related environment variables
 ENV ATHEME_CONF="/usr/local/atheme/etc/atheme.conf" \
     ATHEME_DATA="/usr/local/atheme/var" \
     ATHEME_MODULES="/usr/local/atheme/modules" \
     # UnrealIRCd configuration paths
     UNREALIRCD_CONTRIB="/usr/local/unrealircd/contrib" \
     UNREALIRCD_MODULES="/usr/local/unrealircd/modules" \
-    # 🔒 SECURITY: Disable core dumps and set restrictive umask
+    # SECURITY: Disable core dumps and set restrictive umask
     UMASK=0027 \
     # Performance: Set timezone to UTC for consistency
     TZ=UTC
@@ -330,5 +322,5 @@ ENV ATHEME_CONF="/usr/local/atheme/etc/atheme.conf" \
 # ================================================================================
 # STARTUP COMMAND - Optimized service launcher
 # ================================================================================
-# 🚀 OPTIMIZATION: Use exec for proper signal handling
+# OPTIMIZATION: Use exec for proper signal handling
 CMD ["exec", "/usr/local/bin/start-services", "start"]
