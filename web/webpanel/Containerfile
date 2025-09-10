@@ -13,7 +13,7 @@ LABEL maintainer="AllThingsLinux IRC Infrastructure" \
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
     DEBCONF_NONINTERACTIVE_SEEN=true \
-    NGINX_DOCUMENT_ROOT=/var/www/html/unrealircd-webpanel
+    NGINX_DOCUMENT_ROOT=/var/www/html/unrealircd-webpanel/public
 
 # Install system dependencies
 RUN apt-get update && \
@@ -63,11 +63,11 @@ RUN composer install --no-dev --optimize-autoloader
 # Switch back to root for final setup
 USER root
 
-# Set proper permissions
+# Set proper permissions for the webpanel directory
 RUN chown -R webpanel:webpanel /var/www/html/unrealircd-webpanel && \
-    chmod -R 755 /var/www/html/unrealircd-webpanel && \
-    chmod -R 775 /var/www/html/unrealircd-webpanel/data && \
-    chmod -R 775 /var/www/html/unrealircd-webpanel/config
+    chmod -R 755 /var/www/html/unrealircd-webpanel
+
+# Note: data and config directories will be mounted from host and permissions set at runtime
 
 # Copy Nginx configuration
 COPY web/webpanel/nginx.conf /etc/nginx/sites-available/webpanel

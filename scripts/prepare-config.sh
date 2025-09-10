@@ -75,7 +75,14 @@ prepare_config() {
     fi
     
     # Prepare Atheme configuration
-    if [ -f "$atheme_config" ]; then
+    local atheme_template="$PROJECT_ROOT/services/atheme/atheme.conf.template"
+    if [ -f "$atheme_template" ]; then
+        log_info "Preparing Atheme configuration from template..."
+        local temp_file="/tmp/atheme.conf.tmp"
+        envsubst < "$atheme_template" > "$temp_file"
+        mv "$temp_file" "$atheme_config"
+        log_success "Atheme configuration prepared from template"
+    elif [ -f "$atheme_config" ]; then
         log_info "Preparing Atheme configuration..."
         local temp_file="/tmp/atheme.conf.tmp"
         envsubst < "$atheme_config" > "$temp_file"
@@ -83,6 +90,7 @@ prepare_config() {
         log_success "Atheme configuration prepared"
     else
         log_warning "Atheme configuration file not found: $atheme_config"
+        log_warning "Template file not found: $atheme_template"
     fi
     
     log_success "All configuration files prepared successfully"
@@ -98,6 +106,10 @@ prepare_config() {
     echo "  IRC_ROOT_DOMAIN: ${IRC_ROOT_DOMAIN:-'not set'}"
     echo "  IRC_SERVICES_PASSWORD: ${IRC_SERVICES_PASSWORD:-'not set'}"
     echo "  IRC_OPER_PASSWORD: ${IRC_OPER_PASSWORD:-'not set'}"
+    echo "  ATHEME_SERVER_NAME: ${ATHEME_SERVER_NAME:-'not set'}"
+    echo "  ATHEME_UPLINK_HOST: ${ATHEME_UPLINK_HOST:-'not set'}"
+    echo "  ATHEME_UPLINK_PORT: ${ATHEME_UPLINK_PORT:-'not set'}"
+    echo "  ATHEME_SEND_PASSWORD: ${ATHEME_SEND_PASSWORD:-'not set'}"
 }
 
 # Main function

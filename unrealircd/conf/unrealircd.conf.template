@@ -292,6 +292,13 @@ oper admin {
 	vhost "admin.${IRC_DOMAIN}";
 }
 
+/* RPC Configuration for Webpanel */
+rpc-user "${WEBPANEL_RPC_USER}" {
+	match { ip *; }
+	rpc-class full;
+	password "${WEBPANEL_RPC_PASSWORD}";
+}
+
 /* Server specific configuration */
 set {
 	kline-address '${IRC_ADMIN_EMAIL}'; /* e-mail or URL shown when a user is banned */

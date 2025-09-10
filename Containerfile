@@ -146,6 +146,9 @@ COPY --chown=ircd:ircd scripts/start-services.sh /usr/local/bin/start-services
 COPY --chown=ircd:ircd scripts/manage-modules.sh /usr/local/bin/manage-modules
 COPY --chown=ircd:ircd scripts/module-config.sh /usr/local/bin/module-config
 COPY --chown=ircd:ircd scripts/start-webpanel.sh /usr/local/bin/start-webpanel
+
+# Create directory for prepare-config script and copy it
+RUN mkdir -p /opt/irc/scripts
 COPY --chown=ircd:ircd scripts/prepare-config.sh /opt/irc/scripts/prepare-config.sh
 
 # Set proper permissions and create necessary symlinks
@@ -165,7 +168,7 @@ USER ircd:ircd
 WORKDIR /usr/local/unrealircd
 
 # Expose default IRC ports
-EXPOSE 6667 6697
+EXPOSE 6667 6697 6900 8600
 
 # Health check for both services
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

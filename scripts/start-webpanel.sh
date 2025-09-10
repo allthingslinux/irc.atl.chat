@@ -36,6 +36,20 @@ WAIT_INTERVAL="${WAIT_INTERVAL:-5}"   # 5 seconds between checks
 
 print_status "Starting UnrealIRCd WebPanel..."
 
+# Set proper permissions for mounted directories
+print_status "Setting permissions for mounted directories..."
+if [ -d "/var/www/html/unrealircd-webpanel/data" ]; then
+    chown -R webpanel:webpanel /var/www/html/unrealircd-webpanel/data
+    chmod -R 775 /var/www/html/unrealircd-webpanel/data
+    print_success "Data directory permissions set"
+fi
+
+if [ -d "/var/www/html/unrealircd-webpanel/config" ]; then
+    chown -R webpanel:webpanel /var/www/html/unrealircd-webpanel/config
+    chmod -R 775 /var/www/html/unrealircd-webpanel/config
+    print_success "Config directory permissions set"
+fi
+
 # Skip JSON-RPC API check for now - start WebPanel directly
 print_status "Starting WebPanel without JSON-RPC API check..."
 print_warning "Note: WebPanel may need manual configuration to connect to UnrealIRCd"

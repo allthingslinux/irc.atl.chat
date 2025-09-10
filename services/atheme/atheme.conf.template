@@ -981,11 +981,11 @@ loadmodule "groupserv/set_url";
  * users in channel access entries. These target mapping entity types are
  * defined through the 'exttarget' modules listed below.
  *
- *  exttarget match type                   exttarget/oper
- *  exttarget match type             exttarget/registered
- *  exttarget match type                exttarget/channel
- *  exttarget match type                exttarget/chanacs
- *  exttarget match type                 exttarget/server
+ * $oper exttarget match type                   exttarget/oper
+ * $registered exttarget match type             exttarget/registered
+ * $channel exttarget match type                exttarget/channel
+ * $chanacs exttarget match type                exttarget/chanacs
+ * $server exttarget match type                 exttarget/server
  */
 #loadmodule "exttarget/oper";
 #loadmodule "exttarget/registered";
@@ -1033,7 +1033,7 @@ loadmodule "groupserv/set_url";
  *     - ./configure --prefix=foo ...
  *     - make
  *     - make install
- *     - /bin/atheme-crypto-benchmark -o
+ *     - ${foo}/bin/atheme-crypto-benchmark -o
  *
  * If you wish to deploy SASL SCRAM support, please read 'doc/SASL-SCRAM' and
  * pass the '-i' flag to the included cryptographic benchmarking utility too.
@@ -1382,13 +1382,13 @@ serverinfo {
 	 * must be unique on the IRC network and contain at least one dot, but
 	 * does not have to be equal to any DNS name.
 	 */
-	name = "services.atl.dev";
+	name = "${ATHEME_SERVER_NAME}";
 
 	/* desc
 	 *
 	 * The ``server comment'' we send to the IRC network.
 	 */
-	desc = "Atheme IRC Services";
+	desc = "${ATHEME_SERVER_DESC}";
 
 	/* numeric
 	 *
@@ -1581,19 +1581,19 @@ uplink "irc.example.net" {
 	 *
 	 * The port to connect to.
 	 */
-	port = 6900;
+	port = ${ATHEME_UPLINK_PORT};
 
 	/* send_password
 	 *
 	 * The password sent for linking.
 	 */
-	send_password = "test1234";
+	send_password = "${ATHEME_SEND_PASSWORD}";
 
 	/* receive_password
 	 *
 	 * The password received for linking.
 	 */
-	receive_password = "test1234";
+	receive_password = "${ATHEME_RECEIVE_PASSWORD}";
 };
 
 // This is an example for using an IPv6 address as an uplink
@@ -2664,14 +2664,14 @@ general {
 	 * Network help channel. Shown to users when they request help for a
 	 * command that doesn't exist.
 	 */
-	helpchan = "#support";
+	helpchan = "${ATHEME_HELP_CHANNEL}";
 
 	/* (*) helpurl
 	 *
 	 * Network webpage for services help. Shown to users when they request
 	 * help for a command that doesn't exist.
 	 */
-	helpurl = "https://atl.dev/help";
+	helpurl = "${ATHEME_HELP_URL}";
 
 	/* (*) silent
 	 *

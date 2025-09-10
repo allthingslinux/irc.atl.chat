@@ -21,8 +21,8 @@ services:
     volumes:
       - ./unrealircd/conf:/usr/local/unrealircd/conf:ro
       - ./scripts:/opt/irc/scripts:ro
-      - unrealircd_data:/usr/local/unrealircd/data
-      - unrealircd_logs:/usr/local/unrealircd/logs
+      - ./data/unrealircd:/usr/local/unrealircd/data
+      - ./logs/unrealircd:/usr/local/unrealircd/logs
     # Use the ircd user (non-root) for security
     user: 1001:1001
 
@@ -70,68 +70,69 @@ services:
 
     # Volume mounts - persist certificates and credentials
     volumes:
-      - letsencrypt_data:/etc/letsencrypt
+      - ./data/letsencrypt:/etc/letsencrypt
       - ./cloudflare-credentials.ini:/etc/letsencrypt/cloudflare-credentials.ini:ro
 
     # Network access for DNS challenges
     networks:
       - irc_network
 
-  # atheme:
-  #   build:
-  #     context: .
-  #     dockerfile: Containerfile
-  #     target: runtime
-  #     args:
-  #       UNREALIRCD_VERSION: "6.1.10"
-  #       ATHEME_VERSION: "7.2.12"
-  #   container_name: atheme
-  #   hostname: atheme
-  #   depends_on:
-  #     unrealircd:
-  #       condition: service_healthy
-  #   volumes:
-  #     - atheme_data:/usr/local/atheme/data
-  #     - atheme_logs:/usr/local/atheme/logs
-  #     - ./services/atheme:/usr/local/atheme/etc:ro
-  #   environment:
-  #     - TZ=UTC
-  #     - ATHEME_CONF=/usr/local/atheme/etc/atheme-minimal.conf
-  #     - ATHEME_DATA=/usr/local/atheme/data
-  #   networks:
-  #     - irc_network
-  #   command: ["/usr/local/bin/atheme-services", "-c", "/usr/local/atheme/etc/atheme-minimal.conf"]
-  #   restart: unless-stopped
+  atheme:
+    build:
+      context: .
+      dockerfile: Containerfile
+      target: runtime
+      args:
+        UNREALIRCD_VERSION: "6.1.10"
+        ATHEME_VERSION: "7.2.12"
+    container_name: atheme
+    hostname: atheme
+    depends_on:
+      unrealircd:
+        condition: service_healthy
+    volumes:
+      - ./data/atheme:/usr/local/atheme/data
+      - ./logs/atheme:/usr/local/atheme/logs
+      - ./services/atheme:/usr/local/atheme/etc:ro
+    environment:
+      - TZ=UTC
+      - ATHEME_CONF=/usr/local/atheme/etc/atheme.conf
+      - ATHEME_DATA=/usr/local/atheme/data
+    networks:
+      - irc_network
+    command: ["/usr/local/bin/atheme-services", "-c", "/usr/local/atheme/etc/atheme.conf"]
+    restart: unless-stopped
 
-  # unrealircd-webpanel:
-  #   build:
-  #     context: .
-  #     dockerfile: web/webpanel/Containerfile
-  #   container_name: unrealircd-webpanel
-  #   hostname: unrealircd-webpanel
-  #   depends_on:
-  #     unrealircd:
-  #       condition: service_healthy
-  #   volumes:
-  #     - unrealircd-webpanel_data:/var/www/html/unrealircd-webpanel/data
-  #     - unrealircd-webpanel_config:/var/www/html/unrealircd-webpanel/config
-  #   environment:
-  #     - TZ=UTC
-  #     - UNREALIRCD_HOST=unrealircd
-  #     - UNREALIRCD_PORT=8600
-  #     - UNREALIRCD_RPC_USER=adminpanel
-  #     - UNREALIRCD_RPC_PASSWORD=webpanel_password_2024
-  #   ports:
-  #     - '8080:80'  # Web interface
-  #   networks:
-  #     - irc_network
-  #   restart: unless-stopped
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost/unrealircd-webpanel/"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 60s
+  unrealircd-webpanel:
+    build:
+      context: .
+      dockerfile: web/webpanel/Containerfile
+    container_name: unrealircd-webpanel
+    hostname: unrealircd-webpanel
+    depends_on:
+      unrealircd:
+        condition: service_healthy
+    volumes:
+      - ./data/webpanel:/var/www/html/unrealircd-webpanel/data
+      - ./config/webpanel:/var/www/html/unrealircd-webpanel/config
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - TZ=UTC
+      - UNREALIRCD_HOST=unrealircd
+      - UNREALIRCD_PORT=${IRC_RPC_PORT:-8600}
+    ports:
+      - '8080:80'
+    networks:
+      - irc_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   # gamja:
   #   build:
@@ -166,7 +167,7 @@ services:
   #     unrealircd:
   #       condition: service_healthy
   #   volumes:
-  #     - thelounge_data:/var/opt/thelounge
+  #     - ./data/thelounge:/var/opt/thelounge
   #   networks:
   #     - irc_network
   #   ports:
@@ -177,25 +178,4 @@ networks:
   irc_network:
     driver: bridge
 
-volumes:
-  unrealircd_data:
-    driver: local
-  unrealircd_logs:
-    driver: local
-  unrealircd_modules:
-    driver: local
-  unrealircd_contrib:
-    driver: local
-  # atheme_data:
-    # driver: local
-  # atheme_logs:
-    # driver: local
-  # unrealircd-webpanel_data:
-    # driver: local
-  # unrealircd-webpanel_config:
-    # driver: local
-  # thelounge_data:
-    # driver: local
-  letsencrypt_data:
-    driver: local
   

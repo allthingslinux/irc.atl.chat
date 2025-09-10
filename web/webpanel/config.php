@@ -12,7 +12,7 @@ return [
         'host' => $_ENV['UNREALIRCD_HOST'] ?? 'ircd',
         'port' => (int)($_ENV['UNREALIRCD_PORT'] ?? 8600),
         'rpc_user' => $_ENV['UNREALIRCD_RPC_USER'] ?? 'adminpanel',
-        'rpc_password' => $_ENV['UNREALIRCD_RPC_PASSWORD'] ?? 'webpanel_password_2024',
+        'rpc_password' => $_ENV['UNREALIRCD_RPC_PASSWORD'] ?? 'test1234',
     ],
     
     'auth' => [

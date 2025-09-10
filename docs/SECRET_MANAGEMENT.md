@@ -87,6 +87,20 @@ docker compose up unrealircd
 - `IRC_SSL_CERT_PATH` - SSL certificate path
 - `IRC_SSL_KEY_PATH` - SSL key path
 
+### **Atheme Services**
+- `ATHEME_SERVER_NAME` - Services server name
+- `ATHEME_SERVER_DESC` - Services server description
+- `ATHEME_UPLINK_HOST` - IRC server hostname/IP
+- `ATHEME_UPLINK_PORT` - IRC server port
+- `ATHEME_SEND_PASSWORD` - Password sent to IRC server
+- `ATHEME_RECEIVE_PASSWORD` - Password received from IRC server
+- `ATHEME_HELP_CHANNEL` - Help channel for users
+- `ATHEME_HELP_URL` - Help website URL
+
+### **Webpanel**
+- `WEBPANEL_RPC_USER` - RPC username for webpanel
+- `WEBPANEL_RPC_PASSWORD` - RPC password for webpanel
+
 ## 📝 **Making Configuration Changes**
 
 ### **✅ DO: Edit the Template**
