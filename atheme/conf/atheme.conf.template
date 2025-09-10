@@ -136,6 +136,7 @@ loadmodule "modules/operserv/sqline";           /* SQLINE system */
 loadmodule "modules/operserv/update";           /* UPDATE command */
 loadmodule "modules/operserv/uptime";           /* UPTIME command */
 
+loadmodule "modules/memoserv/main";             /* Core components */
 loadmodule "modules/memoserv/help";             /* HELP command */
 loadmodule "modules/memoserv/send";             /* SEND command */
 loadmodule "modules/memoserv/sendops";          /* SENDOPS command */
@@ -269,9 +270,10 @@ loadmodule "modules/hostserv/drop";			/* DROP command */
 #loadmodule "modules/helpserv/ticket";			/* Help Ticket system */
 #loadmodule "modules/helpserv/services";		/* Service List */
 loadmodule "modules/alis/main";				/* Core components */
-#loadmodule "modules/statserv/channel";			/* CHANNEL command */
-#loadmodule "modules/statserv/netsplit";		/* NETSPLIT command */
-#loadmodule "modules/statserv/server";			/* SERVER command */
+loadmodule "modules/statserv/main";			/* Core components */
+loadmodule "modules/statserv/channel";			/* CHANNEL command */
+loadmodule "modules/statserv/netsplit";		/* NETSPLIT command */
+loadmodule "modules/statserv/server";			/* SERVER command */
 loadmodule "modules/groupserv/invite";			/* INVITE command */
 #loadmodule "modules/misc/httpd";				/* HTTP Server */
 #loadmodule "modules/misc/login_throttling";	/* Password-based login throttling */
@@ -468,15 +470,19 @@ saslserv {
 };
 
 memoserv {
-	nick = "${ATHEME_MEMOSERV_NICK}";
-	user = "${ATHEME_MEMOSERV_USER}";
-	host = "${ATHEME_MEMOSERV_HOST}";
-	real = "${ATHEME_MEMOSERV_REAL}";
-	aliases {
-	};
+        nick = "${ATHEME_MEMOSERV_NICK}";
+        user = "${ATHEME_MEMOSERV_USER}";
+        host = "${ATHEME_MEMOSERV_HOST}";
+        real = "${ATHEME_MEMOSERV_REAL}";
+        aliases {
+                "MAIL" = "SEND";
+                "MSG" = "SEND";
+                "DEL" = "DELETE";
+                "RM" = "DELETE";
+        };
 	access {
 	};
-	maxmemos = 30;
+        maxmemos = 50;
 };
 
 gameserv {
@@ -559,12 +565,15 @@ helpserv {
 };
 
 statserv {
-	nick = "${ATHEME_STATSERV_NICK}";
-	user = "${ATHEME_STATSERV_USER}";
-	host = "${ATHEME_STATSERV_HOST}";
-	real = "${ATHEME_STATSERV_REAL}";
-	aliases {
-	};
+        nick = "${ATHEME_STATSERV_NICK}";
+        user = "${ATHEME_STATSERV_USER}";
+        host = "${ATHEME_STATSERV_HOST}";
+        real = "${ATHEME_STATSERV_REAL}";
+        aliases {
+                "STATS" = "SERVER";
+                "CHAN" = "CHANNEL";
+                "SPLIT" = "NETSPLIT";
+        };
 	access {
 	};
 };
