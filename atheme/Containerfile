@@ -1,0 +1,62 @@
+# ================================================================================
+# Atheme Services - IRC Services Daemon
+# ================================================================================
+FROM alpine:3.20 AS builder
+
+# Build dependencies
+RUN apk add --no-cache \
+    build-base \
+    pkgconf \
+    openssl-dev \
+    git
+
+# Download and build Atheme
+ARG ATHEME_VERSION="7.2.12"
+WORKDIR /usr/src
+
+# Checkout from Git - we need to manually bump the libmowgli snapshot to fix compilation against musl
+RUN git clone https://github.com/atheme/atheme -b v${ATHEME_VERSION} --depth=1 atheme-src --recursive && \
+    cd atheme-src/libmowgli-2 && \
+    git pull origin master
+
+# Alpine build fix
+RUN sed -i "s/@MKDIR_P@/mkdir -p/g" /usr/src/atheme-src/modules/contrib/buildsys.mk.in
+
+# Configure and build
+RUN cd /usr/src/atheme-src && \
+    ./configure --prefix=/usr/local/atheme --enable-contrib --with-modulesdir=/usr/local/atheme/modules && \
+    make -j$(nproc) && \
+    make install
+
+# ================================================================================
+# Runtime stage
+# ================================================================================
+FROM alpine:3.20
+
+# Runtime dependencies
+RUN apk add --no-cache \
+    openssl \
+    ca-certificates \
+    su-exec \
+    tini
+
+# Create atheme user
+RUN addgroup -g 1001 -S atheme && \
+    adduser -u 1001 -D -S -G atheme atheme
+
+# Copy from builder
+COPY --from=builder /usr/local/atheme /usr/local/atheme
+
+# Create directory structure
+RUN mkdir -p /usr/local/atheme/etc \
+    /usr/local/atheme/data \
+    /usr/local/atheme/logs && \
+    chown -R atheme:atheme /usr/local/atheme
+
+# Copy entrypoint
+COPY --chown=root:root docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Use tini as init system
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
+CMD ["start"]
