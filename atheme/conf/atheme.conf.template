@@ -272,7 +272,7 @@ loadmodule "modules/hostserv/drop";			/* DROP command */
 #loadmodule "modules/statserv/channel";			/* CHANNEL command */
 #loadmodule "modules/statserv/netsplit";		/* NETSPLIT command */
 #loadmodule "modules/statserv/server";			/* SERVER command */
-#loadmodule "modules/groupserv/invite";			/* INVITE command */
+loadmodule "modules/groupserv/invite";			/* INVITE command */
 #loadmodule "modules/misc/httpd";				/* HTTP Server */
 #loadmodule "modules/misc/login_throttling";	/* Password-based login throttling */
 #loadmodule "modules/transport/xmlrpc";			/* XMLRPC handler for the httpd */
@@ -514,18 +514,20 @@ botserv {
 };
 
 groupserv {
-	nick = "${ATHEME_GROUPSERV_NICK}";
-	user = "${ATHEME_GROUPSERV_USER}";
-	host = "${ATHEME_GROUPSERV_HOST}";
-	real = "${ATHEME_GROUPSERV_REAL}";
-	aliases {
-	};
+        nick = "${ATHEME_GROUPSERV_NICK}";
+        user = "${ATHEME_GROUPSERV_USER}";
+        host = "${ATHEME_GROUPSERV_HOST}";
+        real = "${ATHEME_GROUPSERV_REAL}";
+        aliases {
+                "APPROVE" = "ACTIVATE";
+                "DENY" = "REJECT";
+        };
 	access {
 	};
 	maxgroups = 5;
 	maxgroupacs = 100;
 	enable_open_groups;
-	join_flags = "+";
+        join_flags = "+cv";
 };
 
 hostserv {
