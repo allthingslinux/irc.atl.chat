@@ -274,7 +274,7 @@ RUN set -eux; \
     # Copy all management scripts
     mkdir -p /opt/irc/scripts; \
     cp -a scripts/* /opt/irc/scripts/ 2>/dev/null || true; \
-    # Set executable permissions
+    # Set executable permissions for all users (important for bind mounts)
     chmod 755 /usr/local/atheme/bin/* /usr/local/unrealircd/bin/* /opt/irc/scripts/* 2>/dev/null || true; \
     # Create necessary directories with proper ownership
     mkdir -p /usr/local/atheme/var /usr/local/atheme/etc /usr/local/unrealircd/conf /usr/local/unrealircd/logs; \
@@ -282,6 +282,8 @@ RUN set -eux; \
     # Create symlinks for easier access
     ln -sf /usr/local/atheme/bin/atheme-services /usr/local/bin/atheme-services; \
     ln -sf /usr/local/unrealircd/bin/unrealircd /usr/local/bin/unrealircd; \
+    # Ensure binaries are executable by any user (fixes bind mount permission issues)
+    chmod +x /usr/local/bin/unrealircd /usr/local/bin/atheme-services /usr/local/unrealircd/bin/* /usr/local/atheme/bin/* 2>/dev/null || true; \
     # Security: Remove any world-writable permissions
     find /usr/local -type f -perm /002 -exec chmod o-w {} + 2>/dev/null || true; \
     # Clean up any temporary files

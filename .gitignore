@@ -23,6 +23,10 @@ unrealircd/conf/tls/
 data/
 logs/
 
+# Generated configuration files (created from templates)
+unrealircd/conf/unrealircd.conf
+services/atheme/atheme.conf
+
 # Docker volumes (if any are created)
 ircd_data/
 ircd_logs/

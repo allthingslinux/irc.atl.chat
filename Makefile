@@ -2,55 +2,36 @@
 
 # Default target - comprehensive help
 help:
-	@echo "IRC Infrastructure Management"
-	@echo "============================"
+	@echo "IRC.atl.chat - Docker IRC Server"
+	@echo "==============================="
 	@echo ""
-	@echo "FIRST TIME SETUP:"
-	@echo "  make setup          - Complete first-time setup (directories + services)"
-	@echo "  make init           - Just create directories (run once)"
+	@echo "QUICK START (like any Docker project):"
+	@echo "  make up             - Start all services"
+	@echo "  make down           - Stop all services"
+	@echo "  make logs           - View logs"
+	@echo "  make status         - Check status"
 	@echo ""
-	@echo "DAILY USAGE:"
-	@echo "  make start          - Start all services (after setup)"
-	@echo "  make stop           - Stop all services"
+	@echo "That's it! Everything else happens automatically."
 	@echo ""
-	@echo "CORE COMMANDS:"
-	@echo "  make build          - Build all services"
-	@echo "  make up             - Start services"
-	@echo "  make down           - Stop services"
+	@echo "ADVANCED COMMANDS:"
+	@echo "  make build          - Build containers"
+	@echo "  make rebuild        - Rebuild without cache"
 	@echo "  make restart        - Restart services"
-	@echo "  make status         - Check service status"
-	@echo "  make logs           - View all logs"
-	@echo ""
-	@echo "SERVICE LOGS:"
-	@echo "  make logs-ircd      - UnrealIRCd logs"
-	@echo "  make logs-atheme    - Atheme logs"
-	@echo "  make logs-webpanel  - WebPanel logs"
-	@echo ""
-	@echo "DEVELOPMENT:"
-	@echo "  make dev-shell      - Access IRC container shell"
-	@echo "  make test           - Run basic validation"
-	@echo "  make lint           - Check code quality"
+	@echo "  make dev-shell      - Access container shell"
 	@echo ""
 	@echo "SSL MANAGEMENT:"
-	@echo "  make ssl-setup      - One-command SSL setup"
+	@echo "  make ssl-setup      - Setup SSL certificates"
 	@echo "  make ssl-status     - Check SSL status"
-	@echo "  make ssl-renew      - Force certificate renewal"
-	@echo "  make ssl-logs       - View SSL logs"
-	@echo "  make ssl-stop       - Stop SSL monitoring"
-	@echo "  make ssl-clean      - Remove SSL certificates (CAUTION!)"
+	@echo "  make ssl-renew      - Renew certificates"
 	@echo ""
 	@echo "MAINTENANCE:"
-	@echo "  make clean          - Clean containers and images"
-	@echo "  make reset          - Reset everything (CAUTION!)"
-	@echo "  make info           - System information"
+	@echo "  make clean          - Clean containers/images"
+	@echo "  make reset          - Complete reset (CAUTION!)"
 	@echo ""
 	@echo "WORKFLOW:"
-	@echo "  1. make setup       (first time only - creates directories)"
-	@echo "  2. make start       (every day - starts services)"
-	@echo "  3. make stop        (when done - stops services)"
-	@echo ""
-	@echo "ENVIRONMENT VARIABLES:"
-	@echo "  NO_CACHE=1          - Build without cache"
+	@echo "  1. make up          (starts everything automatically)"
+	@echo "  2. Access IRC: localhost:6667"
+	@echo "  3. Access WebPanel: http://localhost:8080"
 
 # Configuration
 DOCKER_COMPOSE := docker compose
@@ -82,10 +63,14 @@ build:
 
 # Service operations
 up:
-	@echo -e "$(PURPLE)=== Starting Services ===$(NC)"
+	@echo -e "$(PURPLE)=== Starting IRC.atl.chat ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Setting up directories and configuration..."
+	@./scripts/init.sh || (echo -e "$(RED)[ERROR]$(NC) Setup failed. Please check your .env file."; exit 1)
 	@echo -e "$(BLUE)[INFO]$(NC) Starting all services..."
 	$(DOCKER_COMPOSE) up -d
-	@echo -e "$(BLUE)[INFO]$(NC) Services started. Use 'make status' to check status."
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Services started!"
+	@echo -e "$(BLUE)[INFO]$(NC) IRC Server: localhost:6667"
+	@echo -e "$(BLUE)[INFO]$(NC) WebPanel: http://localhost:8080"
 
 down:
 	@echo -e "$(PURPLE)=== Stopping Services ===$(NC)"
@@ -207,29 +192,6 @@ clean:
 # ============================================================================
 # QUICK ACTIONS
 # ============================================================================
-
-init: ## Initialize directory structure and environment
-	@echo -e "$(PURPLE)=== Initializing IRC Infrastructure ===$(NC)"
-	@./scripts/init.sh
-
-setup: ## First-time setup: create directories, build and start services
-	@echo -e "$(PURPLE)=== First-Time Setup ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) This will create directories and start all services"
-	@echo -e "$(BLUE)[INFO]$(NC) Run this only once, or after cleaning up"
-	@$(MAKE) init
-	@$(MAKE) build
-	@$(MAKE) up
-	@$(MAKE) status
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Setup completed!"
-	@echo -e "$(BLUE)[INFO]$(NC) Access webpanel at http://localhost:8080"
-	@echo -e "$(BLUE)[INFO]$(NC) IRC server: localhost:6667 (standard) / localhost:6697 (SSL)"
-
-start: ## Start services (assumes setup already done)
-	@echo -e "$(BLUE)[INFO]$(NC) Starting IRC services..."
-	@$(MAKE) up
-	@$(MAKE) status
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Services started!"
-	@echo -e "$(BLUE)[INFO]$(NC) Access webpanel at http://localhost:8080"
 
 stop: ## Stop all services
 	@echo -e "$(PURPLE)=== Stopping Services ===$(NC)"

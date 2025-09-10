@@ -73,8 +73,10 @@ set_permissions() {
     log_info "Setting proper permissions..."
 
     # Get current user ID and group ID
-    local current_uid=$(id -u)
-    local current_gid=$(id -g)
+    local current_uid
+    local current_gid
+    current_uid=$(id -u)
+    current_gid=$(id -g)
 
     log_info "Current user: $current_uid:$current_gid"
 
@@ -101,6 +103,65 @@ set_permissions() {
     find "$PROJECT_ROOT/logs" -type d -exec chmod 755 {} \; 2>/dev/null || true
 
     log_success "Permissions set successfully"
+}
+
+# Function to prepare configuration files from templates
+prepare_config_files() {
+    log_info "Preparing configuration files from templates..."
+
+    # Load environment variables from .env if it exists
+    if [ -f "$PROJECT_ROOT/.env" ]; then
+        log_info "Loading environment variables from .env"
+        # Use set -a to automatically export all variables
+        set -a
+        # shellcheck disable=SC1091
+        source "$PROJECT_ROOT/.env"
+        set +a
+        log_info "Environment variables loaded"
+    else
+        log_warning ".env file not found. Configuration will use defaults."
+        return 1
+    fi
+
+    # Check if envsubst is available
+    if ! command -v envsubst >/dev/null 2>&1; then
+        log_error "envsubst command not found. Please install gettext package."
+        return 1
+    fi
+
+    # Prepare UnrealIRCd configuration
+    local unreal_template="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf.template"
+    local unreal_config="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf"
+
+    if [ -f "$unreal_template" ]; then
+        log_info "Creating UnrealIRCd configuration from template..."
+        envsubst <"$unreal_template" >"$unreal_config"
+        log_success "UnrealIRCd configuration created"
+    elif [ -f "$unreal_config" ]; then
+        log_info "UnrealIRCd configuration already exists"
+    else
+        log_warning "No UnrealIRCd configuration template found"
+    fi
+
+    # Prepare Atheme configuration
+    local atheme_template="$PROJECT_ROOT/services/atheme/atheme.conf.template"
+    local atheme_config="$PROJECT_ROOT/services/atheme/atheme.conf"
+
+    if [ -f "$atheme_template" ]; then
+        log_info "Creating Atheme configuration from template..."
+        envsubst <"$atheme_template" >"$atheme_config"
+        log_success "Atheme configuration created"
+    elif [ -f "$atheme_config" ]; then
+        log_info "Atheme configuration already exists"
+    else
+        log_warning "No Atheme configuration template found"
+    fi
+
+    # Show substituted values for verification
+    log_info "Configuration values:"
+    echo "  IRC_DOMAIN: ${IRC_DOMAIN:-'not set'}"
+    echo "  IRC_NETWORK_NAME: ${IRC_NETWORK_NAME:-'not set'}"
+    echo "  IRC_ADMIN_NAME: ${IRC_ADMIN_NAME:-'not set'}"
 }
 
 # Function to create .env template if it doesn't exist
@@ -170,6 +231,9 @@ main() {
 
     # Create .env if needed
     create_env_template
+
+    # Prepare configuration files from templates
+    prepare_config_files
 
     # Show next steps
     show_next_steps
