@@ -1,4 +1,4 @@
-.PHONY: help
+.PHONY: help build rebuild up down restart status logs logs-ircd logs-atheme logs-webpanel dev-shell dev-logs test lint clean reset info ssl-setup ssl-status ssl-renew ssl-logs ssl-stop ssl-clean generate-password modules-list modules-installed webpanel stop
 
 # Default target - comprehensive help
 help:
@@ -52,10 +52,16 @@ NC := \033[0m # No Color
 
 # Building operations
 build:
-	@echo -e "$(PURPLE)=== Building All Services ===$(NC)"
+	@echo -e "$(PURPLE)=== Building Services ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Building IRC services..."
 	$(DOCKER_COMPOSE) build $(if $(NO_CACHE),--no-cache)
 	@echo -e "$(GREEN)[SUCCESS]$(NC) All services built successfully!"
+
+rebuild:
+	@echo -e "$(PURPLE)=== Rebuilding Services (No Cache) ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Rebuilding IRC services without cache..."
+	$(DOCKER_COMPOSE) build --no-cache
+	@echo -e "$(GREEN)[SUCCESS]$(NC) All services rebuilt successfully!"
 
 # ============================================================================
 # SERVICE MANAGEMENT COMMANDS
@@ -99,7 +105,7 @@ logs:
 
 logs-ircd:
 	@echo -e "$(PURPLE)=== UnrealIRCd Logs ===$(NC)"
-	$(DOCKER_COMPOSE) logs -f ircd
+	$(DOCKER_COMPOSE) logs -f unrealircd
 
 logs-atheme:
 	@echo -e "$(PURPLE)=== Atheme Logs ===$(NC)"
@@ -107,7 +113,7 @@ logs-atheme:
 
 logs-webpanel:
 	@echo -e "$(PURPLE)=== WebPanel Logs ===$(NC)"
-	$(DOCKER_COMPOSE) logs -f webpanel
+	$(DOCKER_COMPOSE) logs -f unrealircd-webpanel
 
 # ============================================================================
 # MODULE MANAGEMENT (Advanced)

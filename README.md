@@ -48,6 +48,7 @@ make status         # Check service status
 
 # Advanced commands
 make build          # Build containers manually
+make rebuild        # Rebuild containers without cache (fresh build)
 make restart        # Restart services
 make reset          # Complete reset (CAUTION!)
 make help           # Show all available commands
