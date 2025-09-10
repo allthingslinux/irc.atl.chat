@@ -39,15 +39,19 @@ print_status "Starting UnrealIRCd WebPanel..."
 # Set proper permissions for mounted directories
 print_status "Setting permissions for mounted directories..."
 if [ -d "/var/www/html/unrealircd-webpanel/data" ]; then
-    chown -R webpanel:webpanel /var/www/html/unrealircd-webpanel/data
-    chmod -R 775 /var/www/html/unrealircd-webpanel/data
-    print_success "Data directory permissions set"
+    # Try chown, but don't fail if it doesn't work (bind mount permissions)
+    chown -R webpanel:webpanel /var/www/html/unrealircd-webpanel/data 2>/dev/null || print_warning "Could not change data directory ownership (bind mount permissions)"
+    # Try chmod, but don't fail if it doesn't work (bind mount permissions)
+    chmod -R 775 /var/www/html/unrealircd-webpanel/data 2>/dev/null || print_warning "Could not change data directory permissions (bind mount permissions)"
+    print_success "Data directory setup completed"
 fi
 
 if [ -d "/var/www/html/unrealircd-webpanel/config" ]; then
-    chown -R webpanel:webpanel /var/www/html/unrealircd-webpanel/config
-    chmod -R 775 /var/www/html/unrealircd-webpanel/config
-    print_success "Config directory permissions set"
+    # Try chown, but don't fail if it doesn't work (bind mount permissions)
+    chown -R webpanel:webpanel /var/www/html/unrealircd-webpanel/config 2>/dev/null || print_warning "Could not change config directory ownership (bind mount permissions)"
+    # Try chmod, but don't fail if it doesn't work (bind mount permissions)
+    chmod -R 775 /var/www/html/unrealircd-webpanel/config 2>/dev/null || print_warning "Could not change config directory permissions (bind mount permissions)"
+    print_success "Config directory setup completed"
 fi
 
 # Skip JSON-RPC API check for now - start WebPanel directly

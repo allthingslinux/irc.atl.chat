@@ -8,6 +8,13 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# Load environment variables from .env file if it exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+    set -a # automatically export all variables
+    source "$PROJECT_ROOT/.env"
+    set +a # stop automatically exporting
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -75,31 +82,44 @@ set_permissions() {
     # Get current user ID and group ID
     local current_uid
     local current_gid
-    current_uid=$(id -u)
-    current_gid=$(id -g)
+    # Use the same UID/GID as the container's unrealircd user
+    current_uid=1000
+    current_gid=1000
 
     log_info "Current user: $current_uid:$current_gid"
 
     # Set ownership for data directories (if they exist)
     if [ -d "$PROJECT_ROOT/data" ]; then
-        chown -R "$current_uid:$current_gid" "$PROJECT_ROOT/data"
+        sudo chown -R "$current_uid:$current_gid" "$PROJECT_ROOT/data"
+        # Ensure directories are writable by owner (critical for socket creation)
+        find "$PROJECT_ROOT/data" -type d -exec chmod 755 {} \;
         log_info "Set ownership for data directory"
+    fi
+
+    # Ensure UnrealIRCd data directory specifically has correct permissions
+    if [ -d "$PROJECT_ROOT/data/unrealircd" ]; then
+        sudo chown -R "$current_uid:$current_gid" "$PROJECT_ROOT/data/unrealircd"
+        chmod 755 "$PROJECT_ROOT/data/unrealircd"
+        log_info "Set permissions for UnrealIRCd data directory"
     fi
 
     # Set ownership for log directories (if they exist)
     if [ -d "$PROJECT_ROOT/logs" ]; then
-        chown -R "$current_uid:$current_gid" "$PROJECT_ROOT/logs"
+        sudo chown -R "$current_uid:$current_gid" "$PROJECT_ROOT/logs"
+        # Ensure directories are writable by owner
+        find "$PROJECT_ROOT/logs" -type d -exec chmod 755 {} \;
         log_info "Set ownership for logs directory"
     fi
 
     # Set permissions for SSL certificates
     if [ -d "$PROJECT_ROOT/unrealircd/conf/tls" ]; then
-        chmod 755 "$PROJECT_ROOT/unrealircd/conf/tls"
+        chmod 755 "$PROJECT_ROOT/unrealircd/conf/tls" || log_warning "Could not set permissions for SSL directory"
         log_info "Set permissions for SSL directory"
     fi
 
     # Make sure data directories are writable
     find "$PROJECT_ROOT/data" -type d -exec chmod 755 {} \; 2>/dev/null || true
+    find "$PROJECT_ROOT/atheme" -type d -exec chmod 755 {} \; 2>/dev/null || true
     find "$PROJECT_ROOT/logs" -type d -exec chmod 755 {} \; 2>/dev/null || true
 
     log_success "Permissions set successfully"
@@ -135,8 +155,11 @@ prepare_config_files() {
 
     if [ -f "$unreal_template" ]; then
         log_info "Creating UnrealIRCd configuration from template..."
-        envsubst <"$unreal_template" >"$unreal_config"
-        log_success "UnrealIRCd configuration created"
+        if envsubst <"$unreal_template" >"$unreal_config" 2>/dev/null; then
+            log_success "UnrealIRCd configuration created"
+        else
+            log_warning "Could not create UnrealIRCd configuration (permission denied). Using existing file."
+        fi
     elif [ -f "$unreal_config" ]; then
         log_info "UnrealIRCd configuration already exists"
     else
@@ -144,8 +167,8 @@ prepare_config_files() {
     fi
 
     # Prepare Atheme configuration
-    local atheme_template="$PROJECT_ROOT/services/atheme/atheme.conf.template"
-    local atheme_config="$PROJECT_ROOT/services/atheme/atheme.conf"
+    local atheme_template="$PROJECT_ROOT/atheme/conf/atheme.conf.template"
+    local atheme_config="$PROJECT_ROOT/atheme/conf/atheme.conf"
 
     if [ -f "$atheme_template" ]; then
         log_info "Creating Atheme configuration from template..."
@@ -162,6 +185,10 @@ prepare_config_files() {
     echo "  IRC_DOMAIN: ${IRC_DOMAIN:-'not set'}"
     echo "  IRC_NETWORK_NAME: ${IRC_NETWORK_NAME:-'not set'}"
     echo "  IRC_ADMIN_NAME: ${IRC_ADMIN_NAME:-'not set'}"
+    echo "  ATHEME_SERVER_NAME: ${ATHEME_SERVER_NAME:-'not set'}"
+    echo "  ATHEME_NETNAME: ${ATHEME_NETNAME:-'not set'}"
+    echo "  ATHEME_ADMIN_NAME: ${ATHEME_ADMIN_NAME:-'not set'}"
+    echo "  ATHEME_ADMIN_EMAIL: ${ATHEME_ADMIN_EMAIL:-'not set'}"
 }
 
 # Function to create .env template if it doesn't exist
