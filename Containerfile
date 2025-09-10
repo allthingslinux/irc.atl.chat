@@ -15,6 +15,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     ATHEME_VERSION="7.2.12"
 
 # Install system dependencies in a single layer with cleanup
+# hadolint ignore=DL3008
 RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
