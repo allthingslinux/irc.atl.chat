@@ -29,7 +29,7 @@ print_error() {
 }
 
 # Configuration
-UNREALIRCD_HOST="${UNREALIRCD_HOST:-ircd}"
+UNREALIRCD_HOST="${UNREALIRCD_HOST:-unrealircd}"
 UNREALIRCD_PORT="${UNREALIRCD_PORT:-8600}"
 MAX_WAIT_TIME="${MAX_WAIT_TIME:-300}" # 5 minutes max wait
 WAIT_INTERVAL="${WAIT_INTERVAL:-5}"   # 5 seconds between checks

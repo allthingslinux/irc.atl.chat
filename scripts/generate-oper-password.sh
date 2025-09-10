@@ -79,11 +79,11 @@ show_usage() {
     echo "  $0 [container-name]"
     echo
     echo "Arguments:"
-    echo "  container-name    Name of the IRC container (default: ircd)"
+    echo "  container-name    Name of the IRC container (default: unrealircd)"
     echo
     echo "Examples:"
-    echo "  $0                # Use default container 'ircd'"
-    echo "  $0 ircd           # Use container 'ircd'"
+    echo "  $0                # Use default container 'unrealircd'"
+    echo "  $0 unrealircd     # Use container 'unrealircd'"
     echo
     echo "Requirements:"
     echo "  - IRC container must be running"
@@ -94,12 +94,12 @@ show_usage() {
     echo "  2. Add it to your .env file:"
     echo "     IRC_OPER_PASSWORD=\"\$hash\""
     echo "  3. Restart the IRC container:"
-    echo "     docker compose restart ircd"
+    echo "     docker compose restart unrealircd"
 }
 
 # Main function
 main() {
-    local container_name="${1:-ircd}"
+    local container_name="${1:-unrealircd}"
 
     # Show usage if requested
     if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
