@@ -284,7 +284,8 @@ loadmodule "modules/groupserv/invite";			/* INVITE command */
 #loadmodule "modules/exttarget/channel";		/* $channel exttarget match type */
 #loadmodule "modules/exttarget/chanacs";		/* $chanacs exttarget match type */
 #loadmodule "modules/exttarget/server";			/* $server exttarget match type */
-#loadmodule "modules/proxyscan/dnsbl";			/* Proxyscan (DNSBL) modules */
+loadmodule "modules/proxyscan/main";			/* Core components */
+loadmodule "modules/proxyscan/dnsbl";			/* Proxyscan (DNSBL) modules */
 #loadmodule "modules/contrib/backtrace";        /* Backtrace module */
 
 crypto {
@@ -598,19 +599,23 @@ alis {
 };
 
 proxyscan {
-	nick = "${ATHEME_PROXYSCAN_NICK}";
-	user = "${ATHEME_PROXYSCAN_USER}";
-	host = "${ATHEME_PROXYSCAN_HOST}";
-	real = "${ATHEME_PROXYSCAN_REAL}";
-	aliases {
-	};
+        nick = "${ATHEME_PROXYSCAN_NICK}";
+        user = "${ATHEME_PROXYSCAN_USER}";
+        host = "${ATHEME_PROXYSCAN_HOST}";
+        real = "${ATHEME_PROXYSCAN_REAL}";
+        aliases {
+                "SCAN" = "SCAN";
+                "CHECK" = "SCAN";
+        };
 	access {
 	};
-	blacklists {
-		"dnsbl.dronebl.org";
-		"rbl.efnetrbl.org";
-		"tor.efnet.org";
-	};
+        blacklists {
+                "dnsbl.dronebl.org";
+                "rbl.efnetrbl.org";
+                "tor.efnet.org";
+                "dnsbl.tornevall.org";
+                "bl.spamcop.net";
+        };
 	dnsbl_action = kline;
 };
 
