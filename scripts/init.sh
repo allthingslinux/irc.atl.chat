@@ -82,9 +82,13 @@ set_permissions() {
     # Get current user ID and group ID
     local current_uid
     local current_gid
-    # Use the same UID/GID as the container's unrealircd user
-    current_uid=1000
-    current_gid=1000
+    # Use actual user ID instead of hardcoded values
+    current_uid=$(id -u)
+    current_gid=$(id -g)
+
+    # Use same UID for all services to avoid permission issues
+    local atheme_uid=$current_uid
+    local atheme_gid=$current_gid
 
     log_info "Current user: $current_uid:$current_gid"
 
@@ -103,12 +107,26 @@ set_permissions() {
         log_info "Set permissions for UnrealIRCd data directory"
     fi
 
+    # Set ownership for Atheme data directory with correct UID
+    if [ -d "$PROJECT_ROOT/data/atheme" ]; then
+        sudo chown -R "$atheme_uid:$atheme_gid" "$PROJECT_ROOT/data/atheme"
+        chmod 755 "$PROJECT_ROOT/data/atheme"
+        log_info "Set permissions for Atheme data directory"
+    fi
+
     # Set ownership for log directories (if they exist)
     if [ -d "$PROJECT_ROOT/logs" ]; then
         sudo chown -R "$current_uid:$current_gid" "$PROJECT_ROOT/logs"
         # Ensure directories are writable by owner
         find "$PROJECT_ROOT/logs" -type d -exec chmod 755 {} \;
         log_info "Set ownership for logs directory"
+    fi
+
+    # Set ownership for Atheme logs with correct UID
+    if [ -d "$PROJECT_ROOT/logs/atheme" ]; then
+        sudo chown -R "$atheme_uid:$atheme_gid" "$PROJECT_ROOT/logs/atheme"
+        chmod 755 "$PROJECT_ROOT/logs/atheme"
+        log_info "Set permissions for Atheme logs directory"
     fi
 
     # Set permissions for SSL certificates
