@@ -31,7 +31,10 @@ help:
 	@echo "SSL MANAGEMENT:"
 	@echo "  make ssl-setup      - One-command SSL setup"
 	@echo "  make ssl-status     - Check SSL status"
+	@echo "  make ssl-renew      - Force certificate renewal"
 	@echo "  make ssl-logs       - View SSL logs"
+	@echo "  make ssl-stop       - Stop SSL monitoring"
+	@echo "  make ssl-clean      - Remove SSL certificates (CAUTION!)"
 	@echo ""
 	@echo "MAINTENANCE:"
 	@echo "  make clean          - Clean containers and images"
@@ -229,7 +232,7 @@ info: ## Show system information
 ssl-setup: ## One-command SSL setup - sets up everything automatically
 	@echo -e "$(PURPLE)=== SSL Setup - One Command to Rule Them All ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) This will:"
-	@echo -e "$(BLUE)[INFO]$(NC)   1. Issue SSL certificates for $(IRC_ROOT_DOMAIN)"
+	@echo -e "$(BLUE)[INFO]$(NC)   1. Issue SSL certificates for your domain"
 	@echo -e "$(BLUE)[INFO]$(NC)   2. Start automatic Docker monitoring"
 	@echo -e "$(BLUE)[INFO]$(NC)   3. Configure daily renewal at 2 AM"
 	@echo ""
@@ -252,11 +255,34 @@ ssl-status: ## Check SSL certificate status
 
 ssl-renew: ## Force certificate renewal
 	@echo -e "$(PURPLE)=== Forcing SSL Certificate Renewal ===$(NC)"
-	@./scripts/ssl-manager.sh renew
+	@if [[ -f "unrealircd/conf/tls/server.cert.pem" ]]; then \
+		./scripts/ssl-manager.sh renew; \
+	else \
+		echo -e "$(YELLOW)[WARNING]$(NC) No SSL certificates found. Run 'make ssl-setup' first."; \
+	fi
 
 ssl-logs: ## View SSL monitoring logs
 	@echo -e "$(PURPLE)=== SSL Monitoring Logs ===$(NC)"
 	@docker compose logs -f ssl-monitor --tail=50
+
+ssl-stop: ## Stop SSL monitoring
+	@echo -e "$(PURPLE)=== Stopping SSL Monitoring ===$(NC)"
+	@docker compose down ssl-monitor
+	@echo -e "$(GREEN)[SUCCESS]$(NC) SSL monitoring stopped"
+
+ssl-clean: ## Remove SSL certificates and monitoring (CAUTION: destroys certificates!)
+	@echo -e "$(RED)=== WARNING: This will DELETE your SSL certificates! ===$(NC)"
+	@echo -e "$(YELLOW)This action cannot be undone.$(NC)"
+	@echo ""
+	@read -p "Are you sure you want to continue? (type 'yes' to confirm): " confirm && \
+	if [[ "$$confirm" == "yes" ]]; then \
+		echo -e "$(BLUE)[INFO]$(NC) Removing SSL certificates..."; \
+		rm -rf data/letsencrypt unrealircd/conf/tls; \
+		docker compose down ssl-monitor; \
+		echo -e "$(GREEN)[SUCCESS]$(NC) SSL certificates and monitoring removed."; \
+	else \
+		echo -e "$(YELLOW)[CANCELLED]$(NC) SSL cleanup cancelled."; \
+	fi
 
 # ============================================================================
 # UTILITIES
