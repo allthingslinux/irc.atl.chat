@@ -8,6 +8,7 @@ RUN apk add --no-cache \
     build-base \
     pkgconf \
     openssl-dev \
+    libidn-dev \
     git
 
 # Download and build Atheme
@@ -22,9 +23,9 @@ RUN git clone https://github.com/atheme/atheme -b v${ATHEME_VERSION} --depth=1 a
 # Alpine build fix
 RUN sed -i "s/@MKDIR_P@/mkdir -p/g" /usr/src/atheme-src/modules/contrib/buildsys.mk.in
 
-# Configure and build
+# Configure and build with libidn support for SCRAM-SHA
 RUN cd /usr/src/atheme-src && \
-    ./configure --prefix=/usr/local/atheme --enable-contrib --with-modulesdir=/usr/local/atheme/modules && \
+    ./configure --prefix=/usr/local/atheme --enable-contrib --with-modulesdir=/usr/local/atheme/modules --with-libidn && \
     make -j$(nproc) && \
     make install
 
@@ -36,6 +37,7 @@ FROM alpine:3.20
 # Runtime dependencies
 RUN apk add --no-cache \
     openssl \
+    libidn \
     ca-certificates \
     su-exec \
     tini
