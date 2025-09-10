@@ -24,7 +24,7 @@ services:
       - ./data/unrealircd:/usr/local/unrealircd/data
       - ./logs/unrealircd:/usr/local/unrealircd/logs
       
-    user: 1001:1001
+    user: 1000:1000
 
     # Environment configuration
     env_file:

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Simple IRC Services Startup Script
-# Just starts UnrealIRCd - Atheme runs in separate container
+# IRC Services Startup Script
+# Just starts UnrealIRCd - directories created on host
 
 set -e
 
@@ -9,6 +9,6 @@ set -e
 echo "Preparing configuration..."
 /opt/irc/scripts/prepare-config.sh
 
-# Simple startup - just run UnrealIRCd
+# Start UnrealIRCd
 echo "Starting UnrealIRCd..."
 exec /usr/local/bin/unrealircd -F

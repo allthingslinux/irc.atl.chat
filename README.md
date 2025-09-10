@@ -22,7 +22,7 @@ The setup includes **complete IRC services integration**:
 
 ## Quick Start
 
-### **4-Step Setup**
+### **First Time Setup**
 ```bash
 # 1. Copy environment template
 cp env.example .env
@@ -35,8 +35,33 @@ vim cloudflare-credentials.ini  # Add your Cloudflare API token
 # 3. Edit .env with your settings (domain, passwords, etc.)
 vim .env
 
-# 4. Start everything
-make build && make up
+# 4. Complete setup (creates directories + starts services)
+make setup
+```
+
+### **Daily Usage**
+```bash
+# Start services (after first-time setup)
+make start
+
+# Stop services
+make stop
+```
+
+### **Available Commands**
+```bash
+# First-time setup only
+make setup          # Complete setup (directories + services)
+make init           # Just create directories
+
+# Daily operations
+make start          # Start all services
+make stop           # Stop all services
+
+# Development & maintenance
+make status         # Check service status
+make logs           # View all logs
+make reset          # Complete reset (CAUTION!)
 ```
 
 ### What's Included

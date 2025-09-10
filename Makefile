@@ -5,10 +5,13 @@ help:
 	@echo "IRC Infrastructure Management"
 	@echo "============================"
 	@echo ""
-	@echo "QUICK START:"
-	@echo "  make quick-start    - Build and start all services"
-	@echo "  make up             - Start all services"
-	@echo "  make down           - Stop all services"
+	@echo "FIRST TIME SETUP:"
+	@echo "  make setup          - Complete first-time setup (directories + services)"
+	@echo "  make init           - Just create directories (run once)"
+	@echo ""
+	@echo "DAILY USAGE:"
+	@echo "  make start          - Start all services (after setup)"
+	@echo "  make stop           - Stop all services"
 	@echo ""
 	@echo "CORE COMMANDS:"
 	@echo "  make build          - Build all services"
@@ -38,7 +41,13 @@ help:
 	@echo ""
 	@echo "MAINTENANCE:"
 	@echo "  make clean          - Clean containers and images"
+	@echo "  make reset          - Reset everything (CAUTION!)"
 	@echo "  make info           - System information"
+	@echo ""
+	@echo "WORKFLOW:"
+	@echo "  1. make setup       (first time only - creates directories)"
+	@echo "  2. make start       (every day - starts services)"
+	@echo "  3. make stop        (when done - stops services)"
 	@echo ""
 	@echo "ENVIRONMENT VARIABLES:"
 	@echo "  NO_CACHE=1          - Build without cache"
@@ -199,17 +208,51 @@ clean:
 # QUICK ACTIONS
 # ============================================================================
 
-quick-start: ## Quick start with build and run
+init: ## Initialize directory structure and environment
+	@echo -e "$(PURPLE)=== Initializing IRC Infrastructure ===$(NC)"
+	@./scripts/init.sh
+
+setup: ## First-time setup: create directories, build and start services
+	@echo -e "$(PURPLE)=== First-Time Setup ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) This will create directories and start all services"
+	@echo -e "$(BLUE)[INFO]$(NC) Run this only once, or after cleaning up"
+	@$(MAKE) init
 	@$(MAKE) build
 	@$(MAKE) up
 	@$(MAKE) status
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Quick start completed! Access webpanel at http://localhost:8080"
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Setup completed!"
+	@echo -e "$(BLUE)[INFO]$(NC) Access webpanel at http://localhost:8080"
+	@echo -e "$(BLUE)[INFO]$(NC) IRC server: localhost:6667 (standard) / localhost:6697 (SSL)"
 
-quick-stop: ## Quick stop and cleanup
-	@$(MAKE) down
-	@$(MAKE) clean
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Quick stop completed!"
+start: ## Start services (assumes setup already done)
+	@echo -e "$(BLUE)[INFO]$(NC) Starting IRC services..."
+	@$(MAKE) up
+	@$(MAKE) status
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Services started!"
+	@echo -e "$(BLUE)[INFO]$(NC) Access webpanel at http://localhost:8080"
 
+stop: ## Stop all services
+	@echo -e "$(PURPLE)=== Stopping Services ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Stopping all services..."
+	$(DOCKER_COMPOSE) down
+	@echo -e "$(GREEN)[SUCCESS]$(NC) All services stopped and removed."
+
+reset: ## Reset everything - WARNING: destroys data!
+	@echo -e "$(RED)=== WARNING: This will DELETE all data! ===$(NC)"
+	@echo -e "$(YELLOW)This includes: containers, images, volumes, and data directories$(NC)"
+	@echo ""
+	@read -p "Are you sure you want to continue? (type 'yes' to confirm): " confirm && \
+	if [[ "$$confirm" == "yes" ]]; then \
+		echo -e "$(BLUE)[INFO]$(NC) Stopping services..."; \
+		$(DOCKER_COMPOSE) down -v; \
+		echo -e "$(BLUE)[INFO]$(NC) Removing images..."; \
+		$(DOCKER) image prune -f; \
+		echo -e "$(BLUE)[INFO]$(NC) Removing data directories..."; \
+		rm -rf data/ logs/; \
+		echo -e "$(GREEN)[SUCCESS]$(NC) Complete reset done."; \
+	else \
+		echo -e "$(YELLOW)[CANCELLED]$(NC) Reset cancelled."; \
+	fi
 
 info: ## Show system information
 	@echo -e "$(PURPLE)=== System Information ===$(NC)"

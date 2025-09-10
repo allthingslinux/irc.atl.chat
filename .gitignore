@@ -14,15 +14,20 @@ runtime/*/
 !runtime/.gitkeep
 
 # SSL certificates and keys
+unrealircd/conf/tls/
 *.pem
 *.key
 *.crt
 
-# Docker volumes
+# Runtime data directories (created at runtime)
+data/
+logs/
+
+# Docker volumes (if any are created)
 ircd_data/
 ircd_logs/
 ircd_modules/
-ircd_contrib/
+ircd_contrib/       # Legacy            
 atheme_data/
 atheme_logs/
 webpanel_data/
