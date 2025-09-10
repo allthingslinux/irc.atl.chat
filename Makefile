@@ -1,30 +1,44 @@
-.PHONY: help help-build help-services help-modules help-webpanel help-dev help-docker help-ssl help-test
+.PHONY: help
 
-# Default target
+# Default target - comprehensive help
 help:
 	@echo "IRC Infrastructure Management"
 	@echo "============================"
 	@echo ""
-	@echo "Available command groups:"
-	@echo "  make help-build     - Building and compilation commands"
-	@echo "  make help-services  - Service management commands"
-	@echo "  make help-modules   - Module management commands"
-	@echo "  make help-webpanel  - WebPanel management commands"
-	@echo "  make help-dev       - Development and testing commands"
-	@echo "  make help-docker    - Docker management commands"
-	@echo "  make help-ssl       - SSL/TLS certificate management commands"
-	@echo ""
-	@echo "Quick start:"
+	@echo "QUICK START:"
 	@echo "  make quick-start    - Build and start all services"
 	@echo "  make up             - Start all services"
 	@echo "  make down           - Stop all services"
-	@echo "  make status         - Check service status"
-	@echo "  make logs           - View service logs"
 	@echo ""
-	@echo "Environment variables:"
-	@echo "  NO_CACHE=1         - Build without cache"
-	@echo "  TARGET=base|builder|runtime - Build specific stage"
-	@echo "  MODULE=webpanel    - Target specific module for operations"
+	@echo "CORE COMMANDS:"
+	@echo "  make build          - Build all services"
+	@echo "  make up             - Start services"
+	@echo "  make down           - Stop services"
+	@echo "  make restart        - Restart services"
+	@echo "  make status         - Check service status"
+	@echo "  make logs           - View all logs"
+	@echo ""
+	@echo "SERVICE LOGS:"
+	@echo "  make logs-ircd      - UnrealIRCd logs"
+	@echo "  make logs-atheme    - Atheme logs"
+	@echo "  make logs-webpanel  - WebPanel logs"
+	@echo ""
+	@echo "DEVELOPMENT:"
+	@echo "  make dev-shell      - Access IRC container shell"
+	@echo "  make test           - Run basic validation"
+	@echo "  make lint           - Check code quality"
+	@echo ""
+	@echo "SSL MANAGEMENT:"
+	@echo "  make ssl-setup      - One-command SSL setup"
+	@echo "  make ssl-status     - Check SSL status"
+	@echo "  make ssl-logs       - View SSL logs"
+	@echo ""
+	@echo "MAINTENANCE:"
+	@echo "  make clean          - Clean containers and images"
+	@echo "  make info           - System information"
+	@echo ""
+	@echo "ENVIRONMENT VARIABLES:"
+	@echo "  NO_CACHE=1          - Build without cache"
 
 # Configuration
 DOCKER_COMPOSE := docker compose
@@ -43,77 +57,16 @@ NC := \033[0m # No Color
 # BUILDING COMMANDS
 # ============================================================================
 
-help-build:
-	@echo "Building Commands:"
-	@echo "  build              - Build all services (default: runtime)"
-	@echo "  build-base         - Build base stage only"
-	@echo "  build-builder      - Build builder stage (includes compilation)"
-	@echo "  build-runtime      - Build runtime stage (production image)"
-	@echo "  build-webpanel     - Build webpanel service only"
-	@echo ""
-	@echo "Options:"
-	@echo "  NO_CACHE=1         - Build without cache"
-	@echo "  TARGET=base        - Build specific stage"
-	@echo ""
-	@echo "Usage examples:"
-	@echo "  make build                    # Build all services"
-	@echo "  make build-base               # Build base dependencies"
-	@echo "  make build NO_CACHE=1        # Build without cache"
-	@echo "  make build-webpanel          # Build only webpanel"
-
 # Building operations
 build:
 	@echo -e "$(PURPLE)=== Building All Services ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Building IRC services..."
-	$(DOCKER_COMPOSE) build
+	$(DOCKER_COMPOSE) build $(if $(NO_CACHE),--no-cache)
 	@echo -e "$(GREEN)[SUCCESS]$(NC) All services built successfully!"
-
-build-base:
-	@echo -e "$(PURPLE)=== Building Base Stage ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Building base dependencies..."
-	$(DOCKER) build --target base -t irc-atl-chat:base .
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Base stage built successfully!"
-
-build-builder:
-	@echo -e "$(PURPLE)=== Building Builder Stage ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Building with compilation..."
-	$(DOCKER) build --target builder -t irc-atl-chat:builder .
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Builder stage built successfully!"
-
-build-runtime:
-	@echo -e "$(PURPLE)=== Building Runtime Stage ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Building production image..."
-	$(DOCKER) build --target runtime -t irc-atl-chat:runtime .
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Runtime stage built successfully!"
-
-build-webpanel:
-	@echo -e "$(PURPLE)=== Building WebPanel ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Building webpanel service..."
-	$(DOCKER_COMPOSE) build webpanel
-	@echo -e "$(GREEN)[SUCCESS]$(NC) WebPanel built successfully!"
 
 # ============================================================================
 # SERVICE MANAGEMENT COMMANDS
 # ============================================================================
-
-help-services:
-	@echo "Service Management Commands:"
-	@echo "  up                 - Start all services in background"
-	@echo "  down               - Stop and remove all services"
-	@echo "  start              - Start services (alias for up)"
-	@echo "  stop               - Stop services (alias for down)"
-	@echo "  restart            - Restart all services"
-	@echo "  status             - Show status of all services"
-	@echo "  logs               - Show logs from all services"
-	@echo "  logs-ircd          - Show UnrealIRCd logs"
-	@echo "  logs-atheme        - Show Atheme logs"
-	@echo "  logs-webpanel      - Show WebPanel logs"
-	@echo ""
-	@echo "Usage examples:"
-	@echo "  make up             # Start all services"
-	@echo "  make down           # Stop all services"
-	@echo "  make status         # Check service status"
-	@echo "  make logs-ircd      # View UnrealIRCd logs"
 
 # Service operations
 up:
@@ -128,11 +81,6 @@ down:
 	$(DOCKER_COMPOSE) down
 	@echo -e "$(GREEN)[SUCCESS]$(NC) All services stopped and removed."
 
-start: ## Start services (alias for up)
-	@$(MAKE) up
-
-stop: ## Stop services (alias for down)
-	@$(MAKE) down
 
 restart:
 	@echo -e "$(PURPLE)=== Restarting Services ===$(NC)"
@@ -165,85 +113,12 @@ logs-webpanel:
 	$(DOCKER_COMPOSE) logs -f webpanel
 
 # ============================================================================
-# MODULE MANAGEMENT COMMANDS
+# MODULE MANAGEMENT (Advanced)
 # ============================================================================
-
-help-modules:
-	@echo "Module Management Commands:"
-	@echo "  modules            - Show module management help"
-	@echo "  modules-list      - List available contrib modules"
-	@echo "  modules-info      - Show module information"
-	@echo "  modules-install   - Install a module"
-	@echo "  modules-remove    - Remove a module"
-	@echo "  modules-update    - Update contrib repository"
-	@echo "  modules-installed - Show installed modules"
-	@echo ""
-	@echo "Required variables:"
-	@echo "  MODULE=webpanel   - Module name for install/remove operations"
-	@echo ""
-	@echo "Usage examples:"
-	@echo "  make modules list                    # List available modules"
-	@echo "  make modules install MODULE=webpanel # Install webpanel module"
-	@echo "  make modules remove MODULE=webpanel  # Remove webpanel module"
-	@echo "  make modules update                  # Update contrib repository"
-
-# Module operations
-modules:
-	@echo -e "$(PURPLE)=== Module Management ===$(NC)"
-	@echo "Available module commands:"
-	@echo "  make modules list     # List available modules"
-	@echo "  make modules info     # Show module information"
-	@echo "  make modules install  # Install a module"
-	@echo "  make modules remove   # Remove a module"
-	@echo "  make modules update   # Update contrib repository"
-	@echo ""
-	@echo "Examples:"
-	@echo "  make modules list"
-	@echo "  make modules install MODULE=webpanel"
-	@echo "  make modules remove MODULE=webpanel"
 
 modules-list:
 	@echo -e "$(PURPLE)=== Available Modules ===$(NC)"
 	$(DOCKER_COMPOSE) exec ircd manage-modules list
-
-modules-info:
-	@echo -e "$(PURPLE)=== Module Information ===$(NC)"
-	@if [ -z "$(MODULE)" ]; then \
-		echo "Usage: make modules-info MODULE=<module-name>"; \
-		echo "Example: make modules-info MODULE=webpanel"; \
-		exit 1; \
-	fi
-	$(DOCKER_COMPOSE) exec ircd manage-modules info $(MODULE)
-
-modules-install:
-	@echo -e "$(PURPLE)=== Installing Module ===$(NC)"
-	@if [ -z "$(MODULE)" ]; then \
-		echo "Usage: make modules-install MODULE=<module-name>"; \
-		echo "Example: make modules-install MODULE=webpanel"; \
-		exit 1; \
-	fi
-	@echo -e "$(BLUE)[INFO]$(NC) Installing $(MODULE)..."
-	$(DOCKER_COMPOSE) exec ircd manage-modules install $(MODULE)
-	@echo -e "$(BLUE)[INFO]$(NC) Adding to configuration..."
-	$(DOCKER_COMPOSE) exec ircd module-config add $(MODULE)
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Module $(MODULE) installed and configured!"
-
-modules-remove:
-	@echo -e "$(PURPLE)=== Removing Module ===$(NC)"
-	@if [ -z "$(MODULE)" ]; then \
-		echo "Usage: make modules-remove MODULE=<module-name>"; \
-		echo "Example: make modules-remove MODULE=webpanel"; \
-		exit 1; \
-	fi
-	@echo -e "$(BLUE)[INFO]$(NC) Removing $(MODULE) from configuration..."
-	$(DOCKER_COMPOSE) exec ircd module-config remove $(MODULE)
-	@echo -e "$(BLUE)[INFO]$(NC) Uninstalling $(MODULE)..."
-	$(DOCKER_COMPOSE) exec ircd manage-modules uninstall $(MODULE)
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Module $(MODULE) removed successfully!"
-
-modules-update:
-	@echo -e "$(PURPLE)=== Updating Contrib Repository ===$(NC)"
-	$(DOCKER_COMPOSE) exec ircd manage-modules update
 
 modules-installed:
 	@echo -e "$(PURPLE)=== Installed Modules ===$(NC)"
@@ -253,64 +128,25 @@ modules-installed:
 # WEBPANEL COMMANDS
 # ============================================================================
 
-help-webpanel:
-	@echo "WebPanel Management Commands:"
-	@echo "  webpanel           - Show webpanel access information"
-	@echo "  webpanel-logs      - Show webpanel logs"
-	@echo "  webpanel-shell     - Access webpanel container shell"
-	@echo ""
-	@echo "Usage examples:"
-	@echo "  make webpanel           # Show access information"
-	@echo "  make webpanel-logs      # View webpanel logs"
-	@echo "  make webpanel-shell     # Access container shell"
-
-# WebPanel operations
 webpanel:
 	@echo -e "$(PURPLE)=== WebPanel Access ===$(NC)"
 	@echo "WebPanel URL: http://localhost:8080"
 	@echo "IRC Server: localhost:6667 (standard) / localhost:6697 (SSL)"
-	@echo "JSON-RPC API: localhost:8600 (internal)"
-	@echo ""
-	@echo "Default RPC credentials:"33333333
-	@echo "  User: adminpanel"
-	@echo "  Password: webpanel_password_2024"
 	@echo ""
 	@echo "To access webpanel:"
 	@echo "  1. Start services: make up"
 	@echo "  2. Open browser: http://localhost:8080"
-	@echo "  3. Follow setup wizard"
-
-webpanel-logs:
-	@$(MAKE) logs-webpanel
-
-webpanel-shell:
-	@echo -e "$(PURPLE)=== WebPanel Shell ===$(NC)"
-	$(DOCKER_COMPOSE) exec webpanel bash
 
 # ============================================================================
 # DEVELOPMENT COMMANDS
 # ============================================================================
 
-help-dev:
-	@echo "Development Commands:"
-	@echo "  dev-shell          - Access IRC container shell for development"
-	@echo "  dev-logs           - Show all logs with timestamps"
-	@echo "  test               - Run basic tests and validation"
-	@echo "  lint               - Run linting checks on scripts"
-	@echo ""
-	@echo "Usage examples:"
-	@echo "  make dev-shell     # Access container shell"
-	@echo "  make dev-logs      # View development logs"
-	@echo "  make test          # Run validation tests"
-	@echo "  make lint          # Check code quality"
-
-# Development operations
 dev-shell:
 	@echo -e "$(PURPLE)=== Development Shell ===$(NC)"
 	$(DOCKER_COMPOSE) exec ircd bash
 
 dev-logs:
-	@echo -e "$(PURPLE)=== Development Logs ===$(NC)"
+	@echo -e "$(PURPLE)=== All Logs with Timestamps ===$(NC)"
 	$(DOCKER_COMPOSE) logs -f --timestamps
 
 # Testing and validation
@@ -345,84 +181,16 @@ lint:
 	fi
 
 # ============================================================================
-# DOCKER COMMANDS
+# MAINTENANCE
 # ============================================================================
 
-help-docker:
-	@echo "Docker Management Commands:"
-	@echo "  docker-build      - Build Docker images with options"
-	@echo "  docker-clean      - Clean up Docker resources"
-	@echo "  docker-clean-all  - Remove everything including volumes"
-	@echo "  docker-info       - Show Docker system information"
-	@echo ""
-	@echo "Options:"
-	@echo "  NO_CACHE=1        - Build without cache"
-	@echo "  TARGET=base       - Build specific stage"
-	@echo "  VOLUMES=1         - Remove volumes on cleanup"
-	@echo ""
-	@echo "Usage examples:"
-	@echo "  make docker-build NO_CACHE=1    # Build without cache"
-	@echo "  make docker-clean               # Clean containers and images"
-	@echo "  make docker-clean-all VOLUMES=1 # Full cleanup with volumes"
-
-help-ssl:
-	@echo "SSL/TLS Certificate Management Commands:"
-	@echo ""
-	@echo "Simplified SSL Management:"
-	@echo "  ssl-setup           - Setup certificates (only if none exist)"
-	@echo "  ssl-renew           - Renew certificates (only if needed)"
-	@echo "  ssl-status          - Check certificate status"
-	@echo "  ssl-self-signed     - Generate self-signed certificate (fallback)"
-	@echo ""
-	@echo "Quick Start:"
-	@echo "  1. Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini"
-	@echo "  2. Add your Cloudflare API token to cloudflare-credentials.ini"
-	@echo "  3. make ssl-setup   # Initial certificate setup (safe to run multiple times)"
-	@echo "  4. make ssl-status  # Check certificate status"
-	@echo ""
-	@echo "Fallback Options:"
-	@echo "  make ssl-self-signed # Generate self-signed cert if Let's Encrypt fails"
-
-# Docker operations
-docker-build:
-	@echo -e "$(PURPLE)=== Building Docker Images ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Building with options: $(if $(NO_CACHE),NO_CACHE=1) $(if $(TARGET),TARGET=$(TARGET))"
-	$(DOCKER) build $(if $(NO_CACHE),--no-cache) $(if $(TARGET),--target $(TARGET)) -t irc-atl-chat:$(or $(TARGET),latest) .
-
-docker-clean:
+clean:
 	@echo -e "$(PURPLE)=== Cleaning Up ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Removing containers and networks..."
 	$(DOCKER_COMPOSE) down
 	@echo -e "$(BLUE)[INFO]$(NC) Removing unused images..."
 	$(DOCKER) image prune -f
 	@echo -e "$(GREEN)[SUCCESS]$(NC) Cleanup completed!"
-
-docker-clean-all:
-	@echo -e "$(PURPLE)=== Full Cleanup ===$(NC)"
-	@echo -e "$(YELLOW)[WARNING]$(NC) This will remove ALL data including volumes!"
-	@read -p "Are you sure? Type 'yes' to continue: " confirm; \
-	if [ "$$confirm" = "yes" ]; then \
-		echo -e "$(BLUE)[INFO]$(NC) Removing everything..."; \
-		$(DOCKER_COMPOSE) down -v; \
-		$(DOCKER) system prune -af; \
-		echo -e "$(GREEN)[SUCCESS]$(NC) Full cleanup completed!"; \
-	else \
-		echo -e "$(BLUE)[INFO]$(NC) Cleanup cancelled."; \
-	fi
-
-docker-info:
-	@echo -e "$(PURPLE)=== Docker System Information ===$(NC)"
-	@echo "Docker version:"
-	$(DOCKER) --version
-	@echo ""
-	@echo "Docker Compose version:"
-	$(DOCKER_COMPOSE) --version
-	@echo ""
-	@echo "Available disk space:"
-	df -h . | tail -1
-	@echo ""
-	@echo "Memory usage:"
-	free -h
 
 # ============================================================================
 # QUICK ACTIONS
@@ -436,22 +204,9 @@ quick-start: ## Quick start with build and run
 
 quick-stop: ## Quick stop and cleanup
 	@$(MAKE) down
-	@$(MAKE) docker-clean
+	@$(MAKE) clean
 	@echo -e "$(GREEN)[SUCCESS]$(NC) Quick stop completed!"
 
-# ============================================================================
-# INFORMATION COMMANDS
-# ============================================================================
-
-version: ## Show version information
-	@echo -e "$(PURPLE)=== Version Information ===$(NC)"
-	@echo "IRC Infrastructure: 1.0.0"
-	@echo "UnrealIRCd: 6.1.10"
-	@echo "Atheme: 7.2.12"
-	@echo "WebPanel: Latest from GitHub"
-	@echo "Base Image: Debian Bookworm Slim"
-	@echo "PHP: 8.2 with FPM"
-	@echo "Web Server: Nginx"
 
 info: ## Show system information
 	@echo -e "$(PURPLE)=== System Information ===$(NC)"
@@ -466,73 +221,47 @@ info: ## Show system information
 	@echo ""
 	@echo "Memory usage:"
 	free -h
+
+# ============================================================================
+# SSL MANAGEMENT (Simple & Automatic)
+# ============================================================================
+
+ssl-setup: ## One-command SSL setup - sets up everything automatically
+	@echo -e "$(PURPLE)=== SSL Setup - One Command to Rule Them All ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) This will:"
+	@echo -e "$(BLUE)[INFO]$(NC)   1. Issue SSL certificates for $(IRC_ROOT_DOMAIN)"
+	@echo -e "$(BLUE)[INFO]$(NC)   2. Start automatic Docker monitoring"
+	@echo -e "$(BLUE)[INFO]$(NC)   3. Configure daily renewal at 2 AM"
 	@echo ""
-	@echo "Current directory:"
-	pwd
-
-# ============================================================================
-# INTERNAL TARGETS
-# ============================================================================
-
-check-services: ## Check if services are running
-	@$(DOCKER_COMPOSE) ps --format "{{.Status}}" | grep -q "Up" || (echo "Services are not running. Use 'make up' to start them." && exit 1)
-
-check-module: ## Check if MODULE variable is set
-	@if [ -z "$(MODULE)" ]; then \
-		echo "Error: MODULE variable not set"; \
-		echo "Usage: make <target> MODULE=<module-name>"; \
-		exit 1; \
-	fi
-
-# ============================================================================
-# SSL/TLS MANAGEMENT (Simplified)
-# ============================================================================
-
-ssl-setup: ## Setup SSL certificates (one-time setup)
-	@echo -e "$(PURPLE)=== SSL Certificate Setup ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Make sure cloudflare-credentials.ini is configured first!"
-	@echo -e "$(BLUE)[INFO]$(NC) Copy cloudflare-credentials.ini.template to cloudflare-credentials.ini"
-	@echo -e "$(BLUE)[INFO]$(NC) and add your Cloudflare API token."
-	@echo
 	@./scripts/ssl-manager.sh issue
-
-ssl-renew: ## Renew SSL certificates
-	@echo -e "$(PURPLE)=== Renewing SSL Certificates ===$(NC)"
-	@./scripts/ssl-manager.sh renew
+	@docker compose up -d ssl-monitor
+	@echo ""
+	@echo -e "$(GREEN)[SUCCESS]$(NC) SSL is now fully automated!"
+	@echo -e "$(BLUE)[INFO]$(NC) Certificates will renew automatically every day at 2 AM"
+	@echo -e "$(BLUE)[INFO]$(NC) Check status anytime with: make ssl-status"
 
 ssl-status: ## Check SSL certificate status
 	@echo -e "$(PURPLE)=== SSL Certificate Status ===$(NC)"
-	@./scripts/ssl-manager.sh status
-
-ssl-self-signed: ## Generate self-signed certificate (fallback)
-	@echo -e "$(PURPLE)=== Generating Self-Signed Certificate ===$(NC)"
-	@./scripts/ssl-manager.sh self-signed
-
-# ============================================================================
-# ENVIRONMENT SETUP
-# ============================================================================
-
-setup-env: ## Setup environment files
-	@echo -e "$(PURPLE)=== Setting up Environment ===$(NC)"
-	@./scripts/setup-environment.sh
-
-generate-oper-password: ## Generate new IRC operator password hash
-	@echo -e "$(PURPLE)=== Generating IRC Operator Password ===$(NC)"
-	@./scripts/generate-oper-password.sh
-
-setup-private-env: ## Setup private environment file with sensitive data
-	@echo -e "$(PURPLE)=== Setting up Private Environment ===$(NC)"
-	@if [ ! -f ".env" ]; then \
-		cp env.example .env; \
-		echo -e "$(GREEN)[SUCCESS]$(NC) Created .env from template"; \
-		echo -e "$(YELLOW)[WARNING]$(NC) Please edit .env with your sensitive data"; \
-		echo -e "$(BLUE)[INFO]$(NC) Use 'make generate-oper-password' to create secure operator passwords"; \
+	@if [[ -f "unrealircd/conf/tls/server.cert.pem" ]]; then \
+		./scripts/ssl-manager.sh check; \
+		echo ""; \
+		docker compose ps ssl-monitor | grep -q "Up" && echo -e "$(GREEN)[OK]$(NC) SSL monitoring is running" || echo -e "$(YELLOW)[WARNING]$(NC) SSL monitoring is not running"; \
 	else \
-		echo -e "$(YELLOW)[WARNING]$(NC) .env already exists"; \
+		echo -e "$(YELLOW)[INFO]$(NC) No SSL certificates found. Run 'make ssl-setup' to get started."; \
 	fi
 
-setup: ## Complete setup (runtime + start services)
-	@echo -e "$(PURPLE)=== Complete Setup ===$(NC)"
-	@mkdir -p .runtime/certs .runtime/logs
-	@echo -e "$(GREEN)[SUCCESS]$(NC) IRC server setup complete!"
-	@echo -e "$(BLUE)[INFO]$(NC) Run 'make setup-ssl' to configure SSL certificates"
+ssl-renew: ## Force certificate renewal
+	@echo -e "$(PURPLE)=== Forcing SSL Certificate Renewal ===$(NC)"
+	@./scripts/ssl-manager.sh renew
+
+ssl-logs: ## View SSL monitoring logs
+	@echo -e "$(PURPLE)=== SSL Monitoring Logs ===$(NC)"
+	@docker compose logs -f ssl-monitor --tail=50
+
+# ============================================================================
+# UTILITIES
+# ============================================================================
+
+generate-password: ## Generate new IRC operator password hash
+	@echo -e "$(PURPLE)=== Generating IRC Operator Password ===$(NC)"
+	@./scripts/generate-oper-password.sh
