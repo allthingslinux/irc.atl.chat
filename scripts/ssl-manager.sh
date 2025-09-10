@@ -251,7 +251,7 @@ issue_certificates() {
         -v "$LETSENCRYPT_DIR:/etc/letsencrypt"
         -v "$CREDENTIALS_FILE:/etc/letsencrypt/cloudflare-credentials.ini:ro"
         certbot/dns-cloudflare:latest
-        certbot certonly
+        certonly
         --dns-cloudflare
         --dns-cloudflare-credentials=/etc/letsencrypt/cloudflare-credentials.ini
         --email "$EMAIL"
@@ -318,7 +318,7 @@ renew_certificates() {
             -v "$LETSENCRYPT_DIR:/etc/letsencrypt"
             -v "$CREDENTIALS_FILE:/etc/letsencrypt/cloudflare-credentials.ini:ro"
             certbot/dns-cloudflare:latest
-            certbot renew
+            renew
             --dns-cloudflare
             --dns-cloudflare-credentials=/etc/letsencrypt/cloudflare-credentials.ini
             --no-random-sleep-on-renew
