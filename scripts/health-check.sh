@@ -77,7 +77,7 @@ check_irc_response() {
     if timeout $HEALTH_TIMEOUT bash -c "echo >/dev/tcp/$host/$port" 2>/dev/null; then
         log "$service is accepting connections"
         return 0
-    elif echo -e "PING :healthcheck\r\nQUIT\r\n" | timeout $HEALTH_TIMEOUT nc -w 5 $host $port >/dev/null 2>&1; then
+    elif echo -e "PING :healthcheck\r\nQUIT\r\n" | timeout $HEALTH_TIMEOUT nc -w 5 "$host" "$port" >/dev/null 2>&1; then
         log "$service responded to PING command"
         return 0
     else
@@ -104,7 +104,8 @@ check_rpc_api() {
 # Check disk space
 check_disk_space() {
     local threshold=90
-    local usage=$(df /usr/local/unrealircd/data | awk 'NR==2 {print $5}' | sed 's/%//')
+    local usage
+    usage=$(df /usr/local/unrealircd/data | awk 'NR==2 {print $5}' | sed 's/%//')
 
     if [ "$usage" -lt "$threshold" ]; then
         log "Disk space usage is ${usage}% (below ${threshold}% threshold)"
@@ -121,7 +122,8 @@ check_memory_usage() {
 
     # Try to get memory usage, fallback to skip if not available
     if command -v free >/dev/null 2>&1; then
-        local usage=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
+        local usage
+        usage=$(free | awk 'NR==2{printf "%.0f", $3*100/$2}')
         if [ -n "$usage" ] && [ "$usage" -lt "$threshold" ]; then
             log "Memory usage is ${usage}% (below ${threshold}% threshold)"
             return 0
@@ -143,6 +145,9 @@ main() {
 
     # Check UnrealIRCd process (simplified for container)
     check_unrealircd_process || exit_code=1
+
+    # Check Atheme process (optional)
+    check_atheme_process
 
     # Check ports
     check_port "$IRC_HOST" "$IRC_PORT" "IRC Server" || exit_code=1

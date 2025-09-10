@@ -8,9 +8,6 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -51,9 +48,7 @@ generate_password() {
 
     # Generate the hash using the container's unrealircd mkpasswd command
     local hash
-    hash=$(docker compose exec -T "$container_name" /usr/local/unrealircd/bin/unrealircd mkpasswd)
-
-    if [ $? -eq 0 ] && [ -n "$hash" ]; then
+    if hash=$(docker compose exec -T "$container_name" /usr/local/unrealircd/bin/unrealircd mkpasswd) && [ -n "$hash" ]; then
         log_success "Password hash generated successfully!"
         echo
         echo "================================================================="

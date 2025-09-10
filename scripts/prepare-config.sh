@@ -36,65 +36,66 @@ log_error() {
 prepare_config() {
     local unreal_config="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf"
     local atheme_config="$PROJECT_ROOT/services/atheme/atheme.conf"
-    
+
     log_info "Preparing IRC configuration files with environment variables..."
-    
+
     # Check if envsubst is available
     if ! command -v envsubst >/dev/null 2>&1; then
         log_error "envsubst command not found. Please install gettext package."
         exit 1
     fi
-    
+
     # Load environment variables from .env if it exists
     if [ -f "$PROJECT_ROOT/.env" ]; then
         log_info "Loading environment variables from .env"
         # Use set -a to automatically export all variables
         set -a
+        # shellcheck disable=SC1091
         source "$PROJECT_ROOT/.env"
         set +a
         log_info "Environment variables loaded"
     fi
-    
+
     # Prepare UnrealIRCd configuration
     local unreal_template="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf.template"
     if [ -f "$unreal_template" ]; then
         log_info "Preparing UnrealIRCd configuration from template..."
         local temp_file="/tmp/unrealircd.conf.tmp"
-        envsubst < "$unreal_template" > "$temp_file"
+        envsubst <"$unreal_template" >"$temp_file"
         mv "$temp_file" "$unreal_config"
         log_success "UnrealIRCd configuration prepared from template"
     elif [ -f "$unreal_config" ]; then
         log_info "Preparing UnrealIRCd configuration..."
         local temp_file="/tmp/unrealircd.conf.tmp"
-        envsubst < "$unreal_config" > "$temp_file"
+        envsubst <"$unreal_config" >"$temp_file"
         mv "$temp_file" "$unreal_config"
         log_success "UnrealIRCd configuration prepared"
     else
         log_warning "UnrealIRCd configuration file not found: $unreal_config"
         log_warning "Template file not found: $unreal_template"
     fi
-    
+
     # Prepare Atheme configuration
     local atheme_template="$PROJECT_ROOT/services/atheme/atheme.conf.template"
     if [ -f "$atheme_template" ]; then
         log_info "Preparing Atheme configuration from template..."
         local temp_file="/tmp/atheme.conf.tmp"
-        envsubst < "$atheme_template" > "$temp_file"
+        envsubst <"$atheme_template" >"$temp_file"
         mv "$temp_file" "$atheme_config"
         log_success "Atheme configuration prepared from template"
     elif [ -f "$atheme_config" ]; then
         log_info "Preparing Atheme configuration..."
         local temp_file="/tmp/atheme.conf.tmp"
-        envsubst < "$atheme_config" > "$temp_file"
+        envsubst <"$atheme_config" >"$temp_file"
         mv "$temp_file" "$atheme_config"
         log_success "Atheme configuration prepared"
     else
         log_warning "Atheme configuration file not found: $atheme_config"
         log_warning "Template file not found: $atheme_template"
     fi
-    
+
     log_success "All configuration files prepared successfully"
-    
+
     # Show substituted values for verification
     log_info "Substituted values:"
     echo "  IRC_DOMAIN: ${IRC_DOMAIN:-'not set'}"
@@ -115,12 +116,12 @@ prepare_config() {
 # Main function
 main() {
     log_info "IRC Configuration Preparation"
-    
+
     # Check if we're in a container environment
     if [ -f /.dockerenv ]; then
         log_info "Running in container environment"
     fi
-    
+
     prepare_config
 }
 
