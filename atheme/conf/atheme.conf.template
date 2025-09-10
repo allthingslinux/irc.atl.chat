@@ -217,13 +217,13 @@ loadmodule "modules/nickserv/waitreg";        /* Delay services account registra
 #loadmodule "modules/chanserv/moderate";       /* Moderated channel registrations */
 #loadmodule "modules/chanserv/owner";          /* OWNER/DEOWNER commands */
 #loadmodule "modules/chanserv/protect";        /* PROTECT/DEPROTECT commands */
-#loadmodule "modules/chanserv/quiet";          /* QUIET command (+q support) */
+loadmodule "modules/chanserv/quiet";           /* QUIET command (+q support) */
 #loadmodule "modules/chanserv/set_gameserv";   /* SET GAMESERV command */
 #loadmodule "modules/chanserv/set_limitflags"; /* SET LIMITFLAGS command */
-#loadmodule "modules/chanserv/set_private";    /* Channel info hiding (SET PRIVATE command) */
+loadmodule "modules/chanserv/set_private";     /* Channel info hiding (SET PRIVATE command) */
 #loadmodule "modules/chanserv/set_pubacl";     /* SET PUBACL command */
 #loadmodule "modules/chanserv/successor_acl";  /* Named Successor ACL flag */
-#loadmodule "modules/chanserv/xop";            /* VOP/HOP/AOP/SOP commands */
+loadmodule "modules/chanserv/xop";             /* VOP/HOP/AOP/SOP commands */
 #loadmodule "modules/chanfix/main";            /* Core components */
 loadmodule "modules/operserv/clearchan";       /* CLEARCHAN command */
 loadmodule "modules/operserv/clones";          /* CLONES system */
@@ -390,11 +390,11 @@ chanserv {
 		aop = "+AOehiortv";
 		sop = "+AOaefhiorstv";
 		founder = "+AFORaefhioqrstv";
-		#member = "+Ai";
-		#op = "+AOiortv";
+		member = "+Ai";
+		op = "+AOiortv";
 	};
-	#deftemplates = "MEMBER=+Ai OP=+AOeiortv";
-	#changets;
+        deftemplates = "MEMBER=+Ai OP=+AOiortv";
+        changets;
 	trigger = "!";
 	expire = 30;
 	maxchanacs = 0;
@@ -404,7 +404,7 @@ chanserv {
 	#akick_time = 10;
 	antiflood_enforce_method = quiet;
 	show_custom_metadata;
-	#shorthelp = "";
+        shorthelp = "REGISTER DROP OP DEOP VOICE DEVOICE AKICK FLAGS INFO TOPIC INVITE";
 };
 
 chanfix {
