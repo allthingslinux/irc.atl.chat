@@ -7,31 +7,29 @@ services:
     build:
       context: .
       dockerfile: Containerfile
-      target: runtime
       args:
         UNREALIRCD_VERSION: "6.1.10"
-        ATHEME_VERSION: "7.2.12"
+        UID: 1000
+        GID: 1000
     container_name: unrealircd
     hostname: unrealircd
     restart: unless-stopped
     init: true
-    command: ["/usr/local/bin/unrealircd", "-F"]
 
-    # Volume mounts
+    # Volume mounts - aligned with Containerfile paths
     volumes:
-      - ./unrealircd/conf:/usr/local/unrealircd/conf:ro
+      - ./unrealircd/conf:/home/unrealircd/unrealircd/conf
+      - ./logs/unrealircd:/home/unrealircd/unrealircd/logs
+      - ./data/unrealircd:/home/unrealircd/unrealircd/data
       - ./scripts:/opt/irc/scripts:ro
-      - ./data/unrealircd:/usr/local/unrealircd/data
-      - ./logs/unrealircd:/usr/local/unrealircd/logs
-      
-    user: 1000:1000
 
-    # Environment configuration
-    env_file:
-      - path: .env
-        required: false
+    # Environment
     environment:
       - TZ=UTC
+      - PUID=1000
+      - PGID=1000
+      - IRC_SSL_CERT_PATH=/home/unrealircd/unrealircd/conf/tls/server.cert.pem
+      - IRC_SSL_KEY_PATH=/home/unrealircd/unrealircd/conf/tls/server.key.pem
 
     # Port mappings
     ports:
@@ -40,11 +38,11 @@ services:
       - '${IRC_SERVER_PORT:-6900}:6900'  # Server-to-server TLS
       - '${IRC_RPC_PORT:-8600}:8600'  # JSON-RPC API
 
-    # Health monitoring
+    # Health monitoring - use built-in healthcheck
     healthcheck:
-      test: ['CMD', '/opt/irc/scripts/health-check.sh']
+      test: ['CMD', 'nc', '-z', 'localhost', '6667']
       interval: 30s
-      timeout: 20s
+      timeout: 10s
       retries: 3
       start_period: 30s
 
@@ -58,25 +56,26 @@ services:
 
   atheme:
     build:
-      context: .
+      context: ./atheme
       dockerfile: Containerfile
-      target: runtime
       args:
-        UNREALIRCD_VERSION: "6.1.10"
-        ATHEME_VERSION: "7.2.12"
+        UID: 1000
+        GID: 1000
     container_name: atheme
     hostname: atheme
     depends_on:
       unrealircd:
         condition: service_healthy
     volumes:
+      - ./atheme/conf:/usr/local/atheme/etc:ro
       - ./data/atheme:/usr/local/atheme/data
       - ./logs/atheme:/usr/local/atheme/logs
-      - ./services/atheme:/usr/local/atheme/etc:ro
     environment:
       - TZ=UTC
       - ATHEME_CONF=/usr/local/atheme/etc/atheme.conf
       - ATHEME_DATA=/usr/local/atheme/data
+      - PUID=1000  # Host user ID for bind mount compatibility
+      - PGID=1000  # Host group ID for bind mount compatibility
     networks:
       - irc_network
     command: ["/usr/local/bin/atheme-services", "-c", "/usr/local/atheme/etc/atheme.conf"]
@@ -204,4 +203,6 @@ networks:
   irc_network:
     driver: bridge
 
-  
+# Named volumes removed - using bind mounts with PUID/PGID for better permission handling
+
+

@@ -10,13 +10,21 @@
  * be processed correctly!
  */
 
+
 /* Configuration is self-contained with environment variable substitution */
+
+
+
+
 
 /* UnrealIRCd makes heavy use of modules. Modules allow you to completely
  * customize the featureset you wish to enable in UnrealIRCd.
  * See: https://www.unrealircd.org/docs/Modules
  */
 include "modules.default.conf";
+
+/* Blacklist control socket module to avoid permission issues */
+blacklist-module "control";
 
 /* Now let's include some other files as well */
 include "help/help.conf";
