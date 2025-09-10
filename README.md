@@ -41,12 +41,16 @@ make up
 
 ### **Available Commands**
 ```bash
-make up             # Start all services (auto-creates directories)
+make up             # Start all services (auto-setup included!)
 make down           # Stop all services
 make logs           # View all logs
 make status         # Check service status
-make build          # Build containers (if needed)
+
+# Advanced commands
+make build          # Build containers manually
+make restart        # Restart services
 make reset          # Complete reset (CAUTION!)
+make help           # Show all available commands
 ```
 
 ### What's Included
@@ -127,23 +131,17 @@ ATHEME_RECEIVE_PASSWORD=your-services-password
 
 ### **Core Commands**
 ```bash
-# Get help
+# Get help with all commands
 make help
 
-# Build and start services
-make build && make up
-
 # Service management
-make up          # Start all services
+make up          # Start all services (auto-setup included!)
 make down        # Stop all services
 make restart     # Restart all services
 make status      # Check service status
 
 # View logs
 make logs           # All service logs
-make logs-ircd      # IRC server logs
-make logs-atheme    # Services logs
-make logs-webpanel  # WebPanel logs
 
 # SSL management
 make ssl-setup     # Complete SSL setup with monitoring
@@ -154,17 +152,15 @@ make ssl-stop      # Stop SSL monitoring container
 make ssl-clean     # Remove certificates and monitoring (CAUTION!)
 
 # Maintenance
+make reset         # Complete reset (CAUTION!)
 make clean         # Clean containers and images
 make info          # System information
 ```
 
-### **Configuration Management**
+### **Password Management**
 ```bash
-# Generate secure operator password
+# Generate secure IRC operator password
 make generate-password
-
-# Prepare configuration from templates
-./scripts/prepare-config.sh
 ```
 
 ## SSL/TLS Setup
@@ -252,18 +248,23 @@ irc.atl.chat/
 ├── compose.yaml              # Docker Compose configuration
 ├── Containerfile             # Docker build instructions
 ├── .env                      # Environment variables (gitignored)
-├── cloudflare-credentials.ini # Cloudflare API credentials
+├── cloudflare-credentials.ini # Cloudflare API credentials (gitignored)
 ├── scripts/                  # Management scripts
-│   ├── ssl-manager.sh        # SSL management (--help, --debug, --verbose)
-│   ├── prepare-config.sh     # Configuration preparation
-│   └── health-check.sh       # Health monitoring
+│   ├── init.sh              # Auto-setup (directories + configs)
+│   ├── ssl-manager.sh       # SSL management (--help, --debug, --verbose)
+│   ├── start-services.sh    # Container startup script
+│   └── health-check.sh      # Health monitoring
 ├── unrealircd/               # IRC server configuration
-│   └── conf/                 # Configuration files
+│   └── conf/
+│       ├── unrealircd.conf.template    # Config template
+│       └── unrealircd.conf             # Generated config (gitignored)
 ├── services/atheme/          # Services configuration
+│   ├── atheme.conf.template  # Config template
+│   └── atheme.conf           # Generated config (gitignored)
 ├── web/webpanel/             # WebPanel container
-├── logs/                     # Service logs
-├── data/                     # Persistent data
-└── Makefile                  # Management commands
+├── logs/                     # Service logs (auto-created)
+├── data/                     # Persistent data (auto-created)
+└── Makefile                  # Management commands (simplified!)
 ```
 
 ## Using Your IRC Server
@@ -320,11 +321,13 @@ docker compose ps ssl-monitor
 
 ### **Configuration Issues**
 ```bash
-# Regenerate configuration from templates
-./scripts/prepare-config.sh
-
-# Restart services
+# Configuration is auto-generated on startup
+# If you need to regenerate configs, restart services
 make restart
+
+# Or check the generated config files
+ls -la unrealircd/conf/unrealircd.conf
+ls -la services/atheme/atheme.conf
 ```
 
 ## Additional Resources
@@ -346,13 +349,16 @@ Your **production-ready IRC infrastructure** is now fully configured with:
 - **Production security** - Argon2id password hashing, secure secrets management
 - **Containerized deployment** - Easy scaling and updates
 - **Troubleshooting tools** - Debug/verbose modes, comprehensive logging
+- **Auto-configuration** - Everything sets up automatically on first run
 
 **Start your IRC network:**
 ```bash
-make build && make up
+make up
 ```
 
 **Access your services:**
 - **IRC Server**: `irc.atl.chat:6667` (standard) or `:6697` (SSL)
 - **WebPanel**: `http://your-server:8080`
 - **Services**: Available once connected to IRC
+
+**That's it!** 🎉 Everything is automated - no manual directory creation, no config preparation, just `make up` and you're ready to IRC!
