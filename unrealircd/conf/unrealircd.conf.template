@@ -22,6 +22,7 @@
  * See: https://www.unrealircd.org/docs/Modules
  */
 include "modules.default.conf";
+include "modules.optional.conf";
 
 /* Blacklist control socket module to avoid permission issues */
 blacklist-module "control";
@@ -305,6 +306,17 @@ blacklist efnetrbl {
 	reason "Proxy/Drone/TOR detected. Check https://rbl.efnetrbl.org/?i=$ip for details.";
 }
 
+blacklist tornevall {
+	dns {
+		name dnsbl.tornevall.org;
+		type record;
+		reply { 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15; 16; }
+	}
+	action gline;
+	ban-time 24h;
+	reason "Open proxy/relay detected. Check https://dnsbl.tornevall.org/ for details.";
+}
+
 /* Network configuration */
 set {
 	network-name 		"${IRC_NETWORK_NAME}";
@@ -372,5 +384,46 @@ set {
 	 */
 	anti-spam-quit-message-time 10s;
 
-        /* Using default anti-flood settings and secure TLS requirements */
+        /* Restrict commands for new users (security hardening) */
+        restrict-commands {
+                list {
+                        except { identified yes; reputation-score 24; }
+                        connect-delay 60s;
+                }
+                invite {
+                        except { identified yes; reputation-score 24; }
+                        connect-delay 120s;
+                }
+        }
 }
+
+/*
+ * CHANNEL ANTI-FLOOD RECOMMENDATIONS
+ * ==================================
+ * 
+ * Operators can use channel mode +f for automatic flood protection:
+ * 
+ * Recommended for large channels (50+ users):
+ * /MODE #channel +f [50j#i10,75m#m10,7c#C15,10n#N15,30k#K10]:15
+ * 
+ * Recommended for medium channels (10-50 users):  
+ * /MODE #channel +f [30j#i10,40m#m10,7c#C15,10n#N15,30k#K10]:15
+ * 
+ * Recommended for small channels (<10 users):
+ * /MODE #channel +f [15j#i5,20m#m5,5c#C10,7n#N10,15k#K5]:15
+ * 
+ * Format explanation:
+ * - 30j#i10 = 30 joins per 15 seconds, set +i for 10 minutes if exceeded
+ * - 40m#m10 = 40 messages per 15 seconds, set +m for 10 minutes if exceeded  
+ * - 7c#C15 = 7 CTCPs per 15 seconds, set +C for 15 minutes if exceeded
+ * - 10n#N15 = 10 nick changes per 15 seconds, set +N for 15 minutes if exceeded
+ * - 30k#K10 = 30 knocks per 15 seconds, set +K for 10 minutes if exceeded
+ * 
+ * Emergency flood protection modes for operators:
+ * - +M = Only registered users can talk
+ * - +N = No nick changes allowed
+ * - +C = No CTCPs allowed  
+ * - +K = No /KNOCK allowed
+ * - +i = Invite only
+ * - +m = Moderated (only voiced+ can talk)
+ */
