@@ -93,6 +93,7 @@ renovate.json
 
 # 📚 Scripts (keep only essential ones for Docker build)
 scripts/
+!scripts/docker-entrypoint.sh
 !scripts/start-services.sh
 !scripts/manage-modules.sh
 !scripts/module-config.sh
@@ -100,6 +101,11 @@ scripts/
 !scripts/prepare-config.sh
 !scripts/ssl-manager.sh
 
-# ⚙️ UnrealIRCd config (keep only settings)
+# ⚙️ UnrealIRCd config (keep only essential files)
 unrealircd/
+!unrealircd/conf/
 !unrealircd/config.settings
+
+# ⚙️ Atheme config
+services/
+!services/atheme/
