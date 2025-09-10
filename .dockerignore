@@ -20,6 +20,8 @@ scripts/
 !scripts/manage-modules.sh
 !scripts/module-config.sh
 !scripts/start-webpanel.sh
+!scripts/prepare-config.sh
+!scripts/ssl-manager.sh
 renovate.json
 .github/
 .vscode/
