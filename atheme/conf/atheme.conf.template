@@ -1,4 +1,4 @@
-loadmodule "modules/modules/protocol/unreal4";
+loadmodule "modules/protocol/unreal4";
 
 loadmodule "modules/backend/opensex";
 
@@ -114,7 +114,21 @@ loadmodule "modules/operserv/restart";          /* RESTART command */
 loadmodule "modules/operserv/rmatch";           /* Display regex matching (RMATCH command) */
 loadmodule "modules/operserv/rnc";              /* Most common realnames (RNC command) */
 loadmodule "modules/operserv/rwatch";           /* RWATCH system */
-loadmodule "modules/operserv/set";              /* ALL of the below SET commands (deprecated) */
+/* Specific SET commands instead of deprecated operserv/set module */
+loadmodule "modules/operserv/set_akicktime";    /* SET AKICKTIME command */
+loadmodule "modules/operserv/set_chanexpire";   /* SET CHANEXPIRE command */
+loadmodule "modules/operserv/set_commitinterval"; /* SET COMMITINTERVAL command */
+loadmodule "modules/operserv/set_klinetime";    /* SET KLINETIME command */
+loadmodule "modules/operserv/set_maxchanacs";   /* SET MAXCHANACS command */
+loadmodule "modules/operserv/set_maxchans";     /* SET MAXCHANS command */
+loadmodule "modules/operserv/set_maxfounders";  /* SET MAXFOUNDERS command */
+loadmodule "modules/operserv/set_maxlogins";    /* SET MAXLOGINS command */
+loadmodule "modules/operserv/set_maxnicks";     /* SET MAXNICKS command */
+loadmodule "modules/operserv/set_maxusers";     /* SET MAXUSERS command */
+loadmodule "modules/operserv/set_mdlimit";      /* SET MDLIMIT command */
+loadmodule "modules/operserv/set_nickexpire";   /* SET NICKEXPIRE command */
+loadmodule "modules/operserv/set_recontime";    /* SET RECONTIME command */
+loadmodule "modules/operserv/set_spam";         /* SET SPAM command */
 loadmodule "modules/operserv/sgline";           /* SGLINE system */
 loadmodule "modules/operserv/shutdown";         /* SHUTDOWN command */
 loadmodule "modules/operserv/specs";            /* Oper privilege display (SPECS command) */
@@ -181,12 +195,12 @@ loadmodule "modules/groupserv/set_url";			/* SET URL command */
 #loadmodule "modules/crypto/crypt3-des";        /* --enable-legacy-pwcrypto */
 #loadmodule "modules/crypto/base64";            /* --enable-legacy-pwcrypto */
 #loadmodule "modules/auth/ldap";               /* LDAP authentication */
-#loadmodule "modules/nickserv/access";         /* Nickname access lists */
-#loadmodule "modules/nickserv/cert";           /* CertFP fingerprint management */
-#loadmodule "modules/nickserv/enforce";        /* Nickname enforcement */
-#loadmodule "modules/nickserv/info_lastquit";  /* Last quit message in INFO */
-#loadmodule "modules/nickserv/listlogins";     /* LISTLOGINS command */
-#loadmodule "modules/nickserv/listownmail";    /* LISTOWNMAIL command */
+loadmodule "modules/nickserv/access";         /* Nickname access lists */
+loadmodule "modules/nickserv/cert";           /* CertFP fingerprint management */
+loadmodule "modules/nickserv/enforce";        /* Nickname enforcement */
+loadmodule "modules/nickserv/info_lastquit";  /* Last quit message in INFO */
+loadmodule "modules/nickserv/listlogins";     /* LISTLOGINS command */
+loadmodule "modules/nickserv/listownmail";    /* LISTOWNMAIL command */
 #loadmodule "modules/nickserv/login";          /* LOGIN command (for no_nick_ownership) */
 #loadmodule "modules/nickserv/loginnolimit";   /* LOGINNOLIMIT command */
 #loadmodule "modules/nickserv/pwquality";      /* Password quality validation */
@@ -194,9 +208,9 @@ loadmodule "modules/groupserv/set_url";			/* SET URL command */
 #loadmodule "modules/nickserv/set_badpasswdmsg"; /* SET BADPASSWDMSG command */
 #loadmodule "modules/nickserv/set_enforcetime"; /* SET ENFORCETIME command */
 #loadmodule "modules/nickserv/set_nopassword"; /* SET NOPASSWORD command */
-#loadmodule "modules/nickserv/set_privmsg";    /* PRIVMSG instead of NOTICE (SET PRIVMSG cmd) */
-#loadmodule "modules/nickserv/set_private";    /* Account info hiding (SET PRIVATE command) */
-#loadmodule "modules/nickserv/waitreg";        /* Delay services account registrations */
+loadmodule "modules/nickserv/set_privmsg";    /* PRIVMSG instead of NOTICE (SET PRIVMSG cmd) */
+loadmodule "modules/nickserv/set_private";    /* Account info hiding (SET PRIVATE command) */
+loadmodule "modules/nickserv/waitreg";        /* Delay services account registrations */
 #loadmodule "modules/chanserv/unban_self";     /* UNBAN self only (load ban or this not both) */
 #loadmodule "modules/chanserv/fflags";         /* Forced flags changes */
 #loadmodule "modules/chanserv/halfop";         /* HALFOP/DEHALFOP commands */
@@ -211,13 +225,13 @@ loadmodule "modules/groupserv/set_url";			/* SET URL command */
 #loadmodule "modules/chanserv/successor_acl";  /* Named Successor ACL flag */
 #loadmodule "modules/chanserv/xop";            /* VOP/HOP/AOP/SOP commands */
 #loadmodule "modules/chanfix/main";            /* Core components */
-#loadmodule "modules/operserv/clearchan";       /* CLEARCHAN command */
-#loadmodule "modules/operserv/clones";          /* CLONES system */
-#loadmodule "modules/operserv/genhash";         /* GENHASH command */
-#loadmodule "modules/operserv/greplog";         /* GREPLOG command */
+loadmodule "modules/operserv/clearchan";       /* CLEARCHAN command */
+loadmodule "modules/operserv/clones";          /* CLONES system */
+loadmodule "modules/operserv/genhash";         /* GENHASH command */
+loadmodule "modules/operserv/greplog";         /* GREPLOG command */
 #loadmodule "modules/operserv/joinrate";        /* JOINRATE command & join rate monitoring */
 #loadmodule "modules/operserv/rakill";          /* Regex mass akill (RAKILL command) */
-#loadmodule "modules/operserv/soper";           /* Non-config oper privileges (SOPER command) */
+loadmodule "modules/operserv/soper";           /* Non-config oper privileges (SOPER command) */
 #loadmodule "modules/saslserv/ecdh-x25519-challenge"; /* ECDH-X25519-CHALLENGE mechanism */
 #loadmodule "modules/saslserv/ecdsa-nist256p-challenge"; /* ECDSA-NIST256P-CHALLENGE mechanism */
 #loadmodule "modules/saslserv/external"; 		/* EXTERNAL mechanism (IRCv3.1+) */
@@ -243,14 +257,14 @@ loadmodule "modules/groupserv/set_url";			/* SET URL command */
 #loadmodule "modules/botserv/set_nobot";		/* SET NOBOT command */
 #loadmodule "modules/botserv/set_private";		/* SET PRIVATE command */
 #loadmodule "modules/botserv/set_saycaller";	/* SET SAYCALLER command */
-#loadmodule "modules/hostserv/help";			/* HELP command */
-#loadmodule "modules/hostserv/onoff";			/* ON and OFF commands */
-#loadmodule "modules/hostserv/offer";			/* OFFER system */
-#loadmodule "modules/hostserv/request";			/* REQUEST system */
-#loadmodule "modules/hostserv/vhost";			/* VHOST and LISTVHOST commands */
-#loadmodule "modules/hostserv/vhostnick";		/* VHOSTNICK command */
-#loadmodule "modules/hostserv/group";			/* GROUP command */
-#loadmodule "modules/hostserv/drop";			/* DROP command */
+loadmodule "modules/hostserv/help";			/* HELP command */
+loadmodule "modules/hostserv/onoff";			/* ON and OFF commands */
+loadmodule "modules/hostserv/offer";			/* OFFER system */
+loadmodule "modules/hostserv/request";			/* REQUEST system */
+loadmodule "modules/hostserv/vhost";			/* VHOST and LISTVHOST commands */
+loadmodule "modules/hostserv/vhostnick";		/* VHOSTNICK command */
+loadmodule "modules/hostserv/group";			/* GROUP command */
+loadmodule "modules/hostserv/drop";			/* DROP command */
 #loadmodule "modules/helpserv/helpme";			/* HELPME command */
 #loadmodule "modules/helpserv/ticket";			/* Help Ticket system */
 #loadmodule "modules/helpserv/services";		/* Service List */
@@ -334,10 +348,10 @@ nickserv {
 	#no_nick_ownership;
 	maxnicks = 5;
 	expire = 30;
-	#enforce_expire = 14;
-	#enforce_delay = 30;
-	#enforce_prefix = "Guest";
-	#waitreg_time = 0;
+	enforce_expire = 14;
+	enforce_delay = 30;
+	enforce_prefix = "Guest";
+	waitreg_time = 30;
 	#cracklib_dict = "/var/cache/cracklib/cracklib_dict";
 	#passwdqc_max = 288;     /* (8 <= value <= 288) */
 	#passwdqc_min_n0 = 20;   /* (0 <= value <= passwdqc_max) */
@@ -350,7 +364,7 @@ nickserv {
 	show_custom_metadata;
 	emailexempts {
 	};
-	#shorthelp = "";
+	shorthelp = "REGISTER IDENTIFY LOGOUT GROUP DROP GHOST ACCESS CERT SET";
 	listownmail_canon;
 	bad_password_message;
 };
@@ -436,10 +450,13 @@ operserv {
 	host = "${ATHEME_OPERSERV_HOST}";
 	real = "${ATHEME_OPERSERV_REAL}";
 	aliases {
+		"AKILL" = "AKILL";
+		"GLINE" = "AKILL";
+		"KLINE" = "AKILL";
 	};
 	access {
 	};
-	#modinspect_use_colors;
+	modinspect_use_colors;
 };
 
 saslserv {
