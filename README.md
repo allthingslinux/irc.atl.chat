@@ -193,6 +193,7 @@ make ssl-logs
 - **Secure server linking** with password authentication
 - **U-line protection** preventing service disruption
 - **Secrets management** via environment variables
+- **Production-optimized Atheme build** following official documentation recommendations
 
 ## 📊 **Ports and Services**
 
