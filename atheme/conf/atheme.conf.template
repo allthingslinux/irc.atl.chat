@@ -258,6 +258,7 @@ loadmodule "modules/operserv/soper";           /* Non-config oper privileges (SO
 #loadmodule "modules/botserv/set_nobot";		/* SET NOBOT command */
 #loadmodule "modules/botserv/set_private";		/* SET PRIVATE command */
 #loadmodule "modules/botserv/set_saycaller";	/* SET SAYCALLER command */
+loadmodule "modules/hostserv/main";			/* Core components */
 loadmodule "modules/hostserv/help";			/* HELP command */
 loadmodule "modules/hostserv/onoff";			/* ON and OFF commands */
 loadmodule "modules/hostserv/offer";			/* OFFER system */
@@ -476,12 +477,12 @@ memoserv {
         user = "${ATHEME_MEMOSERV_USER}";
         host = "${ATHEME_MEMOSERV_HOST}";
         real = "${ATHEME_MEMOSERV_REAL}";
-        aliases {
+	aliases {
                 "MAIL" = "SEND";
                 "MSG" = "SEND";
                 "DEL" = "DELETE";
                 "RM" = "DELETE";
-        };
+	};
 	access {
 	};
         maxmemos = 50;
@@ -540,17 +541,20 @@ groupserv {
 
 hostserv {
 
-	nick = "${ATHEME_HOSTSERV_NICK}";
-	user = "${ATHEME_HOSTSERV_USER}";
-	host = "${ATHEME_HOSTSERV_HOST}";
-	real = "${ATHEME_HOSTSERV_REAL}";
+        nick = "${ATHEME_HOSTSERV_NICK}";
+        user = "${ATHEME_HOSTSERV_USER}";
+        host = "${ATHEME_HOSTSERV_HOST}";
+        real = "${ATHEME_HOSTSERV_REAL}";
 	aliases {
 		"APPROVE" = "ACTIVATE";
 		"DENY" = "REJECT";
+                "REQ" = "REQUEST";
+                "LIST" = "LISTVHOST";
+                "SET" = "VHOST";
 	};
 	access {
 	};
-	#reggroup = "!Services-Team";
+        reggroup = "!Services-Team";
 	#no_subsequent_requests;
 	#request_per_nick;
 };
@@ -560,12 +564,12 @@ helpserv {
         user = "${ATHEME_HELPSERV_USER}";
         host = "${ATHEME_HELPSERV_HOST}";
         real = "${ATHEME_HELPSERV_REAL}";
-        aliases {
+	aliases {
                 "HELP" = "HELPME";
                 "SUPPORT" = "HELPME";
                 "REQUEST" = "HELPME";
                 "LIST" = "SERVICES";
-        };
+	};
 	access {
 	};
 };
@@ -575,11 +579,11 @@ statserv {
         user = "${ATHEME_STATSERV_USER}";
         host = "${ATHEME_STATSERV_HOST}";
         real = "${ATHEME_STATSERV_REAL}";
-        aliases {
+	aliases {
                 "STATS" = "SERVER";
                 "CHAN" = "CHANNEL";
                 "SPLIT" = "NETSPLIT";
-        };
+	};
 	access {
 	};
 };
@@ -603,16 +607,16 @@ proxyscan {
         user = "${ATHEME_PROXYSCAN_USER}";
         host = "${ATHEME_PROXYSCAN_HOST}";
         real = "${ATHEME_PROXYSCAN_REAL}";
-        aliases {
+	aliases {
                 "SCAN" = "SCAN";
                 "CHECK" = "SCAN";
-        };
+	};
 	access {
 	};
-        blacklists {
-                "dnsbl.dronebl.org";
-                "rbl.efnetrbl.org";
-                "tor.efnet.org";
+	blacklists {
+		"dnsbl.dronebl.org";
+		"rbl.efnetrbl.org";
+		"tor.efnet.org";
                 "dnsbl.tornevall.org";
                 "bl.spamcop.net";
         };
