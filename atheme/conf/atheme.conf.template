@@ -268,7 +268,7 @@ loadmodule "modules/hostserv/drop";			/* DROP command */
 #loadmodule "modules/helpserv/helpme";			/* HELPME command */
 #loadmodule "modules/helpserv/ticket";			/* Help Ticket system */
 #loadmodule "modules/helpserv/services";		/* Service List */
-#loadmodule "modules/alis/main";				/* Core components */
+loadmodule "modules/alis/main";				/* Core components */
 #loadmodule "modules/statserv/channel";			/* CHANNEL command */
 #loadmodule "modules/statserv/netsplit";		/* NETSPLIT command */
 #loadmodule "modules/statserv/server";			/* SERVER command */
@@ -518,10 +518,10 @@ groupserv {
         user = "${ATHEME_GROUPSERV_USER}";
         host = "${ATHEME_GROUPSERV_HOST}";
         real = "${ATHEME_GROUPSERV_REAL}";
-        aliases {
+	aliases {
                 "APPROVE" = "ACTIVATE";
                 "DENY" = "REJECT";
-        };
+	};
 	access {
 	};
 	maxgroups = 5;
@@ -570,15 +570,17 @@ statserv {
 };
 
 alis {
-	nick = "${ATHEME_ALIS_NICK}";
-	user = "${ATHEME_ALIS_USER}";
-	host = "${ATHEME_ALIS_HOST}";
-	real = "${ATHEME_ALIS_REAL}";
+        nick = "${ATHEME_ALIS_NICK}";
+        user = "${ATHEME_ALIS_USER}";
+        host = "${ATHEME_ALIS_HOST}";
+        real = "${ATHEME_ALIS_REAL}";
 	aliases {
+                "FIND" = "LIST";
+                "SEARCH" = "LIST";
 	};
 	access {
 	};
-	#maxmatches = 64;
+        maxmatches = 128;
 };
 
 proxyscan {
