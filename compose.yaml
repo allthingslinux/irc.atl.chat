@@ -37,6 +37,7 @@ services:
       - '${IRC_TLS_PORT:-6697}:6697'  # IRC over SSL/TLS
       - '${IRC_SERVER_PORT:-6900}:6900'  # Server-to-server TLS
       - '${IRC_RPC_PORT:-8600}:8600'  # JSON-RPC API
+      - '${IRC_WEBSOCKET_PORT:-8000}:8000'  # WebSocket for web IRC clients
 
     # Health monitoring - use built-in healthcheck
     healthcheck:

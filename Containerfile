@@ -125,7 +125,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 WORKDIR /home/unrealircd/unrealircd
 
 # Expose ports
-EXPOSE 6667 6697 6900 8600
+EXPOSE 6667 6697 6900 8600 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
