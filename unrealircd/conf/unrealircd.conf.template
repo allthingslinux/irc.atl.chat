@@ -37,6 +37,10 @@ include "rpc.modules.default.conf";
 /* Load the default cloaking module (2021 onwards): */
 loadmodule "cloak_sha256";
 
+/* WebSocket support for web IRC clients */
+loadmodule "websocket";
+loadmodule "webserver";
+
 /* Server Configuration */
 me {
 	name "${IRC_DOMAIN}";
@@ -90,9 +94,16 @@ listen {
 
 /* Special SSL/TLS servers-only port for linking */
 listen {
-	ip *;
-	port 6900;
-	options { tls; serversonly; }
+        ip *;
+        port 6900;
+        options { tls; serversonly; }
+}
+
+/* Non-TLS servers-only port for linking (for Atheme) */
+listen {
+        ip *;
+        port 6901;
+        options { serversonly; }
 }
 
 /* JSON-RPC API port for webpanel */
@@ -100,6 +111,23 @@ listen {
 	ip *;
 	port 8600;
 	options { rpc; }
+}
+
+/* Secure WebSocket port for web IRC clients (wss://) */
+listen {
+	ip *;
+	port 8000;
+	options {
+		tls;
+		websocket { type text; }
+	}
+	tls-options {
+		certificate "${IRC_SSL_CERT_PATH}";
+		key "${IRC_SSL_KEY_PATH}";
+		options {
+			no-client-certificate;
+		}
+	}
 }
 
 /* TLS configuration with modern security settings */
@@ -132,9 +160,9 @@ link ${IRC_SERVICES_SERVER} {
 
 	outgoing {
 		bind-ip *;
-		hostname ${IRC_SERVICES_SERVER};
-		port 6900;
-		options { tls; }
+		hostname atheme;
+		port 6901;
+		options { autoconnect; }
 	}
 
 	password "${IRC_SERVICES_PASSWORD}"; /* Services link password */
@@ -144,6 +172,13 @@ link ${IRC_SERVICES_SERVER} {
 /* U-lines give services special privileges */
 ulines {
 	${IRC_SERVICES_SERVER};
+}
+
+/* Allow Configuration - Who can connect */
+allow {
+	mask *@*;
+	class clients;
+	maxperip 5;
 }
 
 /* Ban nicknames that are reserved for services */
@@ -297,7 +332,8 @@ oper admin {
 	password "${IRC_OPER_PASSWORD}";
 	operclass netadmin-with-override;
 	swhois "is the Network Administrator";
-	vhost "admin.${IRC_DOMAIN}";
+	vhost "${IRC_STAFF_VHOST}";
+	require-modes "";
 }
 
 /* RPC Configuration for Webpanel */
@@ -305,6 +341,15 @@ rpc-user "${WEBPANEL_RPC_USER}" {
 	match { ip *; }
 	rpc-class full;
 	password "${WEBPANEL_RPC_PASSWORD}";
+}
+
+/* Automatic vhost for registered users */
+vhost {
+	auto-login yes;
+	mask {
+		identified yes;
+	}
+	vhost ${IRC_DOMAIN};
 }
 
 /* Server specific configuration */
@@ -327,9 +372,5 @@ set {
 	 */
 	anti-spam-quit-message-time 10s;
 
-	/* Flood protection */
-	anti-flood {
-		connect-flood 3:60;
-		nick-flood 3:60;
-	}
+        /* Using default anti-flood settings and secure TLS requirements */
 }
