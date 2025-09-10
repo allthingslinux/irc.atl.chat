@@ -413,6 +413,42 @@ vhost {
 	vhost ${IRC_DOMAIN};
 }
 
+/* Logging Configuration */
+
+/* Traditional text logging - human readable */
+log {
+	source {
+		all;
+		!debug;
+		!join.LOCAL_CLIENT_JOIN;
+		!join.REMOTE_CLIENT_JOIN;
+		!part.LOCAL_CLIENT_PART;
+		!part.REMOTE_CLIENT_PART;
+		!kick.LOCAL_CLIENT_KICK;
+		!kick.REMOTE_CLIENT_KICK;
+	}
+	destination {
+		file "${IRC_LOG_PATH}/ircd.log" { maxsize 100M; }
+	}
+}
+
+/* JSON logging - machine readable with detailed information */
+log {
+	source {
+		all;
+		!debug;
+		!join.LOCAL_CLIENT_JOIN;
+		!join.REMOTE_CLIENT_JOIN;
+		!part.LOCAL_CLIENT_PART;
+		!part.REMOTE_CLIENT_PART;
+		!kick.LOCAL_CLIENT_KICK;
+		!kick.REMOTE_CLIENT_KICK;
+	}
+	destination {
+		file "${IRC_LOG_PATH}/ircd.json.log" { maxsize 250M; type json; }
+	}
+}
+
 /* Server specific configuration */
 set {
 	kline-address '${IRC_ADMIN_EMAIL}'; /* e-mail or URL shown when a user is banned */
