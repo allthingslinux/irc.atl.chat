@@ -266,9 +266,10 @@ loadmodule "modules/hostserv/vhost";			/* VHOST and LISTVHOST commands */
 loadmodule "modules/hostserv/vhostnick";		/* VHOSTNICK command */
 loadmodule "modules/hostserv/group";			/* GROUP command */
 loadmodule "modules/hostserv/drop";			/* DROP command */
-#loadmodule "modules/helpserv/helpme";			/* HELPME command */
-#loadmodule "modules/helpserv/ticket";			/* Help Ticket system */
-#loadmodule "modules/helpserv/services";		/* Service List */
+loadmodule "modules/helpserv/main";			/* Core components */
+loadmodule "modules/helpserv/helpme";			/* HELPME command */
+loadmodule "modules/helpserv/ticket";			/* Help Ticket system */
+loadmodule "modules/helpserv/services";		/* Service List */
 loadmodule "modules/alis/main";				/* Core components */
 loadmodule "modules/statserv/main";			/* Core components */
 loadmodule "modules/statserv/channel";			/* CHANNEL command */
@@ -554,12 +555,16 @@ hostserv {
 };
 
 helpserv {
-	nick = "${ATHEME_HELPSERV_NICK}";
-	user = "${ATHEME_HELPSERV_USER}";
-	host = "${ATHEME_HELPSERV_HOST}";
-	real = "${ATHEME_HELPSERV_REAL}";
-	aliases {
-	};
+        nick = "${ATHEME_HELPSERV_NICK}";
+        user = "${ATHEME_HELPSERV_USER}";
+        host = "${ATHEME_HELPSERV_HOST}";
+        real = "${ATHEME_HELPSERV_REAL}";
+        aliases {
+                "HELP" = "HELPME";
+                "SUPPORT" = "HELPME";
+                "REQUEST" = "HELPME";
+                "LIST" = "SERVICES";
+        };
 	access {
 	};
 };
