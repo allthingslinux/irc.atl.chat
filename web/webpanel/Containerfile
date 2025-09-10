@@ -16,6 +16,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     NGINX_DOCUMENT_ROOT=/var/www/html/unrealircd-webpanel/public
 
 # Install system dependencies
+# hadolint ignore=DL3008
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     git \
