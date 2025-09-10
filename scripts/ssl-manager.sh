@@ -13,7 +13,7 @@ DOMAIN="${IRC_ROOT_DOMAIN:-irc.atl.chat}"
 EMAIL="${LETSENCRYPT_EMAIL:-admin@allthingslinux.org}"
 TLS_DIR="/tls"
 LETSENCRYPT_DIR="/letsencrypt"
-CREDENTIALS_FILE="/cloudflare-credentials.ini"
+CREDENTIALS_FILE="./cloudflare-credentials.ini"
 
 # Colors for output
 GREEN='\033[0;32m'
