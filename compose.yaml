@@ -23,7 +23,7 @@ services:
       - ./scripts:/opt/irc/scripts:ro
       - ./data/unrealircd:/usr/local/unrealircd/data
       - ./logs/unrealircd:/usr/local/unrealircd/logs
-    # Use the ircd user (non-root) for security
+      
     user: 1001:1001
 
     # Environment configuration
@@ -55,27 +55,6 @@ services:
     # Graceful shutdown
     stop_grace_period: 60s
 
-  # ============================================================================
-  # SSL CERTIFICATE MANAGER (Simplified)
-  # ============================================================================
-  certbot:
-    image: certbot/dns-cloudflare:latest
-    container_name: certbot-manager
-    restart: "no"  # Only run when needed
-
-    # Environment from main project
-    env_file:
-      - path: .env
-        required: false
-
-    # Volume mounts - persist certificates and credentials
-    volumes:
-      - ./data/letsencrypt:/etc/letsencrypt
-      - ./cloudflare-credentials.ini:/etc/letsencrypt/cloudflare-credentials.ini:ro
-
-    # Network access for DNS challenges
-    networks:
-      - irc_network
 
   atheme:
     build:
@@ -133,6 +112,54 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  # ============================================================================
+  # SSL MONITOR (Docker-based - Runs automatically, don't manually control!)
+  # ============================================================================
+  ssl-monitor:
+    image: alpine:latest
+    container_name: ssl-monitor
+    restart: unless-stopped
+
+    # Get environment variables from .env file
+    env_file:
+      - .env
+
+    # Simple environment
+    environment:
+      - TZ=UTC
+
+    # Mount scripts and certificates
+    volumes:
+      - ./scripts:/scripts:ro
+      - ./unrealircd/conf/tls:/tls
+      - ./data/letsencrypt:/letsencrypt
+      - ./cloudflare-credentials.ini:/cloudflare-credentials.ini:ro
+
+    # Simple monitoring loop
+    command: >
+      sh -c "
+        apk add --no-cache openssl curl &&
+        chmod +x /scripts/ssl-manager.sh &&
+        echo 'SSL Monitor started - checking certificates daily' &&
+        while true; do
+          echo \"[$$(date)] Checking SSL certificates...\";
+          /scripts/ssl-manager.sh check >> /tmp/ssl-monitor.log 2>&1;
+
+          # Check for renewal at 2 AM
+          if [ \"$$(date +%H)\" = \"02\" ]; then
+            echo \"[$$(date)] Checking for certificate renewal...\";
+            /scripts/ssl-manager.sh renew >> /tmp/ssl-monitor.log 2>&1;
+          fi;
+
+          echo \"[$$(date)] SSL check completed. Next check in 4 hours.\";
+          sleep 14400;
+        done
+      "
+
+    # Network access
+    networks:
+      - irc_network
 
   # gamja:
   #   build:
