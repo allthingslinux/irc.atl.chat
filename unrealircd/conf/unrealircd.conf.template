@@ -145,11 +145,32 @@ set {
 
 		/* Modern ECDH curves for better security */
 		ecdh-curves "X25519:secp521r1:secp384r1:prime256v1";
+
+		/* Strict Transport Security (STS) - Automatically redirect users to TLS */
+		sts-policy {
+			/* Redirect to secure port 6697 */
+			port 6697;
+			/* Conservative duration - start low and gradually increase
+			 * Recommended progression: 1m -> 1d -> 30d -> 180d
+			 * WARNING: Users cache this setting for 'duration' time!
+			 */
+			duration ${IRC_STS_DURATION};
+			/* Preload in client (optional, for advanced security) */
+			preload ${IRC_STS_PRELOAD};
+		}
 	}
 
-	/* Allow plaintext connections for services (Atheme doesn't support TLS for server links) */
+	/* Plaintext policy - control who can use non-TLS connections */
 	plaintext-policy {
+		/* Allow services to use plaintext (Atheme doesn't support TLS for server links) */
 		server allow;
+		/* Allow users for now, but they'll be redirected to TLS via STS if client supports it */
+		user allow;
+		/* IRCOps should always use TLS for security */
+		oper deny;
+		/* Helpful message for non-STS clients when we want to enforce TLS */
+		user-message "For security, please connect using TLS on port 6697. Your client will be automatically redirected if it supports STS.";
+		oper-message "IRCOps must use TLS connections. Please connect to port 6697 with SSL/TLS enabled.";
 	}
 }
 
@@ -396,6 +417,36 @@ set {
                 }
         }
 }
+
+/*
+ * STRICT TRANSPORT SECURITY (STS) SECURITY PROGRESSION
+ * ====================================================
+ * 
+ * STS automatically redirects capable clients from plaintext (port 6667) to TLS (port 6697).
+ * 
+ * PHASE 1 - TESTING (First week):
+ * - IRC_STS_DURATION=1m (1 minute cache)
+ * - IRC_STS_PRELOAD=no
+ * - plaintext-policy user=allow (users can still use plaintext if STS fails)
+ * 
+ * PHASE 2 - GRADUAL ROLLOUT (After 1 week):
+ * - IRC_STS_DURATION=1d (1 day cache)  
+ * - Monitor for any user connection issues
+ * 
+ * PHASE 3 - MATURE NETWORK (After 1 month):
+ * - IRC_STS_DURATION=30d (30 days cache)
+ * - Consider IRC_STS_PRELOAD=yes for advanced security
+ * 
+ * PHASE 4 - MAXIMUM SECURITY (After 6 months):
+ * - IRC_STS_DURATION=180d (6 months cache)
+ * - Optional: Set plaintext-policy user=deny to force TLS for all users
+ * - Optional: Remove port 6667 listen block entirely
+ * 
+ * SUPPORTED CLIENTS: mIRC, AdiIRC, IRCCloud, The Lounge, Ambassador, GLirc, 
+ * CoreIRC, BitBot, Limnoria, and many others.
+ * 
+ * NON-STS CLIENTS: Will continue using plaintext unless plaintext-policy denies them.
+ */
 
 /*
  * CHANNEL ANTI-FLOOD RECOMMENDATIONS
