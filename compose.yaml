@@ -140,7 +140,6 @@ services:
     command: >
       sh -c "
         apk add --no-cache openssl curl &&
-        chmod +x /scripts/ssl-manager.sh &&
         echo 'SSL Monitor started - checking certificates daily' &&
         while true; do
           echo \"[$$(date)] Checking SSL certificates...\";

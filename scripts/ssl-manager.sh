@@ -452,14 +452,17 @@ copy_certificates() {
     cert_size=$(stat -f%z "$cert_target" 2>/dev/null || stat -c%s "$cert_target" 2>/dev/null || echo "0")
     key_size=$(stat -f%z "$key_target" 2>/dev/null || stat -c%s "$key_target" 2>/dev/null || echo "0")
 
-    if [[ "$cert_size" -lt 1000 ]]; then
+    if [[ "$cert_size" -lt 500 ]]; then
         log_warn "Certificate file seems unusually small ($cert_size bytes)"
         log_warn "This may indicate a problem with the certificate"
     fi
 
-    if [[ "$key_size" -lt 500 ]]; then
+    # ECDSA keys are much smaller than RSA keys, so use lower threshold
+    if [[ "$key_size" -lt 100 ]]; then
         log_warn "Private key file seems unusually small ($key_size bytes)"
         log_warn "This may indicate a problem with the private key"
+    elif [[ "$key_size" -gt 100 && "$key_size" -lt 300 ]]; then
+        log_verbose "Private key size ($key_size bytes) is typical for ECDSA keys"
     fi
 
     log_info "Certificates copied successfully"
