@@ -417,7 +417,101 @@ set {
                         connect-delay 120s;
                 }
         }
+
+        /* Anti-flood settings for enhanced security */
+        anti-flood {
+                /* Settings that apply to everyone */
+                everyone {
+                        /* Connection flood protection - 3 connections per 60 seconds per IP */
+                        connect-flood 3:60;
+                        
+                        /* Handshake data flood protection */
+                        handshake-data-flood {
+                                amount 4k;
+                                ban-action zline;
+                                ban-time 10m;
+                        }
+                        
+                        /* Target flood protection - prevents high-rate flooding of channels/users */
+                        target-flood {
+                                channel-privmsg 45:5;
+                                channel-notice 15:5;
+                                channel-tagmsg 15:5;
+                                private-privmsg 30:5;
+                                private-notice 10:5;
+                                private-tagmsg 10:5;
+                        }
+                }
+
+                /* Settings for known users (registered/trusted users) */
+                known-users {
+                        nick-flood 4:60;        /* 4 nick changes per 60 seconds */
+                        join-flood 4:90;        /* 4 rejoins to same channel per 90 seconds */
+                        away-flood 4:120;       /* 4 away changes per 120 seconds */
+                        invite-flood 5:60;      /* 5 invites per 60 seconds */
+                        knock-flood 4:120;      /* 4 knocks per 120 seconds */
+                        vhost-flood 3:90;       /* 3 vhost changes per 90 seconds */
+                        max-concurrent-conversations {
+                                users 12;               /* Can message 12 different users */
+                                new-user-every 10s;     /* Then 1 new user every 10 seconds */
+                        }
+                        lag-penalty 600;        /* Lower lag penalty for trusted users */
+                        lag-penalty-bytes 200;  /* More bytes allowed before extra penalty */
+                }
+
+                /* Settings for unknown users (new/untrusted users) */
+                unknown-users {
+                        nick-flood 2:60;        /* 2 nick changes per 60 seconds */
+                        join-flood 2:90;        /* 2 rejoins to same channel per 90 seconds */
+                        away-flood 3:120;       /* 3 away changes per 120 seconds */
+                        invite-flood 2:60;      /* 2 invites per 60 seconds */
+                        knock-flood 2:120;      /* 2 knocks per 120 seconds */
+                        vhost-flood 2:90;       /* 2 vhost changes per 90 seconds */
+                        max-concurrent-conversations {
+                                users 4;                /* Can message 4 different users */
+                                new-user-every 20s;     /* Then 1 new user every 20 seconds */
+                        }
+                        lag-penalty 1200;       /* Higher lag penalty for unknown users */
+                        lag-penalty-bytes 80;   /* Fewer bytes allowed before extra penalty */
+                }
+        }
 }
+
+/*
+ * ANTI-FLOOD PROTECTION OVERVIEW
+ * ===============================
+ * 
+ * The anti-flood settings above provide comprehensive protection against various types of flooding:
+ * 
+ * CONNECTION FLOOD PROTECTION:
+ * - Limits connections per IP address to prevent connection bombing
+ * - Default: 3 connections per 60 seconds per IP
+ * 
+ * HANDSHAKE DATA FLOOD PROTECTION:
+ * - Prevents abuse during IRC protocol handshake
+ * - Blocks excessive data during connection establishment
+ * - Results in 10-minute Z-line for violators
+ * 
+ * TARGET FLOOD PROTECTION:
+ * - Prevents high-rate flooding of channels and users
+ * - Limits total messages to any target (channel/user) regardless of source count
+ * - Protects against coordinated flooding attacks
+ * 
+ * USER-BASED FLOOD PROTECTION:
+ * - Different limits for known-users vs unknown-users
+ * - Known users: Registered with services OR reputation score 25+
+ * - Unknown users: New/unregistered users with lower trust
+ * 
+ * COMMAND RATE LIMITING:
+ * - Nick changes, channel joins, away messages, invites, knocks
+ * - Private message conversation limits to prevent spam bots
+ * - Lag penalty system prevents command flooding
+ * 
+ * SECURITY PHILOSOPHY:
+ * - Balanced approach: Strict enough to prevent abuse, lenient enough for normal use
+ * - Graduated penalties: Unknown users have stricter limits than known users
+ * - Multiple protection layers: Per-IP, per-user, and per-target limits
+ */
 
 /*
  * STRICT TRANSPORT SECURITY (STS) SECURITY PROGRESSION
