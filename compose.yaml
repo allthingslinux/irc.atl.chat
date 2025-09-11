@@ -67,6 +67,7 @@ services:
     depends_on:
       unrealircd:
         condition: service_healthy
+        restart: true
     volumes:
       - ./atheme/conf:/usr/local/atheme/etc:ro
       - ./data/atheme:/usr/local/atheme/data
@@ -77,9 +78,9 @@ services:
       - ATHEME_DATA=/usr/local/atheme/data
       - PUID=1000  # Host user ID for bind mount compatibility
       - PGID=1000  # Host group ID for bind mount compatibility
+    # Override CMD to run atheme-services directly with correct data directory (tini from ENTRYPOINT will still be used)
     networks:
       - irc_network
-    command: ["/usr/local/bin/atheme-services", "-c", "/usr/local/atheme/etc/atheme.conf"]
     restart: unless-stopped
 
   unrealircd-webpanel:

@@ -59,6 +59,5 @@ RUN mkdir -p /usr/local/atheme/etc \
 COPY --chown=root:root docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Use tini as init system
+# Use tini as init system - entrypoint will be overridden by compose.yaml
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
-CMD ["start"]
