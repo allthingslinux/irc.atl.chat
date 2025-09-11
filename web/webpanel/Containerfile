@@ -1,94 +1,32 @@
-# UnrealIRCd WebPanel Containerfile
-# Provides web-based administration interface for UnrealIRCd
-# Based on official documentation: https://www.unrealircd.org/docs/UnrealIRCd_webpanel
+# UnrealIRCd WebPanel - Official Approach (Exact Copy)
+# Based on: https://github.com/unrealircd/unrealircd-webpanel/blob/main/Dockerfile
 
-FROM php:8.4-fpm-bookworm@sha256:e6bc23796dbcd21c987d7b45fcd1263d1287217ea66ccddf03597309a1c0e4ed
+FROM composer/composer AS builder
 
-# Add metadata labels
-LABEL maintainer="AllThingsLinux IRC Infrastructure" \
-    description="UnrealIRCd WebPanel - Web-based administration interface" \
-    version="1.0.0" \
-    org.opencontainers.image.source="https://github.com/allthingslinux/irc.atl.chat"
+WORKDIR /app
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive \
-    DEBCONF_NONINTERACTIVE_SEEN=true \
-    NGINX_DOCUMENT_ROOT=/var/www/html/unrealircd-webpanel/public
+# Clone the webpanel source (since we don't have local source)
+RUN git clone --depth 1 https://github.com/unrealircd/unrealircd-webpanel.git .
 
-# Install system dependencies
-# hadolint ignore=DL3008
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    git \
-    unzip \
-    libzip-dev \
-    libssl-dev \
-    ca-certificates \
-    nginx && \
-    apt-get clean && \
-    rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN composer install --no-dev --optimize-autoloader
 
-# Install PHP extensions (many are already available in base image)
-RUN docker-php-ext-install \
-    zip \
-    pdo \
-    pdo_mysql \
-    mysqli
+FROM trafex/php-nginx
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+USER root
 
-# Create webpanel user
-RUN groupadd --system --gid 1001 webpanel && \
-    useradd --create-home --system --uid 1001 --gid webpanel webpanel
+RUN apk add --no-cache php84-sodium
 
-# Configure Nginx
-RUN rm -f /etc/nginx/sites-enabled/default && \
-    mkdir -p /var/log/nginx /var/cache/nginx /var/lib/nginx/body /var/lib/nginx/proxy /var/lib/nginx/fastcgi /var/lib/nginx/uwsgi /var/lib/nginx/scgi /run && \
-    chown -R webpanel:webpanel /var/log/nginx /var/cache/nginx /var/lib/nginx /run
+USER nobody
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Clone UnrealIRCd webpanel repository
-RUN git clone --depth 1 https://github.com/unrealircd/unrealircd-webpanel.git && \
-    chown -R webpanel:webpanel unrealircd-webpanel
+# Copy application files from the builder stage
+COPY --from=builder /app /var/www/html
 
-# Switch to webpanel user for composer operations
-USER webpanel:webpanel
-
-# Install PHP dependencies
-WORKDIR /var/www/html/unrealircd-webpanel
-RUN composer install --no-dev --optimize-autoloader
-
-# Switch back to root for final setup
+# Fix permissions for webpanel to write config files
 USER root
+RUN chown -R nobody:nobody /var/www/html && \
+    chmod -R 755 /var/www/html/data /var/www/html/config /var/www/html/logs
 
-# Set proper permissions for the webpanel directory
-RUN chown -R webpanel:webpanel /var/www/html/unrealircd-webpanel && \
-    chmod -R 755 /var/www/html/unrealircd-webpanel
-
-# Note: data and config directories will be mounted from host and permissions set at runtime
-
-# Copy Nginx configuration
-COPY web/webpanel/nginx.conf /etc/nginx/sites-available/webpanel
-
-# Enable the site
-RUN ln -sf /etc/nginx/sites-available/webpanel /etc/nginx/sites-enabled/
-
-# Copy startup script
-COPY --chown=webpanel:webpanel scripts/start-webpanel.sh /usr/local/bin/start-webpanel.sh
-RUN chmod +x /usr/local/bin/start-webpanel.sh
-
-# Expose port
-EXPOSE 80
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost/ || exit 1
-
-# Switch to webpanel user for execution
-USER webpanel:webpanel
-
-# Default command
-CMD ["/usr/local/bin/start-webpanel.sh"]
+USER nobody
