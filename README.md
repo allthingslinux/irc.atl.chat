@@ -1,81 +1,59 @@
-# IRC.atl.chat - Complete IRC Infrastructure
+# IRC.atl.chat
 
-A **production-ready IRC server ecosystem** with UnrealIRCd, Atheme Services, automated SSL certificates, and containerized deployment.
+IRC server with UnrealIRCd, Atheme Services, and SSL certificates.
 
-## Core Components
+## Components
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **IRC Server** | UnrealIRCd 6.1.10 | Core IRC daemon with modern features |
-| **Services** | Atheme 7.2.12 | Nick/Channel services, authentication |
-| **WebPanel** | UnrealIRCd WebPanel | Admin interface via JSON-RPC |
-| **SSL/TLS** | Let's Encrypt + Cloudflare | Automated certificate management |
-| **Container** | Docker + Compose | Deployment and orchestration |
+| IRC Server | UnrealIRCd 6.1.10 | IRC daemon |
+| Services | Atheme 7.2.12 | NickServ, ChanServ, OperServ |
+| WebPanel | UnrealIRCd WebPanel | Admin interface |
+| SSL/TLS | Let's Encrypt + Cloudflare | Certificate management |
+| Container | Docker + Compose | Deployment |
 
-### Services Integration
+## Setup
 
-The setup includes **complete IRC services integration**:
-- **NickServ**: Nickname registration and authentication
-- **ChanServ**: Channel management and protection
-- **OperServ**: Administrative services
-- **Server linking**: Seamless integration between IRCd and Services
-
-## Quick Start
-
-### **One Command Setup**
 ```bash
 # 1. Copy environment template
 cp env.example .env
 
-# 2. Setup Cloudflare credentials (for SSL certificates)
+# 2. Setup Cloudflare credentials
 cp cloudflare-credentials.ini.template cloudflare-credentials.ini
 chmod 600 cloudflare-credentials.ini
 vim cloudflare-credentials.ini  # Add your Cloudflare API token
 
-# 3. Edit .env with your settings (domain, passwords, etc.)
+# 3. Edit .env with your settings
 vim .env
 
-# 4. Start everything (that's it!)
+# 4. Start services
 make up
 ```
 
-### **Available Commands**
+## Commands
+
 ```bash
-make up             # Start all services (auto-setup included!)
+make up             # Start all services
 make down           # Stop all services
-make logs           # View all logs
+make logs           # View logs
 make status         # Check service status
-
-# Advanced commands
-make build          # Build containers manually
-make rebuild        # Rebuild containers without cache (fresh build)
+make build          # Build containers
+make rebuild        # Rebuild containers
 make restart        # Restart services
-make reset          # Complete reset (CAUTION!)
-make help           # Show all available commands
+make reset          # Complete reset
+make help           # Show all commands
 ```
-
-### What's Included
-- **UnrealIRCd IRC Server** - Modern IRC daemon
-- **Atheme Services** - NickServ, ChanServ, OperServ
-- **WebPanel Admin Interface** - Browser-based management
-- **Automated SSL certificates** - Let's Encrypt with monitoring
-- **Health monitoring** - Automated service checks
-- **Persistent storage** - Data survives container restarts
 
 ## Configuration
 
-### **Environment Variables**
-
-Copy the template and customize for your setup:
-
+Copy the template and edit:
 ```bash
 cp env.example .env
-vim .env  # Edit with your settings
+vim .env
 ```
 
-### **Required Environment Variables**
+### Required Variables
 
-#### **Core IRC Configuration**
 ```bash
 # Server Settings
 IRC_DOMAIN=irc.atl.chat
@@ -91,36 +69,11 @@ IRC_CLOAK_PREFIX=atl
 # Admin Contact
 IRC_ADMIN_NAME="Your Admin Name"
 IRC_ADMIN_EMAIL=admin@yourdomain.com
-```
 
-#### **IRC Operator Password** 🔐
-```bash
-# Generate secure password hash
-make generate-password
-
-# Copy the generated hash to .env
-IRC_OPER_PASSWORD='$argon2id$...'    # Generated hash
-```
-
-#### **SSL/TLS Configuration**
-```bash
-# Let's Encrypt Email (required)
+# SSL/TLS
 LETSENCRYPT_EMAIL=admin@yourdomain.com
-```
 
-#### **Cloudflare DNS** (for SSL certificates)
-```bash
-# Create credentials file from template
-cp cloudflare-credentials.ini.template cloudflare-credentials.ini
-chmod 600 cloudflare-credentials.ini
-
-# Add your Cloudflare API token to the file:
-dns_cloudflare_api_token = your-api-token-here
-```
-
-#### **Services Configuration**
-```bash
-# Atheme Services
+# Services
 ATHEME_SERVER_NAME=services.atl.chat
 ATHEME_UPLINK_HOST=irc.atl.chat
 ATHEME_UPLINK_PORT=6900
@@ -128,238 +81,88 @@ ATHEME_SEND_PASSWORD=your-services-password
 ATHEME_RECEIVE_PASSWORD=your-services-password
 ```
 
-## Management Commands
+### Password Generation
 
-### **Core Commands**
 ```bash
-# Get help with all commands
-make help
-
-# Service management
-make up          # Start all services (auto-setup included!)
-make down        # Stop all services
-make restart     # Restart all services
-make status      # Check service status
-
-# View logs
-make logs           # All service logs
-
-# SSL management
-make ssl-setup     # Complete SSL setup with monitoring
-make ssl-status    # Check SSL certificate status
-make ssl-renew     # Force certificate renewal (with safety checks)
-make ssl-logs      # View SSL monitoring logs
-make ssl-stop      # Stop SSL monitoring container
-make ssl-clean     # Remove certificates and monitoring (CAUTION!)
-
-# Maintenance
-make reset         # Complete reset (CAUTION!)
-make clean         # Clean containers and images
-make info          # System information
-```
-
-### **Password Management**
-```bash
-# Generate secure IRC operator password
+# Generate IRC operator password hash
 make generate-password
+
+# Copy the generated hash to .env
+IRC_OPER_PASSWORD='$argon2id$...'
 ```
 
-## SSL/TLS Setup
-
-### **Automated SSL with Let's Encrypt**
-
-The setup includes **robust SSL certificate management** with comprehensive features:
+### Cloudflare DNS
 
 ```bash
-# One-command SSL setup
-make ssl-setup
-
-# Advanced troubleshooting and debugging
-./scripts/ssl-manager.sh --verbose check    # Detailed status
-./scripts/ssl-manager.sh --debug issue      # Maximum debugging
-./scripts/ssl-manager.sh --help             # Complete help
+cp cloudflare-credentials.ini.template cloudflare-credentials.ini
+chmod 600 cloudflare-credentials.ini
+vim cloudflare-credentials.ini  # Add your API token
 ```
 
-### What Happens Automatically
-- **Certificate Issuance**: Let's Encrypt with Cloudflare DNS challenges
-- **Automatic Renewal**: Every day at 2 AM (no manual intervention)
-- **Docker Monitoring**: 24/7 certificate health monitoring
-- **Comprehensive Logging**: 5-level logging (INFO/WARN/ERROR/DEBUG/VERBOSE)
-- **Safety Features**: Confirmation prompts for dangerous operations
-- **Input Validation**: Domain and email format checking
-- **Service Restart**: Automatic restart after certificate renewal
+## SSL Management
 
-### **Prerequisites**
-1. **Cloudflare Account** with DNS hosting for your domain
-2. **API Token** from https://dash.cloudflare.com/profile/api-tokens
-   - Create token with **Zone:DNS:Edit** permissions for your domain
-3. **Domain Configuration** pointing to your server
-
-### SSL Status & Monitoring
 ```bash
-# Check SSL certificate status
-make ssl-status
-
-# View SSL monitoring logs
-make ssl-logs
-
-# Advanced SSL operations
-make ssl-renew     # Force renewal (with safety checks)
-make ssl-stop      # Stop monitoring container
-make ssl-clean     # Remove certificates (CAUTION!)
+make ssl-setup     # Setup SSL certificates
+make ssl-status    # Check certificate status
+make ssl-renew     # Force certificate renewal
+make ssl-logs      # View SSL logs
+make ssl-stop      # Stop SSL monitoring
+make ssl-clean     # Remove certificates
 ```
 
-### SSL Debugging & Troubleshooting
-```bash
-# Get comprehensive help
-./scripts/ssl-manager.sh --help
-
-# Verbose output for detailed information
-./scripts/ssl-manager.sh --verbose check
-
-# Maximum debugging for troubleshooting
-./scripts/ssl-manager.sh --debug issue
-
-# Manual certificate verification
-openssl x509 -in unrealircd/conf/tls/server.cert.pem -noout -enddate
-```
-
-### **Security Features**
-- **Argon2id password hashing** for IRC operators
-- **PBKDF2v2 password hashing** for services with 64,000 iterations
-- **SHA2-512 digest** for optimal cryptographic security
-- **Secure server linking** with password authentication
-- **U-line protection** preventing service disruption
-- **Secrets management** via environment variables
-- **Production-optimized Atheme build** following official documentation recommendations
-
-## Ports and Services
+## Ports
 
 | Port | Protocol | Service | Purpose |
 |------|----------|---------|---------|
-| **6667** | IRC | UnrealIRCd | Standard IRC connections |
-| **6697** | IRC+TLS | UnrealIRCd | Encrypted IRC connections |
-| **6900** | IRC+TLS | UnrealIRCd | Server-to-server links |
-| **8080** | HTTP | WebPanel | Admin interface |
+| 6667 | IRC | UnrealIRCd | Standard IRC |
+| 6697 | IRC+TLS | UnrealIRCd | Encrypted IRC |
+| 6900 | IRC+TLS | UnrealIRCd | Server links |
+| 8080 | HTTP | WebPanel | Admin interface |
 
-## Project Structure
+## Usage
 
-```
-irc.atl.chat/
-├── compose.yaml              # Docker Compose configuration
-├── Containerfile             # Docker build instructions
-├── .env                      # Environment variables (gitignored)
-├── cloudflare-credentials.ini # Cloudflare API credentials (gitignored)
-├── scripts/                  # Management scripts
-│   ├── init.sh              # Auto-setup (directories + configs)
-│   ├── ssl-manager.sh       # SSL management (--help, --debug, --verbose)
-│   ├── start-services.sh    # Container startup script
-│   └── health-check.sh      # Health monitoring
-├── unrealircd/               # IRC server configuration
-│   └── conf/
-│       ├── unrealircd.conf.template    # Config template
-│       └── unrealircd.conf             # Generated config (gitignored)
-├── services/atheme/          # Services configuration
-│   ├── atheme.conf.template  # Config template
-│   └── atheme.conf           # Generated config (gitignored)
-├── web/webpanel/             # WebPanel container
-├── logs/                     # Service logs (auto-created)
-├── data/                     # Persistent data (auto-created)
-└── Makefile                  # Management commands (simplified!)
-```
-
-## Using Your IRC Server
-
-### **Connect to IRC**
+### Connect to IRC
 ```bash
 # Standard connection
 irc irc.atl.chat:6667
 
-# SSL connection (recommended)
+# SSL connection
 irc irc.atl.chat:6697
 ```
 
-### **Access WebPanel**
-- **URL**: http://your-server:8080
-- **Purpose**: Browser-based IRC server management
-- **Features**: View connections, manage users, monitor server health
+### WebPanel
+- URL: http://your-server:8080
+- Purpose: IRC server management
 
-### **IRC Services**
-Once connected, you have access to:
-- **NickServ**: `/msg NickServ REGISTER password email`
-- **ChanServ**: `/msg ChanServ REGISTER #channel`
-- **OperServ**: Administrative services (for IRC operators)
+### IRC Services
+- NickServ: `/msg NickServ REGISTER password email`
+- ChanServ: `/msg ChanServ REGISTER #channel`
+- OperServ: Administrative services
 
 ## Troubleshooting
 
-### **Services Not Starting**
+### Services Not Starting
 ```bash
-# Check all service logs
 make logs
-
-# Check container status
 make status
 ```
 
-### **SSL Issues**
+### SSL Issues
 ```bash
-# Check SSL certificate status
 make ssl-status
-
-# View SSL monitoring logs
 make ssl-logs
-
-# Advanced SSL debugging
-./scripts/ssl-manager.sh --verbose check    # Detailed status
-./scripts/ssl-manager.sh --debug issue      # Maximum debugging
-
-# Manual certificate verification
-openssl x509 -in unrealircd/conf/tls/server.cert.pem -noout -enddate
-
-# Check SSL monitoring container
-docker compose ps ssl-monitor
+./scripts/ssl-manager.sh --help
 ```
 
-### **Configuration Issues**
+### Configuration Issues
 ```bash
-# Configuration is auto-generated on startup
-# If you need to regenerate configs, restart services
 make restart
-
-# Or check the generated config files
 ls -la unrealircd/conf/unrealircd.conf
 ls -la services/atheme/atheme.conf
 ```
 
-## Additional Resources
+## Documentation
 
-- [SSL Setup Documentation](./docs/SSL.md) - Complete SSL management guide
+- [SSL Setup](./docs/SSL.md)
 - [UnrealIRCd Documentation](https://www.unrealircd.org/docs/)
 - [Atheme Services Documentation](https://atheme.dev/docs/)
-- [Docker Compose Documentation](https://docs.docker.com/compose/)
-
----
-
-## Ready to Get Started?
-
-Your **production-ready IRC infrastructure** is now fully configured with:
-
-- **Complete IRC ecosystem** - Server + Services + Web interface
-- **SSL/TLS certificates** - Let's Encrypt with monitoring & debugging
-- **Full management** - Complete set of make targets for control
-- **Production security** - Argon2id password hashing, secure secrets management
-- **Containerized deployment** - Easy scaling and updates
-- **Troubleshooting tools** - Debug/verbose modes, comprehensive logging
-- **Auto-configuration** - Everything sets up automatically on first run
-
-**Start your IRC network:**
-```bash
-make up
-```
-
-**Access your services:**
-- **IRC Server**: `irc.atl.chat:6667` (standard) or `:6697` (SSL)
-- **WebPanel**: `http://your-server:8080`
-- **Services**: Available once connected to IRC
-
-**That's it!** 🎉 Everything is automated - no manual directory creation, no config preparation, just `make up` and you're ready to IRC!
