@@ -114,7 +114,6 @@ loadmodule "modules/operserv/restart";          /* RESTART command */
 loadmodule "modules/operserv/rmatch";           /* Display regex matching (RMATCH command) */
 loadmodule "modules/operserv/rnc";              /* Most common realnames (RNC command) */
 loadmodule "modules/operserv/rwatch";           /* RWATCH system */
-/* Specific SET commands instead of deprecated operserv/set module */
 loadmodule "modules/operserv/set_akicktime";    /* SET AKICKTIME command */
 loadmodule "modules/operserv/set_chanexpire";   /* SET CHANEXPIRE command */
 loadmodule "modules/operserv/set_commitinterval"; /* SET COMMITINTERVAL command */
@@ -333,12 +332,12 @@ serverinfo {
 	casemapping = rfc1459;
 };
 
-uplink "unrealircd" {
-	host = "${ATHEME_UPLINK_HOST}";
-	#vhost = "192.0.2.5";
-	port = ${ATHEME_UPLINK_PORT};
-	send_password = "${ATHEME_SEND_PASSWORD}";
-	receive_password = "${ATHEME_RECEIVE_PASSWORD}";
+uplink "${IRC_DOMAIN}" {
+    host = "${ATHEME_UPLINK_HOST}";
+    #vhost = "192.0.2.5";
+    port = ${ATHEME_UPLINK_PORT};
+    send_password = "${ATHEME_SEND_PASSWORD}";
+    receive_password = "${ATHEME_RECEIVE_PASSWORD}";
 };
 
 nickserv {
