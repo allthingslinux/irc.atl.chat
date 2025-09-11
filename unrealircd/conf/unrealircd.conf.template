@@ -471,6 +471,17 @@ set {
 	 */
 	anti-spam-quit-message-time 10s;
 
+	/* Channel history configuration - enables history playback for channels
+	 * The defaults are already good for most setups. This enables the feature.
+	 * Users can set +H on channels to store history (e.g. /MODE #channel +H 50:1d)
+	 * See: https://www.unrealircd.org/docs/Channel_history
+	 */
+	history {
+		channel {
+			/* Use defaults - 200 lines max, 31 days retention */
+		}
+	};
+
         /* Restrict commands for new users (security hardening) */
         restrict-commands {
                 list {
@@ -687,4 +698,53 @@ set {
  * - SCRAM mechanisms are much more secure than PLAIN
  * - Consider requiring authentication for proxy/VPN users
  * - Monitor for authentication bypass attempts
+ */
+
+/*
+ * CHANNEL HISTORY GUIDE
+ * =====================
+ * 
+ * Channel history allows users to see previous messages when joining channels.
+ * This server supports multiple methods for retrieving channel history.
+ * 
+ * ENABLING HISTORY:
+ * To enable history for a channel, set channel mode +H:
+ * - /MODE #channel +H 50:1d (store 50 lines for 1 day)
+ * - /MODE #channel +H 100:7d (store 100 lines for 7 days)
+ * - /MODE #channel +H 1000:31d (store 1000 lines for 31 days)
+ * 
+ * HISTORY RETRIEVAL METHODS:
+ * 1. ON-JOIN PLAYBACK: Automatic history shown when joining (max 15 lines)
+ * 2. HISTORY COMMAND: Manual retrieval via /HISTORY #channel [lines]
+ * 3. CHATHISTORY (IRCv3): Advanced client-driven history fetching
+ * 
+ * CLIENT SUPPORT:
+ * 
+ * FULL CHATHISTORY SUPPORT (unlimited history):
+ * - KiwiIRC, Gamja, Goguma, Senpai
+ * 
+ * PARTIAL SUPPORT (on-join + HISTORY command):
+ * - AdiIRC, Colloquy, HexChat, IceChat, irssi (1.2.3+)
+ * - Konversation, KVIrc, mIRC (7.34+), Quassel
+ * - Textual, WeeChat (3.3+), Swirc, Glirc
+ * - IRCCloud, The Lounge
+ * 
+ * NO SUPPORT:
+ * - LimeChat, Mibbit
+ * 
+ * REQUIREMENTS:
+ * - Client must support IRCv3 'server-time' capability
+ * - Channel must have +H mode set by channel operators
+ * - History is lost on server restart (stored in memory only)
+ * 
+ * USAGE EXAMPLES:
+ * - /MODE #general +H 50:1d     # Store 50 lines for 1 day
+ * - /HISTORY #general           # Get recent history
+ * - /HISTORY #general 25        # Get last 25 lines
+ * 
+ * OPERATOR NOTES:
+ * - History can prevent bots from re-triggering on old messages
+ * - Use +P (permanent) mode to prevent history loss when channel empties
+ * - Consider privacy implications when enabling history
+ * - History storage limits are configured server-wide
  */
