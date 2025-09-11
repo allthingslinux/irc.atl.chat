@@ -5,7 +5,7 @@ name: irc.atl.chat
 services:
   unrealircd:
     build:
-      context: .
+      context: ./unrealircd
       dockerfile: Containerfile
       args:
         UNREALIRCD_VERSION: "6.1.10"
@@ -15,6 +15,8 @@ services:
     hostname: unrealircd
     restart: unless-stopped
     init: true
+    user: "1000:1000"
+    userns_mode: "host"
 
     # Volume mounts - aligned with Containerfile paths
     volumes:
@@ -74,11 +76,10 @@ services:
       - ./logs/atheme:/usr/local/atheme/logs
     environment:
       - TZ=UTC
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
       - ATHEME_CONF=/usr/local/atheme/etc/atheme.conf
       - ATHEME_DATA=/usr/local/atheme/data
-      - PUID=1000  # Host user ID for bind mount compatibility
-      - PGID=1000  # Host group ID for bind mount compatibility
-    # Override CMD to run atheme-services directly with correct data directory (tini from ENTRYPOINT will still be used)
     networks:
       - irc_network
     restart: unless-stopped
@@ -93,8 +94,7 @@ services:
       unrealircd:
         condition: service_healthy
     volumes:
-      - ./data/webpanel:/var/www/html/unrealircd-webpanel/data
-      - ./config/webpanel:/var/www/html/unrealircd-webpanel/config
+      - webpanel_data:/var/www/html/unrealircd-webpanel/data
     env_file:
       - path: .env
         required: false
@@ -102,13 +102,16 @@ services:
       - TZ=UTC
       - UNREALIRCD_HOST=unrealircd
       - UNREALIRCD_PORT=${IRC_RPC_PORT:-8600}
+      - UNREALIRCD_RPC_USER=${WEBPANEL_RPC_USER:-adminpanel}
+      - UNREALIRCD_RPC_PASSWORD=${WEBPANEL_RPC_PASSWORD:-test1234}
+      - UNREALIRCD_RPC_SSL=1
     ports:
-      - '8080:80'
+      - '8080:8080'
     networks:
       - irc_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -193,7 +196,7 @@ services:
   #   depends_on:
   #     unrealircd:
   #       condition: service_healthy
-  #   volumes:
+  #   volumes: u make 
   #     - ./data/thelounge:/var/opt/thelounge
   #   networks:
   #     - irc_network
@@ -205,6 +208,6 @@ networks:
   irc_network:
     driver: bridge
 
-# Named volumes removed - using bind mounts with PUID/PGID for better permission handling
-
-
+volumes:
+  webpanel_data:
+    driver: local

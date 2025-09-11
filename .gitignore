@@ -41,3 +41,5 @@ webpanel_config/
 *.tmp
 *.swp
 *.bak
+# WebPanel config (part of data)
+data/webpanel/config/
