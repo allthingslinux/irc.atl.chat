@@ -8,8 +8,8 @@ FROM alpine:3.20 AS builder
 
 # Build arguments
 ARG UNREALIRCD_VERSION=6.1.10
-ARG UID=1000
-ARG GID=1000
+ARG UID=0
+ARG GID=0
 
 # Install build dependencies
 RUN apk update && apk add --no-cache \
@@ -27,61 +27,52 @@ RUN apk update && apk add --no-cache \
     cmake \
     file
 
-# Create unrealircd user
-RUN addgroup -g ${GID} unrealircd && \
-    adduser -D -u ${UID} -G unrealircd -s /bin/false unrealircd
+# Create unrealircd user (skip if UID is 0)
+RUN if [ "${UID}" != "0" ]; then \
+    addgroup -g ${GID} unrealircd && \
+    adduser -D -u ${UID} -G unrealircd -s /bin/false unrealircd; \
+    fi
 
-# Create installation directory with proper ownership
-RUN mkdir -p /home/unrealircd/unrealircd && \
-    chown -R unrealircd:unrealircd /home/unrealircd
+# Create installation directory
+RUN mkdir -p /home/unrealircd/unrealircd
 
-# Download and extract as root, then fix ownership
+# Download and extract
 WORKDIR /tmp
 RUN wget --progress=dot:giga https://www.unrealircd.org/downloads/unrealircd-${UNREALIRCD_VERSION}.tar.gz && \
-    tar xzf unrealircd-${UNREALIRCD_VERSION}.tar.gz && \
-    chown -R unrealircd:unrealircd /tmp/unrealircd-${UNREALIRCD_VERSION}
+    tar xzf unrealircd-${UNREALIRCD_VERSION}.tar.gz
 
-# Switch to unrealircd user for building
-USER unrealircd
+# Create build user for UnrealIRCd (it refuses to build as root)
+RUN addgroup -g 1000 builduser && \
+    adduser -D -u 1000 -G builduser builduser && \
+    mkdir -p /home/unrealircd && \
+    chown -R builduser:builduser /tmp/unrealircd-${UNREALIRCD_VERSION} /home/unrealircd
+
+# Build as builduser
 WORKDIR /tmp/unrealircd-${UNREALIRCD_VERSION}
+USER builduser
 
-# Configure UnrealIRCd with the correct installation paths
-RUN ./Config \
-    --with-showlistmodes \
-    --enable-ssl \
-    --enable-ipv6 \
-    --enable-libcurl \
-    --with-nick-history=2000 \
-    --with-sendq=3000000 \
-    --with-bufferpool=18 \
-    --with-hostname=localhost \
-    --with-listen=6667 \
-    --with-prefix=/home/unrealircd/unrealircd \
-    --with-modulesdir=/home/unrealircd/unrealircd/modules \
-    --with-logdir=/home/unrealircd/unrealircd/logs \
-    --with-cachedir=/home/unrealircd/unrealircd/cache \
-    --with-datadir=/home/unrealircd/unrealircd/data \
-    --with-docdir=/home/unrealircd/unrealircd/doc \
-    --with-tmpdir=/home/unrealircd/unrealircd/tmp \
-    --with-privatelibdir=/home/unrealircd/unrealircd/lib \
-    --with-bindir=/home/unrealircd/unrealircd/bin \
-    --with-scriptdir=/home/unrealircd/unrealircd \
-    --with-controlfile=/run/unrealircd/unrealircd.ctl
+# Copy config.settings file for UnrealIRCd configuration
+COPY config.settings .
+
+# Configure UnrealIRCd using the config.settings file
+RUN ./Config -quick
 
 # Build
 RUN make -j"$(nproc)"
 
-# Switch to root to run installer
+# Install as builduser (same user who configured)
+RUN make install
+
+# Switch back to root for final setup
 USER root
-RUN make install && \
-    chown -R unrealircd:unrealircd /home/unrealircd/unrealircd
+RUN chown -R root:root /home/unrealircd/unrealircd
 
 # Runtime stage
 FROM alpine:3.20
 
 # Runtime arguments
-ARG UID=1000
-ARG GID=1000
+ARG UID=0
+ARG GID=0
 
 # Install runtime dependencies
 RUN apk update && apk add --no-cache \
@@ -90,6 +81,7 @@ RUN apk update && apk add --no-cache \
     c-ares \
     curl \
     ca-certificates \
+    ca-certificates-bundle \
     tini \
     su-exec \
     netcat-openbsd \
@@ -98,13 +90,18 @@ RUN apk update && apk add --no-cache \
     jansson
 
 # Create unrealircd user with specific UID/GID
-RUN addgroup -g ${GID} unrealircd && \
-    adduser -D -u ${UID} -G unrealircd -s /bin/false unrealircd
+RUN if [ "${UID}" = "0" ]; then \
+    addgroup -g 1000 unrealircd && \
+    adduser -D -u 1000 -G unrealircd -s /bin/false unrealircd; \
+    else \
+    addgroup -g ${GID} unrealircd && \
+    adduser -D -u ${UID} -G unrealircd -s /bin/false unrealircd; \
+    fi
 
 # Copy built application from builder stage
 COPY --from=builder /home/unrealircd/unrealircd /home/unrealircd/unrealircd
 
-# Set ownership
+# Set ownership to unrealircd user
 RUN chown -R unrealircd:unrealircd /home/unrealircd/unrealircd
 
 # Create directory structure
@@ -124,6 +121,9 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Set working directory
 WORKDIR /home/unrealircd/unrealircd
 
+# Switch to unrealircd user for runtime
+USER unrealircd
+
 # Expose ports
 EXPOSE 6667 6697 6900 8600 8000
 
@@ -131,7 +131,6 @@ EXPOSE 6667 6697 6900 8600 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD nc -z localhost 6667 || exit 1
 
-# Run as root initially to handle permissions, then drop privileges in entrypoint
-# Use tini as init system
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
+# Use tini as init system with child subreaper
+ENTRYPOINT ["/sbin/tini", "-s", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["start"]

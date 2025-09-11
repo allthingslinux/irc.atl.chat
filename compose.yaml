@@ -9,8 +9,8 @@ services:
       dockerfile: Containerfile
       args:
         UNREALIRCD_VERSION: "6.1.10"
-        UID: 1000
-        GID: 1000
+        UID: 0
+        GID: 0
     container_name: unrealircd
     hostname: unrealircd
     restart: unless-stopped
@@ -60,8 +60,8 @@ services:
       context: ./atheme
       dockerfile: Containerfile
       args:
-        UID: 1000
-        GID: 1000
+        UID: 0
+        GID: 0
     container_name: atheme
     hostname: atheme
     depends_on:

@@ -42,9 +42,15 @@ RUN apk add --no-cache \
     su-exec \
     tini
 
-# Create atheme user
-RUN addgroup -g 1001 -S atheme && \
-    adduser -u 1001 -D -S -G atheme atheme
+# Runtime arguments
+ARG UID=0
+ARG GID=0
+
+# Create atheme user (skip if running as root)
+RUN if [ "${UID}" != "0" ]; then \
+    addgroup -g ${GID} -S atheme && \
+    adduser -u ${UID} -D -S -G atheme atheme; \
+    fi
 
 # Copy from builder
 COPY --from=builder /usr/local/atheme /usr/local/atheme
@@ -53,7 +59,9 @@ COPY --from=builder /usr/local/atheme /usr/local/atheme
 RUN mkdir -p /usr/local/atheme/etc \
     /usr/local/atheme/data \
     /usr/local/atheme/logs && \
-    chown -R atheme:atheme /usr/local/atheme
+    if [ "${UID}" != "0" ]; then \
+    chown -R atheme:atheme /usr/local/atheme; \
+    fi
 
 # Copy entrypoint
 COPY --chown=root:root docker-entrypoint.sh /usr/local/bin/

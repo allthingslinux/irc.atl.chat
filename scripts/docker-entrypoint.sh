@@ -17,60 +17,35 @@ echo "=== UnrealIRCd Docker Entrypoint ==="
 echo "User mapping: UID=$USER_ID, GID=$GROUP_ID"
 echo "Command: $*"
 
-# Function to fix permissions
-fix_permissions() {
-    echo "Fixing permissions on mounted directories..."
+# Function to detect and fix permissions automatically
+setup_environment() {
+    echo "Setting up environment and permissions..."
 
-    # Use host user UID/GID for mounted volumes to avoid permission issues
-    # In rootless Docker, we need to use the actual host UID that maps to our container UID
-    local host_uid=${PUID:-1000}
-    local host_gid=${PGID:-1000}
+    # Create required directories
+    mkdir -p /home/unrealircd/unrealircd/data /home/unrealircd/unrealircd/logs /home/unrealircd/unrealircd/tmp
 
-    # For rootless Docker, we need to find the actual UID that maps to our container UID
-    # This is a workaround for rootless Docker UID mapping
-    if [ -f "/proc/self/uid_map" ]; then
-        local mapped_uid=$(cat /proc/self/uid_map | awk '{print $2}')
-        if [ -n "$mapped_uid" ] && [ "$mapped_uid" != "0" ]; then
-            host_uid=$mapped_uid
-            host_gid=$mapped_uid
+    # Detect if we're in rootless Docker by checking if we're root but have a user namespace
+    if [ "$(id -u)" = "0" ] && [ -f "/proc/self/uid_map" ]; then
+        local container_uid=$(awk 'NR==1 {print $1}' /proc/self/uid_map)
+        local host_uid=$(awk 'NR==1 {print $2}' /proc/self/uid_map)
+
+        if [ "$container_uid" = "0" ] && [ "$host_uid" != "0" ]; then
+            echo "Detected rootless Docker: container UID 0 maps to host UID $host_uid"
+            # Set ownership to the host user so files are accessible
+            chown -R "$host_uid:$host_uid" /home/unrealircd/unrealircd/data /home/unrealircd/unrealircd/logs
+            # Update USER_ID to match the host user
+            USER_ID=$host_uid
+            GROUP_ID=$host_uid
         fi
     fi
 
-    # Fix ownership of mounted volumes to host user
-    chown -R ${host_uid}:${host_gid} /home/unrealircd/unrealircd/logs 2>/dev/null || true
-    chown -R ${host_uid}:${host_gid} /home/unrealircd/unrealircd/data 2>/dev/null || true
-    chown -R ${host_uid}:${host_gid} /home/unrealircd/unrealircd/cache 2>/dev/null || true
-    chown -R ${host_uid}:${host_gid} /home/unrealircd/unrealircd/tmp 2>/dev/null || true
+    # Set proper permissions for directories
+    chmod 755 /home/unrealircd/unrealircd/data /home/unrealircd/unrealircd/logs /home/unrealircd/unrealircd/tmp
 
-    # Fix conf directory if it exists and is writable
-    # Skip conf directory ownership changes to avoid rootless Docker UID mapping issues
-    # The conf directory should be owned by the host user for editing
-    if [ -d "/home/unrealircd/unrealircd/conf" ]; then
-        echo "Skipping conf directory ownership changes (managed by host)"
-        # Only set permissions, not ownership
-        chmod -R 755 /home/unrealircd/unrealircd/conf 2>/dev/null || true
-        if [ -f "/home/unrealircd/unrealircd/conf/unrealircd.conf" ]; then
-            chmod 644 /home/unrealircd/unrealircd/conf/unrealircd.conf 2>/dev/null || true
-        fi
-    fi
+    # Set umask for readable files
+    umask 022
 
-    # Ensure data directory is writable
-    chmod 755 /home/unrealircd/unrealircd/data 2>/dev/null || true
-
-    # Ensure data directory exists and is writable for control socket
-    mkdir -p /home/unrealircd/unrealircd/data 2>/dev/null || true
-    chown -R ${host_uid}:${host_gid} /home/unrealircd/unrealircd/data 2>/dev/null || true
-    chmod 755 /home/unrealircd/unrealircd/data 2>/dev/null || true
-
-    # Create control socket file with proper permissions
-    # Remove existing socket if it exists
-    rm -f /home/unrealircd/unrealircd/data/unrealircd.ctl 2>/dev/null || true
-    # Create the socket file
-    touch /home/unrealircd/unrealircd/data/unrealircd.ctl 2>/dev/null || true
-    chown ${host_uid}:${host_gid} /home/unrealircd/unrealircd/data/unrealircd.ctl 2>/dev/null || true
-    chmod 666 /home/unrealircd/unrealircd/data/unrealircd.ctl 2>/dev/null || true
-
-    echo "Permissions fixed"
+    echo "Environment configured for UID:GID = $USER_ID:$GROUP_ID"
 }
 
 # Function to validate configuration
@@ -108,21 +83,16 @@ start_unrealircd() {
     echo "Found UnrealIRCd binary: $UNREALIRCD_BIN"
     echo "Configuration file: $CONFIG_FILE"
     echo "Working directory: $(pwd)"
+    echo "Running as user: $(id)"
 
-    # Drop privileges and execute
-    if [ "$(id -u)" = '0' ]; then
-        echo "Dropping privileges to run as 'unrealircd' user"
-        exec su-exec unrealircd "$UNREALIRCD_BIN" -F "$@"
-    else
-        echo "Running as current user: $(id)"
-        exec "$UNREALIRCD_BIN" -F "$@"
-    fi
+    # Execute UnrealIRCd directly (already running as correct user)
+    exec "$UNREALIRCD_BIN" -F "$@"
 }
 
 # Main execution
 case "${1:-start}" in
 start)
-    fix_permissions
+    setup_environment
     validate_config
     start_unrealircd "$@"
     ;;
