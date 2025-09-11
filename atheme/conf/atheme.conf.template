@@ -672,7 +672,7 @@ general {
 	#kline_with_ident;
 	#kline_verified_ident;
 	clone_time = 0;
-	#commit_interval = 5;
+        commit_interval = 5; /* Save database every 5 minutes */
 	#db_save_blocking;
 	#operstring = "is an IRC Operator";
 	#servicestring = "is a Network Service";
