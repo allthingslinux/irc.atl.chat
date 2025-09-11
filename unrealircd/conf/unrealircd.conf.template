@@ -498,8 +498,8 @@ set {
         anti-flood {
                 /* Settings that apply to everyone */
                 everyone {
-                        /* Connection flood protection - 3 connections per 60 seconds per IP */
-                        connect-flood 3:60;
+                        /* Connection flood protection - relaxed for testing: 20 connections per 10 seconds per IP */
+                        connect-flood 20:10;
                         
                         /* Handshake data flood protection */
                         handshake-data-flood {
