@@ -91,7 +91,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Lint
-        uses: reviewdog/action-shellcheck@v1.31
+        uses: reviewdog/action-shellcheck@v1.32
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           level: ${{ env.REVIEWDOG_LEVEL }}
