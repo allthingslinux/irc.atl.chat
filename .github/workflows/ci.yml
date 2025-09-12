@@ -175,7 +175,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Lint Docker Compose
+      - name: Lint
         uses: docker-compose-linter/dclint-github-action/reviewdog-action@v1.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
