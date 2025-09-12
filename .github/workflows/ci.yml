@@ -199,7 +199,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Scan
-        uses: reviewdog/action-gitleaks@v1.7
+        uses: reviewdog/action-gitleaks@v1.8
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           level: error
