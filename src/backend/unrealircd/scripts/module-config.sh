@@ -84,12 +84,12 @@ add_module() {
   # Look for the last loadmodule line and add after it
   if grep -q "loadmodule" "$CONFIG_FILE"; then
     # Add after the last loadmodule line
-    awk '/loadmodule/ { print; last_loadmodule = NR } 
-             !/loadmodule/ { 
+    awk '/loadmodule/ { print; last_loadmodule = NR }
+             !/loadmodule/ {
                  if (last_loadmodule && NR == last_loadmodule + 1) {
                      print "loadmodule \"third/'"$module_name"'\";"
                  }
-                 print 
+                 print
              }' "$CONFIG_FILE" > "$temp_file"
   else
     # No loadmodule lines found, add at the end
