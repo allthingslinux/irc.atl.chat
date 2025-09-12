@@ -1,7 +1,6 @@
 include "modules.default.conf";
 include "modules.optional.conf";
 
-blacklist-module "control";
 
 include "help/help.conf";
 include "badwords.conf";
@@ -109,6 +108,12 @@ set {
 		ciphersuites "TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_8_SHA256:TLS_AES_128_CCM_SHA256";
 
 		/* Modern ECDH curves for better security */
+		/* ECDH groups - updated for UnrealIRCd 6.2.0+ */
+		/* Note: ecdh-curves is deprecated, use 'groups' instead */
+		/* X25519MLKEM768: Post-quantum cryptography hybrid group (requires OpenSSL 3.5.0+) */
+		/* X25519: Standard curve used by most clients today */
+		groups "X25519MLKEM768:X25519:secp521r1:secp384r1:prime256v1";
+		/* Legacy setting for compatibility */
 		ecdh-curves "X25519:secp521r1:secp384r1:prime256v1";
 
 		/* Strict Transport Security (STS) - Automatically redirect users to TLS */
@@ -453,6 +458,19 @@ set {
 
         /* Anti-flood settings for enhanced security */
         anti-flood {
+                /* Channel anti-flood protection (UnrealIRCd 6.2.0+) */
+                channel {
+                        /* Default profile for all channels - can be overridden with +F mode */
+                        default-profile normal;
+                        
+                        /* Custom profiles - these override the built-in ones if needed */
+                        profile very-strict { flood-mode "[7c#C15,10j#R10,10k#K15,30m#M10,10n#N15]:15"; }
+                        profile strict { flood-mode "[7c#C15,15j#R10,10k#K15,40m#M10,10n#N15]:15"; }
+                        profile normal { flood-mode "[7c#C15,30j#R10,10k#K15,40m#M10,10n#N15]:15"; }
+                        profile relaxed { flood-mode "[7c#C15,45j#R10,10k#K15,60m#M10,10n#N15]:15"; }
+                        profile very-relaxed { flood-mode "[7c#C15,60j#R10,10k#K15,90m#M10,10n#N15]:15"; }
+                }
+                
                 /* Settings that apply to everyone */
                 everyone {
                         /* Connection flood protection - relaxed for testing: 20 connections per 10 seconds per IP */
@@ -540,10 +558,20 @@ set {
  * - Private message conversation limits to prevent spam bots
  * - Lag penalty system prevents command flooding
  * 
+ * CHANNEL ANTI-FLOOD PROTECTION (UnrealIRCd 6.2.0+):
+ * - Default "normal" profile applied to all channels automatically
+ * - Channel operators can override with MODE +F <profile>:
+ *   +F normal    - Standard protection (default)
+ *   +F relaxed   - For busy channels with lots of activity  
+ *   +F strict    - For channels needing extra protection
+ *   +F off       - Disable channel anti-flood (not recommended)
+ * - Use MODE #channel F to see current effective settings
+ * - Protection covers: messages, notices, joins, parts, nick changes, kicks, CTCPs
+ * 
  * SECURITY PHILOSOPHY:
  * - Balanced approach: Strict enough to prevent abuse, lenient enough for normal use
  * - Graduated penalties: Unknown users have stricter limits than known users
- * - Multiple protection layers: Per-IP, per-user, and per-target limits
+ * - Multiple protection layers: Per-IP, per-user, per-target, and per-channel limits
  */
 
 /*
