@@ -21,7 +21,9 @@ unrealircd/conf/tls/
 
 # Runtime data directories (created at runtime)
 data/
+!data/**/.gitkeep
 logs/
+!logs/**/.gitkeep
 
 # Generated configuration files (created from templates)
 unrealircd/conf/unrealircd.conf
