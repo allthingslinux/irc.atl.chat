@@ -1,7 +1,7 @@
 # ================================================================================
 # Atheme Services - IRC Services Daemon
 # ================================================================================
-FROM alpine:3.20 AS builder
+FROM alpine:3.22 AS builder
 
 # Build dependencies - minimal set for Atheme with SASL SCRAM-SHA support
 
@@ -44,7 +44,7 @@ RUN ./configure \
 # ================================================================================
 # Runtime stage
 # ================================================================================
-FROM alpine:3.20
+FROM alpine:3.22
 
 # Runtime dependencies - minimal set for Atheme operation
 # Only include what's actually needed for the configured modules
