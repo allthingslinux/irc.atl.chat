@@ -3,30 +3,42 @@
 # ================================================================================
 FROM alpine:3.20 AS builder
 
-# Build dependencies
+# Build dependencies - minimal set for Atheme with SASL SCRAM-SHA support
+
+# hadolint ignore=DL3018
 RUN apk add --no-cache \
     build-base \
     pkgconf \
     openssl-dev \
     libidn-dev \
-    git
+    git \
+    autoconf \
+    automake \
+    libtool \
+    gettext-dev
 
 # Download and build Atheme
-ARG ATHEME_VERSION="7.2.12"
+ARG ATHEME_VERSION="master"
 WORKDIR /usr/src
 
-# Checkout from Git - we need to manually bump the libmowgli snapshot to fix compilation against musl
-RUN git clone https://github.com/atheme/atheme -b v${ATHEME_VERSION} --depth=1 atheme-src --recursive && \
-    cd atheme-src/libmowgli-2 && \
-    git pull origin master
+# Checkout from Git with proper submodule handling
+RUN git clone https://github.com/atheme/atheme -b "${ATHEME_VERSION}" --depth=1 atheme-src --recursive
+WORKDIR /usr/src/atheme-src/libmowgli-2
+RUN git pull origin master
 
-# Alpine build fix
+# Alpine build fixes
 RUN sed -i "s/@MKDIR_P@/mkdir -p/g" /usr/src/atheme-src/modules/contrib/buildsys.mk.in
 
-# Configure and build with libidn support for SCRAM-SHA
-RUN cd /usr/src/atheme-src && \
-    ./configure --prefix=/usr/local/atheme --enable-contrib --with-modulesdir=/usr/local/atheme/modules --with-libidn && \
-    make -j$(nproc) && \
+# Configure with minimal options for your configuration
+WORKDIR /usr/src/atheme-src
+RUN ./configure \
+    --prefix=/usr/local/atheme \
+    --enable-contrib \
+    --with-modulesdir=/usr/local/atheme/modules \
+    --with-libidn \
+    --enable-large-net \
+    --disable-linker-defs && \
+    make -j"$(nproc)" && \
     make install
 
 # ================================================================================
@@ -34,38 +46,41 @@ RUN cd /usr/src/atheme-src && \
 # ================================================================================
 FROM alpine:3.20
 
-# Runtime dependencies
+# Runtime dependencies - minimal set for Atheme operation
+# Only include what's actually needed for the configured modules
+
+# hadolint ignore=DL3018
 RUN apk add --no-cache \
     openssl \
     libidn \
     ca-certificates \
-    su-exec \
     tini
 
 # Runtime arguments
-ARG UID=0
-ARG GID=0
+ARG UID=1000
+ARG GID=1000
 
-# Create atheme user (skip if running as root)
-RUN if [ "${UID}" != "0" ]; then \
-    addgroup -g ${GID} -S atheme && \
-    adduser -u ${UID} -D -S -G atheme atheme; \
-    fi
+# Create atheme user and group
+RUN addgroup -g ${GID} -S atheme && \
+    adduser -u ${UID} -D -S -G atheme atheme
 
 # Copy from builder
 COPY --from=builder /usr/local/atheme /usr/local/atheme
 
-# Create directory structure
-RUN mkdir -p /usr/local/atheme/etc \
-    /usr/local/atheme/data \
-    /usr/local/atheme/logs && \
-    if [ "${UID}" != "0" ]; then \
-    chown -R atheme:atheme /usr/local/atheme; \
-    fi
+# Create directory structure with proper permissions
+RUN mkdir -p /usr/local/atheme/etc /usr/local/atheme/data /usr/local/atheme/logs /usr/local/atheme/logs/atheme /usr/local/atheme/var && \
+    chown -R atheme:atheme /usr/local/atheme
 
 # Copy entrypoint
 COPY --chown=root:root docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Use tini as init system - entrypoint will be overridden by compose.yaml
+# Security: Don't run as root
+USER atheme
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD pgrep -f atheme-services > /dev/null || exit 1
+
+# Use tini as init system
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]
