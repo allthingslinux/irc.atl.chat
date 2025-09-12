@@ -7,12 +7,10 @@ set -e
 
 # Configuration
 IRC_PORT=${IRC_PORT:-6667}
-TIMEOUT=5
 
 # Function to check port
 check_port() {
     local port=$1
-    local timeout=$2
 
     if command -v nc >/dev/null 2>&1; then
         nc -z localhost "$port" 2>/dev/null
@@ -29,7 +27,7 @@ check_port() {
 # Main health check
 echo "Checking UnrealIRCd health on port $IRC_PORT..."
 
-if check_port "$IRC_PORT" "$TIMEOUT"; then
+if check_port "$IRC_PORT"; then
     echo "SUCCESS: UnrealIRCd is responding on port $IRC_PORT"
     exit 0
 else

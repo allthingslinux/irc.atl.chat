@@ -1,45 +1,56 @@
 ---
-
-name: irc.atl.chat
+name: "irc.atl.chat"
 
 services:
+  # ============================================================================
+  # UNREALIRCD - Main IRC Server
+  # ============================================================================
   unrealircd:
+    # Build configuration
     build:
-      context: ./unrealircd
+      context: ./src/backend/unrealircd
       dockerfile: Containerfile
       args:
-        UNREALIRCD_VERSION: "6.2.0.1"
-        UID: 0
-        GID: 0
+        UNREALIRCD_VERSION: ${UNREALIRCD_VERSION:-6.2.0.1}
+        UID: ${PUID:-1000}
+        GID: ${PGID:-1000}
+
+    # Container configuration
     container_name: unrealircd
     hostname: unrealircd
-    restart: unless-stopped
-    init: true
+    init: true 
+
+    # Dependencies
+    # (none - this is the primary service)
 
     # Volume mounts - aligned with Containerfile paths
     volumes:
-      - ./unrealircd/conf:/home/unrealircd/unrealircd/conf
+      - ./src/backend/unrealircd/conf:/home/unrealircd/unrealircd/conf
       - ./logs/unrealircd:/home/unrealircd/unrealircd/logs
       - ./data/unrealircd:/home/unrealircd/unrealircd/data
-      - ./scripts:/opt/irc/scripts:ro
 
-    # Environment
+    # Environment variables
     environment:
       - TZ=UTC
-      - PUID=1000
-      - PGID=1000
-      - IRC_SSL_CERT_PATH=/home/unrealircd/unrealircd/conf/tls/server.cert.pem
-      - IRC_SSL_KEY_PATH=/home/unrealircd/unrealircd/conf/tls/server.key.pem
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
 
     # Port mappings
     ports:
-      - '${IRC_PORT:-6667}:6667'  # Standard IRC port
-      - '${IRC_TLS_PORT:-6697}:6697'  # IRC over SSL/TLS
-      - '${IRC_SERVER_PORT:-6900}:6900'  # Server-to-server TLS
-      - '${IRC_RPC_PORT:-8600}:8600'  # JSON-RPC API
-      - '${IRC_WEBSOCKET_PORT:-8000}:8000'  # WebSocket for web IRC clients
+      - '${IRC_PORT:-6667}:6667'              # Standard IRC port
+      - '${IRC_TLS_PORT:-6697}:6697'          # IRC over SSL/TLS
+      - '${IRC_SERVER_PORT:-6900}:6900'       # Server-to-server TLS
+      - '${IRC_RPC_PORT:-8600}:8600'          # JSON-RPC API
+      - '${IRC_WEBSOCKET_PORT:-8000}:8000'    # WebSocket for web IRC clients
 
-    # Health monitoring - use built-in healthcheck
+    # Network configuration
+    networks:
+      - irc-network
+
+    # Restart policy
+    restart: unless-stopped
+
+    # Health monitoring
     healthcheck:
       test: ['CMD', 'nc', '-z', 'localhost', '6667']
       interval: 30s
@@ -47,43 +58,51 @@ services:
       retries: 3
       start_period: 30s
 
-    # Network configuration
-    networks:
-      - irc_network
-
     # Graceful shutdown
     stop_grace_period: 60s
 
-
+  # ============================================================================
+  # ATHEME - IRC Services (NickServ, ChanServ, etc.)
+  # ============================================================================
   atheme:
+    # Build configuration
     build:
-      context: ./atheme
+      context: ./src/backend/atheme
       dockerfile: Containerfile
       args:
         UID: ${PUID:-1000}
         GID: ${PGID:-1000}
+
+    # Container configuration
     container_name: atheme
     hostname: atheme
+
+    # Dependencies
     depends_on:
       unrealircd:
         condition: service_healthy
         restart: true
+
+    # Volume mounts
     volumes:
-      - ./atheme/conf:/usr/local/atheme/etc:ro
+      - ./src/backend/atheme/conf:/usr/local/atheme/etc:ro
       - ./data/atheme:/usr/local/atheme/data
       - ./logs/atheme:/usr/local/atheme/logs
+
+    # Environment variables
     environment:
       - TZ=UTC
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
-      - ATHEME_CONF=/usr/local/atheme/etc/atheme.conf
-      - ATHEME_DATA=/usr/local/atheme/data
+
+    # Network configuration
     networks:
-      - irc_network
+      - irc-network
+
+    # Restart policy
     restart: unless-stopped
-    # Security: Run as non-root user
-    user: "${PUID:-1000}:${PGID:-1000}"
-    # Health check
+
+    # Health monitoring
     healthcheck:
       test: ['CMD', 'pgrep', '-f', 'atheme-services']
       interval: 30s
@@ -91,32 +110,51 @@ services:
       retries: 3
       start_period: 30s
 
+    # Security: Run as non-root user
+    user: "${PUID:-1000}:${PGID:-1000}"
+
+  # ============================================================================
+  # UNREALIRCD WEBPANEL - Web-based Administration Interface
+  # ============================================================================
   unrealircd-webpanel:
+    # Build configuration
     build:
       context: .
-      dockerfile: web/webpanel/Containerfile
+      dockerfile: src/frontend/webpanel/Containerfile
+
+    # Container configuration
     container_name: unrealircd-webpanel
     hostname: unrealircd-webpanel
+
+    # Dependencies
     depends_on:
       unrealircd:
         condition: service_healthy
+
+    # Volume mounts
     volumes:
-      - webpanel_data:/var/www/html/unrealircd-webpanel/data
+      - unrealircd-webpanel-data:/var/www/html/unrealircd-webpanel/data
+
+    # Environment file
     env_file:
-      - path: .env
-        required: false
+      - .env
+
+    # Environment variables
     environment:
       - TZ=UTC
-      - UNREALIRCD_HOST=unrealircd
-      - UNREALIRCD_PORT=${IRC_RPC_PORT:-8600}
-      - UNREALIRCD_RPC_USER=${WEBPANEL_RPC_USER:-adminpanel}
-      - UNREALIRCD_RPC_PASSWORD=${WEBPANEL_RPC_PASSWORD:-test1234}
-      - UNREALIRCD_RPC_SSL=1
+
+    # Port mappings
     ports:
-      - '8080:8080'
+      - '${WEBPANEL_PORT:-8080}:8080'
+
+    # Network configuration
     networks:
-      - irc_network
+      - irc-network
+
+    # Restart policy
     restart: unless-stopped
+
+    # Health monitoring
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
@@ -125,29 +163,44 @@ services:
       start_period: 60s
 
   # ============================================================================
-  # SSL MONITOR (Docker-based - Runs automatically, don't manually control!)
+  # SSL MONITOR - Automated Certificate Management via Let's Encrypt
   # ============================================================================
   ssl-monitor:
+    # Image configuration
     image: alpine:latest
-    container_name: ssl-monitor
-    restart: unless-stopped
 
-    # Get environment variables from .env file
+    # Container configuration
+    container_name: ssl-monitor
+    hostname: ssl-monitor
+
+    # Dependencies
+    # (none - runs independently)
+
+    # Volume mounts
+    volumes:
+      - ./scripts:/scripts:ro                    # SSL management scripts (read-only)
+      - ./src/backend/unrealircd/conf/tls:/tls       # SSL certificates directory
+      - ./data/letsencrypt:/letsencrypt           # Let's Encrypt data
+      - ./cloudflare-credentials.ini:/cloudflare-credentials.ini:ro  # Cloudflare API credentials
+
+    # Environment file
     env_file:
       - .env
 
-    # Simple environment
+    # Environment variables
     environment:
       - TZ=UTC
+      - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-admin@allthingslinux.org}
+      - IRC_DOMAIN=${IRC_DOMAIN:-irc.atl.chat}
 
-    # Mount scripts and certificates
-    volumes:
-      - ./scripts:/scripts:ro
-      - ./unrealircd/conf/tls:/tls
-      - ./data/letsencrypt:/letsencrypt
-      - ./cloudflare-credentials.ini:/cloudflare-credentials.ini:ro
+    # Network configuration
+    networks:
+      - irc-network
 
-    # Simple monitoring loop
+    # Restart policy
+    restart: unless-stopped
+
+    # Command: Simple monitoring loop
     command: >
       sh -c "
         apk add --no-cache openssl curl &&
@@ -167,27 +220,28 @@ services:
         done
       "
 
-    # Network access
-    networks:
-      - irc_network
+  # ============================================================================
+  # COMMENTED OUT SERVICES - Available for future use
+  # ============================================================================
 
+  # Gamja IRC Web Client (commented out)
   # gamja:
   #   build:
   #     context: .
-  #     dockerfile: web/gamja/Containerfile
+  #     dockerfile: src/frontend/gamja/Containerfile
   #   container_name: gamja
   #   hostname: gamja
   #   depends_on:
   #     unrealircd:
   #       condition: service_healthy
+  #   volumes:
+  #     - ./src/frontend/gamja:/var/www/html/gamja:ro
   #   environment:
   #     - TZ=UTC
-  #   volumes:
-  #     - ./web/gamja:/var/www/html/gamja:ro
   #   ports:
   #     - '8081:80'
   #   networks:
-  #     - irc_network
+  #     - irc-network
   #   restart: unless-stopped
   #   healthcheck:
   #     test: ["CMD", "curl", "-f", "http://localhost/gamja/"]
@@ -196,6 +250,7 @@ services:
   #     retries: 3
   #     start_period: 60s
 
+  # The Lounge IRC Web Client (commented out)
   # thelounge:
   #   image: thelounge/thelounge:4@sha256:c2aa0916203b298ffaf3a36c4eb60ef73c1006448d430e218d37840472e84e50
   #   container_name: thelounge
@@ -203,18 +258,26 @@ services:
   #   depends_on:
   #     unrealircd:
   #       condition: service_healthy
-  #   volumes: u make 
+  #   volumes:
   #     - ./data/thelounge:/var/opt/thelounge
   #   networks:
-  #     - irc_network
+  #     - irc-network
   #   ports:
   #     - '9000:9000'
   #   restart: unless-stopped
 
+# ============================================================================
+# NETWORKS
+# ============================================================================
 networks:
-  irc_network:
+  irc-network:
+    name: irc-network
     driver: bridge
 
+# ============================================================================
+# VOLUMES
+# ============================================================================
 volumes:
-  webpanel_data:
+  unrealircd-webpanel-data:
+    name: unrealircd-webpanel-data
     driver: local

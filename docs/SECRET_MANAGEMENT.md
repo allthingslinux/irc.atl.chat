@@ -8,7 +8,7 @@
 
 ```
 .env                          # 🔑 Single source of truth for all secrets
-unrealircd/conf/
+src/backend/unrealircd/conf/
 ├── unrealircd.conf.template  # 📋 Template with ${VARIABLE} syntax
 └── unrealircd.conf           # ⚙️  Generated configuration
 scripts/
@@ -106,7 +106,7 @@ docker compose up unrealircd
 ### **✅ DO: Edit the Template**
 ```bash
 # Edit the template file
-vim unrealircd/conf/unrealircd.conf.template
+vim src/backend/unrealircd/conf/unrealircd.conf.template
 
 # Add new settings
 loadmodule "newmodule";
@@ -118,13 +118,13 @@ set {
 ### **❌ DON'T: Edit the Generated Config**
 ```bash
 # DON'T edit this file - it gets overwritten!
-vim unrealircd/conf/unrealircd.conf
+vim src/backend/unrealircd/conf/unrealircd.conf
 ```
 
 ### **🔄 Workflow for Changes**
 ```bash
 # 1. Edit template
-vim unrealircd/conf/unrealircd.conf.template
+vim src/backend/unrealircd/conf/unrealircd.conf.template
 
 # 2. Regenerate config
 ./scripts/prepare-config.sh
@@ -146,13 +146,13 @@ docker compose up unrealircd
 ### **Configuration Not Updating**
 ```bash
 # Check if template exists
-ls -la unrealircd/conf/unrealircd.conf.template
+ls -la src/backend/unrealircd/conf/unrealircd.conf.template
 
 # Regenerate config
 ./scripts/prepare-config.sh
 
 # Check if variables are substituted
-grep -n '\${' unrealircd/conf/unrealircd.conf
+grep -n '\${' src/backend/unrealircd/conf/unrealircd.conf
 ```
 
 ### **Missing Environment Variables**
@@ -167,10 +167,10 @@ cat .env
 ### **Template vs Generated Config**
 ```bash
 # Template (has variables)
-grep "IRC_DOMAIN" unrealircd/conf/unrealircd.conf.template
+grep "IRC_DOMAIN" src/backend/unrealircd/conf/unrealircd.conf.template
 
 # Generated config (has values)
-grep "irc.atl.chat" unrealircd/conf/unrealircd.conf
+grep "irc.atl.chat" src/backend/unrealircd/conf/unrealircd.conf
 ```
 
 ## 🎯 **Summary**

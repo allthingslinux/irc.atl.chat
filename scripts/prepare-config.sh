@@ -34,8 +34,8 @@ log_error() {
 
 # Function to prepare configuration
 prepare_config() {
-    local unreal_config="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf"
-    local atheme_config="$PROJECT_ROOT/atheme/conf/atheme.conf"
+    local unreal_config="$PROJECT_ROOT/src/backend/unrealircd/conf/unrealircd.conf"
+    local atheme_config="$PROJECT_ROOT/src/backend/atheme/conf/atheme.conf"
 
     log_info "Preparing IRC configuration files with environment variables..."
 
@@ -57,7 +57,7 @@ prepare_config() {
     fi
 
     # Prepare UnrealIRCd configuration
-    local unreal_template="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf.template"
+    local unreal_template="$PROJECT_ROOT/src/backend/unrealircd/conf/unrealircd.conf.template"
     if [ -f "$unreal_template" ]; then
         log_info "Preparing UnrealIRCd configuration from template..."
 
@@ -103,7 +103,7 @@ prepare_config() {
     fi
 
     # Prepare Atheme configuration
-    local atheme_template="$PROJECT_ROOT/atheme/conf/atheme.conf.template"
+    local atheme_template="$PROJECT_ROOT/src/backend/atheme/conf/atheme.conf.template"
     if [ -f "$atheme_template" ]; then
         log_info "Preparing Atheme configuration from template..."
 

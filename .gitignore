@@ -14,7 +14,7 @@ runtime/*/
 !runtime/.gitkeep
 
 # SSL certificates and keys
-unrealircd/conf/tls/
+src/backend/unrealircd/conf/tls/
 *.pem
 *.key
 *.crt
@@ -26,8 +26,8 @@ logs/
 !logs/**/.gitkeep
 
 # Generated configuration files (created from templates)
-unrealircd/conf/unrealircd.conf
-atheme/conf/atheme.conf
+src/backend/unrealircd/conf/unrealircd.conf
+src/backend/atheme/conf/atheme.conf
 
 # Docker volumes (if any are created)
 ircd_data/

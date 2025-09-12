@@ -1,10 +1,12 @@
-# ================================================================================
-# Atheme Services - IRC Services Daemon
-# ================================================================================
+# ============================================================================
+# BUILD STAGE - Compile Atheme from source
+# ============================================================================
 FROM alpine:3.22 AS builder
 
-# Build dependencies - minimal set for Atheme with SASL SCRAM-SHA support
+# Build arguments
+ARG ATHEME_VERSION="master"
 
+# Install build dependencies
 # hadolint ignore=DL3018
 RUN apk add --no-cache \
     build-base \
@@ -18,20 +20,19 @@ RUN apk add --no-cache \
     gettext-dev
 
 # Download and build Atheme
-ARG ATHEME_VERSION="master"
 WORKDIR /usr/src
 
-# Checkout from Git with proper submodule handling
+# Clone Atheme source with submodules
 RUN git clone https://github.com/atheme/atheme -b "${ATHEME_VERSION}" --depth=1 atheme-src --recursive
+
+# Update libmowgli submodule
 WORKDIR /usr/src/atheme-src/libmowgli-2
 RUN git pull origin master
 
-# Alpine build fixes
-RUN sed -i "s/@MKDIR_P@/mkdir -p/g" /usr/src/atheme-src/modules/contrib/buildsys.mk.in
-
-# Configure with minimal options for your configuration
+# Configure, build, and install Atheme
 WORKDIR /usr/src/atheme-src
-RUN ./configure \
+RUN sed -i "s/@MKDIR_P@/mkdir -p/g" /usr/src/atheme-src/modules/contrib/buildsys.mk.in && \
+    ./configure \
     --prefix=/usr/local/atheme \
     --enable-contrib \
     --with-modulesdir=/usr/local/atheme/modules \
@@ -41,14 +42,16 @@ RUN ./configure \
     make -j"$(nproc)" && \
     make install
 
-# ================================================================================
-# Runtime stage
-# ================================================================================
+# ============================================================================
+# RUNTIME STAGE - Minimal production container
+# ============================================================================
 FROM alpine:3.22
 
-# Runtime dependencies - minimal set for Atheme operation
-# Only include what's actually needed for the configured modules
+# Runtime arguments
+ARG UID=1000
+ARG GID=1000
 
+# Install runtime dependencies
 # hadolint ignore=DL3018
 RUN apk add --no-cache \
     openssl \
@@ -56,31 +59,35 @@ RUN apk add --no-cache \
     ca-certificates \
     tini
 
-# Runtime arguments
-ARG UID=1000
-ARG GID=1000
-
-# Create atheme user and group
+# Create atheme user with specific UID/GID
 RUN addgroup -g ${GID} -S atheme && \
     adduser -u ${UID} -D -S -G atheme atheme
 
-# Copy from builder
+# Copy built application from builder stage
 COPY --from=builder /usr/local/atheme /usr/local/atheme
 
 # Create directory structure with proper permissions
-RUN mkdir -p /usr/local/atheme/etc /usr/local/atheme/data /usr/local/atheme/logs /usr/local/atheme/logs/atheme /usr/local/atheme/var && \
+RUN mkdir -p /usr/local/atheme/etc \
+    /usr/local/atheme/data \
+    /usr/local/atheme/logs \
+    /usr/local/atheme/logs/atheme \
+    /usr/local/atheme/var && \
     chown -R atheme:atheme /usr/local/atheme
 
-# Copy entrypoint
-COPY --chown=root:root docker-entrypoint.sh /usr/local/bin/
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Security: Don't run as root
-USER atheme
+# Set working directory
+WORKDIR /usr/local/atheme
 
-# Health check
+# Health check - verify Atheme services are running
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD pgrep -f atheme-services > /dev/null || exit 1
 
+# Switch to atheme user for security
+USER atheme
+
 # Use tini as init system
+# Entrypoint handles service startup
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/docker-entrypoint.sh"]

@@ -11,6 +11,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Load environment variables from .env file if it exists
 if [ -f "$PROJECT_ROOT/.env" ]; then
     set -a # automatically export all variables
+    # shellcheck disable=SC1091
     source "$PROJECT_ROOT/.env"
     set +a # stop automatically exporting
 fi
@@ -47,7 +48,6 @@ create_directories() {
     local data_dirs=(
         "$PROJECT_ROOT/data/unrealircd"
         "$PROJECT_ROOT/data/atheme"
-        "$PROJECT_ROOT/data/webpanel"
         "$PROJECT_ROOT/data/letsencrypt"
     )
 
@@ -59,7 +59,7 @@ create_directories() {
 
     # SSL directories
     local ssl_dirs=(
-        "$PROJECT_ROOT/unrealircd/conf/tls"
+        "$PROJECT_ROOT/src/backend/unrealircd/conf/tls"
     )
 
     # Create all directories
@@ -130,8 +130,8 @@ set_permissions() {
     fi
 
     # Set permissions for SSL certificates
-    if [ -d "$PROJECT_ROOT/unrealircd/conf/tls" ]; then
-        chmod 755 "$PROJECT_ROOT/unrealircd/conf/tls" || log_warning "Could not set permissions for SSL directory"
+    if [ -d "$PROJECT_ROOT/src/backend/unrealircd/conf/tls" ]; then
+        chmod 755 "$PROJECT_ROOT/src/backend/unrealircd/conf/tls" || log_warning "Could not set permissions for SSL directory"
         log_info "Set permissions for SSL directory"
     fi
 
@@ -168,8 +168,8 @@ prepare_config_files() {
     fi
 
     # Prepare UnrealIRCd configuration
-    local unreal_template="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf.template"
-    local unreal_config="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf"
+    local unreal_template="$PROJECT_ROOT/src/backend/unrealircd/conf/unrealircd.conf.template"
+    local unreal_config="$PROJECT_ROOT/src/backend/unrealircd/conf/unrealircd.conf"
 
     if [ -f "$unreal_template" ]; then
         log_info "Creating UnrealIRCd configuration from template..."
@@ -185,8 +185,8 @@ prepare_config_files() {
     fi
 
     # Prepare Atheme configuration
-    local atheme_template="$PROJECT_ROOT/atheme/conf/atheme.conf.template"
-    local atheme_config="$PROJECT_ROOT/atheme/conf/atheme.conf"
+    local atheme_template="$PROJECT_ROOT/src/backend/atheme/conf/atheme.conf.template"
+    local atheme_config="$PROJECT_ROOT/src/backend/atheme/conf/atheme.conf"
 
     if [ -f "$atheme_template" ]; then
         log_info "Creating Atheme configuration from template..."

@@ -80,7 +80,7 @@ validate_configuration() {
 # Simple configuration
 DOMAIN="${IRC_ROOT_DOMAIN}"
 EMAIL="${LETSENCRYPT_EMAIL}"
-TLS_DIR="./unrealircd/conf/tls"
+TLS_DIR="./src/backend/unrealircd/conf/tls"
 LETSENCRYPT_DIR="./data/letsencrypt"
 CREDENTIALS_FILE="./cloudflare-credentials.ini"
 
@@ -586,7 +586,7 @@ ENVIRONMENT VARIABLES (from .env file):
 FILES:
     ./cloudflare-credentials.ini  - Cloudflare API token
     ./data/letsencrypt/           - Let's Encrypt data directory
-    ./unrealircd/conf/tls/        - UnrealIRCd TLS certificates
+    ./src/backend/unrealircd/conf/tls/        - UnrealIRCd TLS certificates
 
 For more information, see the SSL documentation.
 EOF

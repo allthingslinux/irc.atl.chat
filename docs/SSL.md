@@ -78,8 +78,8 @@ VERBOSE: Enhanced operational details (--verbose flag)
 - `Makefile`: Complete SSL management targets
 
 ### Certificate Storage
-- `unrealircd/conf/tls/server.cert.pem`: SSL certificate for IRCd
-- `unrealircd/conf/tls/server.key.pem`: SSL private key for IRCd
+- `src/backend/unrealircd/conf/tls/server.cert.pem`: SSL certificate for IRCd
+- `src/backend/unrealircd/conf/tls/server.key.pem`: SSL private key for IRCd
 - `data/letsencrypt/`: Let's Encrypt ACME challenge data
 
 ### Configuration Files
@@ -137,11 +137,11 @@ cat cloudflare-credentials.ini
 #### ❌ "Certificate file is not readable"
 ```bash
 # Check file permissions
-ls -la unrealircd/conf/tls/
+ls -la src/backend/unrealircd/conf/tls/
 
 # Fix permissions if needed
-chmod 644 unrealircd/conf/tls/server.cert.pem
-chmod 644 unrealircd/conf/tls/server.key.pem
+chmod 644 src/backend/unrealircd/conf/tls/server.cert.pem
+chmod 644 src/backend/unrealircd/conf/tls/server.key.pem
 ```
 
 #### ❌ "Domain validation failed"
@@ -173,7 +173,7 @@ sudo make ssl-setup
 ./scripts/ssl-manager.sh --debug issue
 
 # Check certificate expiry manually
-openssl x509 -in unrealircd/conf/tls/server.cert.pem -noout -enddate
+openssl x509 -in src/backend/unrealircd/conf/tls/server.cert.pem -noout -enddate
 
 # Verify certificate validity
 ./scripts/ssl-manager.sh --verbose check
@@ -220,7 +220,7 @@ make ssl-setup
 ### Custom Certificate Paths
 The script uses these default paths (defined in ssl-manager.sh):
 ```bash
-TLS_DIR="./unrealircd/conf/tls"
+TLS_DIR="./src/backend/unrealircd/conf/tls"
 LETSENCRYPT_DIR="./data/letsencrypt"
 CREDENTIALS_FILE="./cloudflare-credentials.ini"
 ```

@@ -68,11 +68,10 @@ class DirectoryStructureTests(EnvironmentValidator):
         required_dirs = [
             "data/unrealircd",
             "data/atheme",
-            "data/webpanel",
             "logs/unrealircd",
             "logs/atheme",
-            "unrealircd/conf",
-            "atheme/conf",
+            "src/backend/unrealircd/conf",
+            "src/backend/atheme/conf",
             "scripts",
             "tests",
         ]
@@ -128,7 +127,7 @@ class DirectoryStructureTests(EnvironmentValidator):
 
     def test_config_directory_ownership(self):
         """Test config directories have correct ownership"""
-        config_dirs = ["unrealircd/conf", "atheme/conf"]
+        config_dirs = ["src/backend/unrealircd/conf", "src/backend/atheme/conf"]
 
         ownership_issues = []
         current_uid = os.getuid()
@@ -203,8 +202,8 @@ class ConfigurationTests(EnvironmentValidator):
     def test_template_files_exist(self):
         """Test configuration template files exist"""
         templates = [
-            "unrealircd/conf/unrealircd.conf.template",
-            "atheme/conf/atheme.conf.template",
+            "src/backend/unrealircd/conf/unrealircd.conf.template",
+            "src/backend/atheme/conf/atheme.conf.template",
         ]
 
         missing_templates = []
@@ -226,7 +225,10 @@ class ConfigurationTests(EnvironmentValidator):
 
     def test_generated_config_files(self):
         """Test that generated config files exist and are valid"""
-        configs = ["unrealircd/conf/unrealircd.conf", "atheme/conf/atheme.conf"]
+        configs = [
+            "src/backend/unrealircd/conf/unrealircd.conf",
+            "src/backend/atheme/conf/atheme.conf",
+        ]
 
         config_issues = []
         for config_path in configs:

@@ -157,8 +157,8 @@ make ssl-logs
 ### Configuration Issues
 ```bash
 make restart
-ls -la unrealircd/conf/unrealircd.conf
-ls -la services/atheme/atheme.conf
+ls -la src/backend/unrealircd/conf/unrealircd.conf
+ls -la src/backend/atheme/conf/atheme.conf
 ```
 
 ## Documentation

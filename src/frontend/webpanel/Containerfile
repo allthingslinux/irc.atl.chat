@@ -1,19 +1,18 @@
-# UnrealIRCd WebPanel - Official Approach (Exact Copy)
-# Based on: https://github.com/unrealircd/unrealircd-webpanel/blob/main/Dockerfile
-
+# hadolint ignore=DL3006
 FROM composer/composer AS builder
 
 WORKDIR /app
 
-# Clone the webpanel source (since we don't have local source)
-RUN git clone --depth 1 https://github.com/unrealircd/unrealircd-webpanel.git .
+# Clone the webpanel source and install dependencies
+RUN git clone --depth 1 https://github.com/unrealircd/unrealircd-webpanel.git . && \
+    composer install --no-dev --optimize-autoloader
 
-RUN composer install --no-dev --optimize-autoloader
-
+# hadolint ignore=DL3006
 FROM trafex/php-nginx
 
 USER root
 
+# hadolint ignore=DL3018
 RUN apk add --no-cache php84-sodium
 
 USER nobody

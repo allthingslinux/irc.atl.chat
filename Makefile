@@ -232,7 +232,7 @@ lint:
 	fi
 	@if command -v hadolint >/dev/null 2>&1; then \
 		echo -e "$(BLUE)[INFO]$(NC) Running hadolint..."; \
-		hadolint Containerfile web/webpanel/Containerfile; \
+		hadolint Containerfile src/frontend/webpanel/Containerfile; \
 		echo -e "$(GREEN)[SUCCESS]$(NC) Hadolint completed!"; \
 	else \
 		echo -e "$(YELLOW)[WARNING]$(NC) hadolint not found. Install it for Containerfile validation."; \
@@ -311,7 +311,7 @@ ssl-setup: ## One-command SSL setup - sets up everything automatically
 
 ssl-status: ## Check SSL certificate status
 	@echo -e "$(PURPLE)=== SSL Certificate Status ===$(NC)"
-	@if [[ -f "unrealircd/conf/tls/server.cert.pem" ]]; then \
+	@if [[ -f "src/backend/unrealircd/conf/tls/server.cert.pem" ]]; then \
 		./scripts/ssl-manager.sh check; \
 		echo ""; \
 		docker compose ps ssl-monitor | grep -q "Up" && echo -e "$(GREEN)[OK]$(NC) SSL monitoring is running" || echo -e "$(YELLOW)[WARNING]$(NC) SSL monitoring is not running"; \
@@ -321,7 +321,7 @@ ssl-status: ## Check SSL certificate status
 
 ssl-renew: ## Force certificate renewal
 	@echo -e "$(PURPLE)=== Forcing SSL Certificate Renewal ===$(NC)"
-	@if [[ -f "unrealircd/conf/tls/server.cert.pem" ]]; then \
+	@if [[ -f "src/backend/unrealircd/conf/tls/server.cert.pem" ]]; then \
 		./scripts/ssl-manager.sh renew; \
 	else \
 		echo -e "$(YELLOW)[WARNING]$(NC) No SSL certificates found. Run 'make ssl-setup' first."; \
@@ -343,7 +343,7 @@ ssl-clean: ## Remove SSL certificates and monitoring (CAUTION: destroys certific
 	@read -p "Are you sure you want to continue? (type 'yes' to confirm): " confirm && \
 	if [[ "$$confirm" == "yes" ]]; then \
 		echo -e "$(BLUE)[INFO]$(NC) Removing SSL certificates..."; \
-		rm -rf data/letsencrypt unrealircd/conf/tls; \
+		rm -rf data/letsencrypt src/backend/unrealircd/conf/tls; \
 		docker compose down ssl-monitor; \
 		echo -e "$(GREEN)[SUCCESS]$(NC) SSL certificates and monitoring removed."; \
 	else \
