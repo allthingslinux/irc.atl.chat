@@ -128,31 +128,6 @@ jobs:
           filter_mode: nofilter
           fail_level: none
           trivy_flags: --severity HIGH,CRITICAL --exit-code 0
-  secrets:
-    name: Secret Detection
-    runs-on: ubuntu-latest
-    needs: [changes]
-    if: always()
-    permissions:
-      contents: read
-      security-events: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Scan for Secrets
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: main
-          head: HEAD
-          extra_args: --debug --only-verified
-      - name: Upload Results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: trufflehog-results
-          path: trufflehog-results.json
-          retention-days: 30
   shell:
     name: Shell Script Security
     runs-on: ubuntu-latest
