@@ -162,18 +162,19 @@ jobs:
           name: trufflehog-results
           path: trufflehog-results.json
           retention-days: 30
-  dependabot:
-    name: Dependabot
+  renovate:
+    name: Renovate
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: github.actor == 'renovate[bot]'
     permissions:
       contents: write
       pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Auto-merge
+      - name: Auto-merge Renovate PRs
         run: |
+          # Auto-merge Renovate PRs that are up-to-date and pass all checks
           gh pr merge --auto --merge "$PR_URL" || echo "Auto-merge failed, manual review required"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
