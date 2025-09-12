@@ -117,7 +117,7 @@ jobs:
           load: true
           tags: irc-atl-chat-${{ matrix.service }}:security-scan
       - name: Scan Container Image
-        uses: reviewdog/action-trivy@v1.13.10
+        uses: reviewdog/action-trivy@v1.14.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           trivy_command: image

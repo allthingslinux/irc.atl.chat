@@ -98,7 +98,7 @@ jobs:
           echo "✅ Docker build validation for ${{ matrix.service }} completed successfully"
           echo "🔍 Build cache updated for faster future builds"
       - name: Scan Containerfile ${{ matrix.service }}
-        uses: reviewdog/action-trivy@v1.13.10
+        uses: reviewdog/action-trivy@v1.14.0
         continue-on-error: true
         with:
           github_token: ${{ github.token }}
@@ -174,7 +174,7 @@ jobs:
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
       - name: Scan Final Image ${{ matrix.service }}
         if: always()
-        uses: reviewdog/action-trivy@v1.13.10
+        uses: reviewdog/action-trivy@v1.14.0
         continue-on-error: true
         with:
           github_token: ${{ github.token }}
