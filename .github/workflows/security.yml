@@ -232,34 +232,31 @@ jobs:
             
             echo ""
           done
-        >> "$GITHUB_STEP_SUMMARY"
-      - name: Bandit Security Scan
-        if: always()
-        run: |
-          echo "## 🛡️ Additional Security Analysis"
-          echo ""
-          
-          # Check for dangerous file permissions
-          echo "**File Permission Analysis:**"
-          DANGEROUS_PERMS=$(find . -type f -perm /o+w -not -path "./.git/*" 2>/dev/null || echo "")
-          if [ -n "$DANGEROUS_PERMS" ]; then
-            echo "⚠️ World-writable files found:"
-            echo "$DANGEROUS_PERMS"
-          else
-            echo "✅ No world-writable files found"
-          fi
-          
-          # Check for suid/sgid files
-          SUID_FILES=$(find . -type f \( -perm -4000 -o -perm -2000 \) -not -path "./.git/*" 2>/dev/null || echo "")
-          if [ -n "$SUID_FILES" ]; then
-            echo "⚠️ SUID/SGID files found:"
-            echo "$SUID_FILES"
-          else
-            echo "✅ No SUID/SGID files found"
-          fi
-          
-          echo ""
-        >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## 🛡️ Additional Security Analysis"
+            echo ""
+            
+            # Check for dangerous file permissions
+            echo "**File Permission Analysis:**"
+            DANGEROUS_PERMS=$(find . -type f -perm /o+w -not -path "./.git/*" 2>/dev/null || echo "")
+            if [ -n "$DANGEROUS_PERMS" ]; then
+              echo "⚠️ World-writable files found:"
+              echo "$DANGEROUS_PERMS"
+            else
+              echo "✅ No world-writable files found"
+            fi
+            
+            # Check for suid/sgid files
+            SUID_FILES=$(find . -type f \( -perm -4000 -o -perm -2000 \) -not -path "./.git/*" 2>/dev/null || echo "")
+            if [ -n "$SUID_FILES" ]; then
+              echo "⚠️ SUID/SGID files found:"
+              echo "$SUID_FILES"
+            else
+              echo "✅ No SUID/SGID files found"
+            fi
+            
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
   config:
     name: Configuration Security
     runs-on: ubuntu-latest
@@ -336,4 +333,4 @@ jobs:
             
             echo ""
           done
-        >> "$GITHUB_STEP_SUMMARY"
+          } >> "$GITHUB_STEP_SUMMARY"
