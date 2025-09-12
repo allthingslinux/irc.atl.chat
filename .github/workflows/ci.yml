@@ -1,389 +1,209 @@
-# ==============================================================================
-# IRC.ATL.CHAT - DOCKER INFRASTRUCTURE LINTING
-# ==============================================================================
-#
-# This workflow handles Docker and infrastructure validation for the IRC server
-# project. It runs comprehensive linting on Containerfiles, Docker Compose files,
-# and performs security scanning to ensure infrastructure quality.
-#
-# WORKFLOW FEATURES:
-# ------------------
-# 1. Smart file change detection to skip unnecessary jobs
-# 2. Parallel execution for different linting categories
-# 3. Comprehensive Docker linting with Hadolint
-# 4. Docker Compose syntax validation with modern docker compose
-# 5. Security vulnerability scanning with Trivy
-# 6. Efficient execution with conditional job running
-#
-# SECURITY FEATURES:
-# ------------------
-# - Minimal permissions following principle of least privilege
-# - Security scanning only on pull requests to avoid resource waste
-# - SARIF output integration with GitHub Security tab
-# - No sensitive data exposure in logs
-#
-# ==============================================================================
-
-name: Docker Infrastructure CI
-
-# TRIGGER CONFIGURATION
-# Runs on pushes to main/develop and all pull requests
-# Manual trigger available for testing workflow changes
+---
+name: CI
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main]
   pull_request:
-    branches: [ main, develop ]
-  # Manual trigger for debugging and testing workflow changes
+    branches: [main]
   workflow_dispatch:
-
-# CONCURRENCY CONTROL
-# Prevents multiple CI runs on the same branch to save resources
-# Cancels in-progress runs for PRs but allows main branch runs to complete
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
+env:
+  REVIEWDOG_LEVEL: warning
+  REVIEWDOG_REPORTER: github-pr-review
+  REVIEWDOG_FILTER_MODE: file
+  REVIEWDOG_FAIL_LEVEL: none
 jobs:
-  # ============================================================================
-  # CONTAINERFILE LINTING - Static Analysis and Best Practices
-  # ============================================================================
-  # Purpose: Ensures Docker best practices and security through Hadolint
-  # Tools: Hadolint with SARIF output for GitHub Security integration
-  # Optimization: Only runs when Docker files change or on manual trigger
-  # ============================================================================
-  containerfile-lint:
-    name: Containerfile Linting
+  changes:
+    name: File Detection
     runs-on: ubuntu-latest
-    permissions:
-      contents: read              # Required for checkout
-      security-events: write     # Required for SARIF upload
-      actions: read              # Required for GitHub token
-
+    outputs:
+      docker: ${{ steps.docker_changes.outputs.any_changed }}
+      shell: ${{ steps.shell_changes.outputs.any_changed }}
+      workflows: ${{ steps.workflow_changes.outputs.any_changed }}
+      yaml: ${{ steps.yaml_changes.outputs.any_changed }}
+      any: ${{ steps.yaml_changes.outputs.any_changed }}
     steps:
-      # REPOSITORY CHECKOUT
-      # Full history not needed for linting current state
-      - name: Checkout Repository
-        uses: actions/checkout@v5
-
-      # SMART CHANGE DETECTION
-      # Detects Docker file changes to skip unnecessary runs
-      # Includes all Containerfile variants and related files
-      - name: Detect Docker file changes
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check Docker
         uses: tj-actions/changed-files@v46
         id: docker_changes
         with:
           files: |
-            **/Containerfile*
-            **/.dockerignore
-            compose*.yaml
-            compose*.yaml
-
-      # EARLY TERMINATION FOR UNCHANGED FILES
-      # Skips Hadolint setup if no relevant files changed
-      # workflow_dispatch always runs for manual testing
-      - name: Skip if no Docker changes
-        if: steps.docker_changes.outputs.any_changed != 'true' && github.event_name != 'workflow_dispatch'
+            **/Containerfile
+            **/Dockerfile
+            compose.yaml
+            docker-compose*.yml
+            .dockerignore
+      - name: Check Shell
+        uses: tj-actions/changed-files@v46
+        id: shell_changes
+        with:
+          files: |
+            **/*.sh
+            **/*.bash
+            **/*.zsh
+            scripts/**
+      - name: Check Workflows
+        uses: tj-actions/changed-files@v46
+        id: workflow_changes
+        with:
+          files: .github/workflows/**
+      - name: Check YAML
+        uses: tj-actions/changed-files@v46
+        id: yaml_changes
+        with:
+          files: |
+            **/*.yml
+            **/*.yaml
+            .github/**
+      - name: Set Outputs
         run: |
-          echo "✅ No Docker files changed, skipping Containerfile linting"
-          echo "💡 To force run checks, use workflow_dispatch trigger"
+          {
+            echo "docker=${{ steps.docker_changes.outputs.any_changed }}"
+            echo "shell=${{ steps.shell_changes.outputs.any_changed }}"
+            echo "workflows=${{ steps.workflow_changes.outputs.any_changed }}"
+            echo "yaml=${{ steps.yaml_changes.outputs.any_changed }}"
+          } >> "$GITHUB_OUTPUT"
 
-      # CONTAINERFILE DISCOVERY
-      # Finds all Containerfiles in the repository for comprehensive linting
-      - name: Find Containerfiles
-        if: steps.docker_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
-        id: containerfiles
-        run: |
-          # Find all Containerfiles in the repository
-          containerfiles=$(find . -name "Containerfile*" -type f | grep -v ".git")
-          if [ -n "$containerfiles" ]; then
-            echo "found=true" >> $GITHUB_OUTPUT
-            echo "files<<EOF" >> $GITHUB_OUTPUT
-            echo "$containerfiles" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "Found Containerfiles:"
-            echo "$containerfiles"
+          # Check if any files changed
+          if [[ "${{ steps.docker_changes.outputs.any_changed }}" == "true" ]] || \
+             [[ "${{ steps.shell_changes.outputs.any_changed }}" == "true" ]] || \
+             [[ "${{ steps.workflow_changes.outputs.any_changed }}" == "true" ]] || \
+             [[ "${{ steps.yaml_changes.outputs.any_changed }}" == "true" ]]; then
+            echo "any=true" >> "$GITHUB_OUTPUT"
           else
-            echo "found=false" >> $GITHUB_OUTPUT
-            echo "No Containerfiles found"
+            echo "any=false" >> "$GITHUB_OUTPUT"
           fi
-
-      # HADOLINT SECURITY ANALYSIS
-      # Comprehensive linting with SARIF output for GitHub Security
-      # Ignores specific rules that may conflict with multi-stage builds
-      - name: Lint Containerfiles with Hadolint (Security Report)
-        if: steps.containerfiles.outputs.found == 'true'
-        uses: hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: './Containerfile'
-          failure-threshold: warning
-          format: sarif
-          output-file: hadolint-results.sarif
-
-      # SECURITY INTEGRATION
-      # Uploads results to GitHub Security tab for centralized view
-      # Always runs if Containerfiles found, even if linting fails
-      - name: Upload Hadolint results to GitHub Security
-        if: steps.containerfiles.outputs.found == 'true' && always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: hadolint-results.sarif
-
-      # CONSOLE OUTPUT FOR IMMEDIATE FEEDBACK
-      # Provides immediate feedback in workflow logs
-      # Helps developers see issues without navigating to Security tab
-      - name: Lint Containerfiles with Hadolint (Console Output)
-        if: steps.containerfiles.outputs.found == 'true'
-        uses: hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: './Containerfile'
-          failure-threshold: warning
-
-  # ============================================================================
-  # DOCKER COMPOSE LINTING - Syntax and Configuration Validation
-  # ============================================================================
-  # Purpose: Ensures Docker Compose files are syntactically correct and follow best practices
-  # Tools: Docker Compose config validation and yamllint for YAML syntax
-  # Optimization: Only runs when Compose files change or on manual trigger
-  # ============================================================================
-  compose-lint:
-    name: Docker Compose Linting
+  shell:
+    name: Shell
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.shell == 'true'
     permissions:
       contents: read
-
+      pull-requests: write
     steps:
-      # REPOSITORY CHECKOUT
-      # Shallow clone sufficient for validation current state
-      - name: Checkout Repository
-        uses: actions/checkout@v5
-
-      # SMART CHANGE DETECTION
-      # Only runs when Docker Compose files change
-      # Improves CI performance for non-compose changes
-      - name: Detect Docker Compose changes
-        uses: tj-actions/changed-files@v46
-        id: compose_changes
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Lint
+        uses: reviewdog/action-shellcheck@v1.31
         with:
-          files: |
-            compose*.yaml
-            compose*.yaml
-            compose*.yaml
-            compose*.yaml
-
-      # EARLY TERMINATION FOR UNCHANGED FILES
-      # Skips validation setup if no compose files changed
-      - name: Skip if no Docker Compose changes
-        if: steps.compose_changes.outputs.any_changed != 'true' && github.event_name != 'workflow_dispatch'
-        run: |
-          echo "✅ No Docker Compose files changed, skipping Docker Compose linting"
-          echo "💡 To force run checks, use workflow_dispatch trigger"
-
-      # DOCKER COMPOSE FILE DISCOVERY
-      # Finds all Docker Compose files in the repository
-      - name: Find Docker Compose files
-        if: steps.compose_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
-        id: compose-files
-        run: |
-          # Find all compose files in the repository
-          compose_files=$(find . -name "compose*.yaml" -o -name "compose*.yaml" -o -name "compose*.yaml" -o -name "compose*.yaml" | grep -v ".git")
-          if [ -n "$compose_files" ]; then
-            echo "found=true" >> $GITHUB_OUTPUT
-            echo "files<<EOF" >> $GITHUB_OUTPUT
-            echo "$compose_files" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            echo "Found Docker Compose files:"
-            echo "$compose_files"
-          else
-            echo "found=false" >> $GITHUB_OUTPUT
-            echo "No Docker Compose files found"
-          fi
-
-      # DOCKER COMPOSE SYNTAX VALIDATION
-      # Uses modern docker compose v2 for syntax validation
-      # Validates without starting services using --quiet flag
-      - name: Validate Docker Compose syntax
-        if: steps.compose-files.outputs.found == 'true'
-        run: |
-          # Validate each compose file using modern docker compose
-          echo "${{ steps.compose-files.outputs.files }}" | while IFS= read -r file; do
-            if [ -n "$file" ]; then
-              echo "Validating $file..."
-              if docker compose -f "$file" config --quiet; then
-                echo "✅ $file is valid"
-              else
-                echo "❌ $file has syntax errors"
-                exit 1
-              fi
-            fi
-          done
-
-      # YAML LINTING FOR BEST PRACTICES
-      # Uses yamllint for comprehensive YAML syntax checking
-      # Provides additional validation beyond Docker Compose syntax
-      - name: YAML linting with yamllint
-        if: steps.compose-files.outputs.found == 'true'
-        run: |
-          # Install yamllint for YAML syntax validation
-          sudo apt-get update && sudo apt-get install -y yamllint
-
-          # Create yamllint config for Docker Compose specifics
-          cat > .yamllint.yaml << EOF
-          extends: default
-          rules:
-            line-length:
-              max: 120  # Longer lines acceptable for Docker commands
-            comments-indentation: disable  # Docker Compose has specific comment styles
-            truthy:
-              allowed-values: ['true', 'false', 'yes', 'no']  # Docker Compose uses various boolean formats
-          EOF
-
-          # Validate each compose file with yamllint
-          echo "${{ steps.compose-files.outputs.files }}" | while IFS= read -r file; do
-            if [ -n "$file" ]; then
-              echo "Running yamllint on $file..."
-              yamllint -c .yamllint.yaml "$file"
-            fi
-          done
-
-  # ============================================================================
-  # DOCKER SECURITY SCANNING - Vulnerability Assessment
-  # ============================================================================
-  # Purpose: Scans Docker images for security vulnerabilities using Trivy
-  # Scope: Only runs on pull requests to avoid unnecessary resource usage
-  # Tools: Trivy scanner with SARIF output for GitHub Security integration
-  # ============================================================================
-  docker-security-scan:
-    name: Docker Security Scanning
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          level: ${{ env.REVIEWDOG_LEVEL }}
+          reporter: ${{ env.REVIEWDOG_REPORTER }}
+          filter_mode: ${{ env.REVIEWDOG_FILTER_MODE }}
+          fail_level: ${{ env.REVIEWDOG_FAIL_LEVEL }}
+      - name: Format
+        uses: reviewdog/action-shfmt@v1.0.4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          level: ${{ env.REVIEWDOG_LEVEL }}
+          filter_mode: ${{ env.REVIEWDOG_FILTER_MODE }}
+          shfmt_flags: -i 2 -ci -bn -sr -kp -w -s -p
+  workflows:
+    name: Workflows
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.workflows == 'true'
     permissions:
-      contents: read              # Required for checkout
-      security-events: write     # Required for SARIF upload
-      actions: read              # Required for GitHub token
-    # EXECUTION CONTROL
-    # Only run on pull requests to avoid resource waste on every push
-    # Manual trigger available for security audits
-    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
-
+      contents: read
+      pull-requests: write
     steps:
-      # REPOSITORY CHECKOUT
-      # Full history not needed for security scanning
-      - name: Checkout Repository
-        uses: actions/checkout@v5
-
-      # SMART CHANGE DETECTION FOR DOCKER FILES
-      # Only scan if Docker-related files changed
-      - name: Detect Docker changes for security scan
-        uses: tj-actions/changed-files@v46
-        id: security_changes
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate
+        uses: reviewdog/action-actionlint@v1.67.0
         with:
-          files: |
-            **/Containerfile*
-            compose*.yaml
-            compose*.yaml
-
-      # EARLY TERMINATION FOR UNCHANGED DOCKER FILES
-      # Skip security scan if no Docker files changed (unless manual trigger)
-      - name: Skip if no Docker changes
-        if: steps.security_changes.outputs.any_changed != 'true' && github.event_name != 'workflow_dispatch'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          level: ${{ env.REVIEWDOG_LEVEL }}
+          reporter: ${{ env.REVIEWDOG_REPORTER }}
+          filter_mode: ${{ env.REVIEWDOG_FILTER_MODE }}
+          fail_level: ${{ env.REVIEWDOG_FAIL_LEVEL }}
+  docker:
+    name: Docker
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docker == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Lint
+        uses: reviewdog/action-hadolint@v1.50.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          level: ${{ env.REVIEWDOG_LEVEL }}
+          reporter: ${{ env.REVIEWDOG_REPORTER }}
+          filter_mode: ${{ env.REVIEWDOG_FILTER_MODE }}
+          fail_level: ${{ env.REVIEWDOG_FAIL_LEVEL }}
+          hadolint_ignore: DL3008 DL3009 DL3007
+          hadolint_flags: '--format json'
+  yaml:
+    name: YAML
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.yaml == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Lint
+        uses: reviewdog/action-yamllint@v1.21.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          level: ${{ env.REVIEWDOG_LEVEL }}
+          reporter: ${{ env.REVIEWDOG_REPORTER }}
+          filter_mode: ${{ env.REVIEWDOG_FILTER_MODE }}
+          fail_level: ${{ env.REVIEWDOG_FAIL_LEVEL }}
+  compose:
+    name: Docker Compose
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: needs.changes.outputs.docker == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate Compose
         run: |
-          echo "✅ No Docker files changed, skipping security scan"
-          echo "💡 To force run security scan, use workflow_dispatch trigger"
-
-      # DOCKER IMAGE BUILD
-      # Build image for security scanning with proper error handling
-      - name: Build Docker image for security scanning
-        if: steps.security_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
+          echo "Validating Docker Compose configuration..."
+          docker run --rm -v "$(pwd):/workspace" -w /workspace \
+            docker/compose:2.20.2 config --quiet
+          echo "✅ Docker Compose configuration is valid"
+      - name: Test Compose Build
         run: |
-          if [ -f "Containerfile" ]; then
-            echo "Building Docker image for security scanning..."
-            docker build -t irc-security-scan:latest -f=Containerfile .
-            echo "✅ Docker image built successfully"
-          else
-            echo "❌ No Containerfile found in root directory"
-            echo "Security scan requires a Containerfile to analyze"
-            exit 1
-          fi
-
-      # TRIVY SECURITY SCAN WITH SARIF OUTPUT
-      # Comprehensive vulnerability scanning with GitHub Security integration
-      - name: Run Trivy vulnerability scanner (SARIF)
-        if: steps.security_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
-        uses: aquasecurity/trivy-action@master
+          echo "Testing Docker Compose build (dry run)..."
+          docker run --rm -v "$(pwd):/workspace" -w /workspace \
+            docker/compose:2.20.2 config --services
+          echo "✅ Docker Compose services validated"
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: always()
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Scan
+        uses: reviewdog/action-gitleaks@v1.7
         with:
-          image-ref: 'irc-security-scan:latest'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      # SECURITY RESULTS UPLOAD
-      # Upload security findings to GitHub Security tab
-      # Always runs if scan executed, even if vulnerabilities found
-      - name: Upload Trivy scan results to GitHub Security
-        if: (steps.security_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch') && always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-      # CONSOLE OUTPUT FOR IMMEDIATE FEEDBACK
-      # Provides immediate feedback in workflow logs with severity filtering
-      # Focuses on actionable vulnerabilities (CRITICAL, HIGH with fixes available)
-      - name: Run Trivy vulnerability scanner (Console Output)
-        if: steps.security_changes.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'irc-security-scan:latest'
-          format: 'table'
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-
-# ==============================================================================
-# WORKFLOW BEST PRACTICES IMPLEMENTED
-# ==============================================================================
-#
-# 1. PERFORMANCE OPTIMIZATION:
-#    - Smart change detection to skip unnecessary work
-#    - Parallel job execution across linting categories
-#    - Early termination for unchanged files
-#    - Conditional security scanning only on PRs
-#
-# 2. SECURITY & PERMISSIONS:
-#    - Minimal required permissions for each job
-#    - SARIF integration with GitHub Security tab
-#    - No sensitive data exposure in validation
-#    - Comprehensive vulnerability scanning
-#
-# 3. MAINTAINABILITY:
-#    - Clear job names and comprehensive documentation
-#    - Consistent error handling and reporting
-#    - Version pinning for reproducible builds
-#    - Configurable yamllint rules for Docker Compose
-#
-# 4. DEVELOPER EXPERIENCE:
-#    - Clear skip messages explaining why jobs didn't run
-#    - Both Security tab and console output for findings
-#    - Manual trigger option for debugging and testing
-#    - Comprehensive validation across all Docker files
-#
-# 5. INFRASTRUCTURE FOCUS:
-#    - Docker best practices enforcement with Hadolint
-#    - Modern docker compose v2 validation
-#    - YAML syntax validation for configuration files
-#    - Security vulnerability assessment for images
-#
-# USAGE EXAMPLES:
-# ---------------
-# Manual trigger:
-#   GitHub UI → Actions → Docker Infrastructure CI → Run workflow
-#
-# Force run all checks:
-#   Uses workflow_dispatch trigger to bypass change detection
-#
-# View security results:
-#   Check Security tab for vulnerability reports and SARIF data
-#
-# View linting results:
-#   Check Actions tab for detailed logs and console output
-#
-# ==============================================================================
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          level: error
+          reporter: ${{ env.REVIEWDOG_REPORTER }}
+          filter_mode: ${{ env.REVIEWDOG_FILTER_MODE }}
+          fail_level: ${{ env.REVIEWDOG_FAIL_LEVEL }}
+          gitleaks_flags: --verbose

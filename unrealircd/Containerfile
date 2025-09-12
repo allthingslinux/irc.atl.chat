@@ -7,7 +7,7 @@
 FROM alpine:3.20 AS builder
 
 # Build arguments
-ARG UNREALIRCD_VERSION=6.1.10
+ARG UNREALIRCD_VERSION=6.2.0.1
 ARG UID=0
 ARG GID=0
 
@@ -101,36 +101,36 @@ RUN if [ "${UID}" = "0" ]; then \
 # Copy built application from builder stage
 COPY --from=builder /home/unrealircd/unrealircd /home/unrealircd/unrealircd
 
-# Set ownership to unrealircd user
-RUN chown -R unrealircd:unrealircd /home/unrealircd/unrealircd
+# Set ownership to UID 1000 (supports both su-exec and user: "1000:1000" approaches)
+RUN chown -R 1000:1000 /home/unrealircd/unrealircd
 
-# Create directory structure
+# Create directory structure with proper permissions for UID 1000
 RUN mkdir -p /home/unrealircd/unrealircd/conf \
     /home/unrealircd/unrealircd/logs \
     /home/unrealircd/unrealircd/data \
     /home/unrealircd/unrealircd/cache \
     /home/unrealircd/unrealircd/tmp \
     /run/unrealircd && \
-    chown -R unrealircd:unrealircd /home/unrealircd/unrealircd && \
-    chown -R unrealircd:unrealircd /run/unrealircd
+    chown -R 1000:1000 /home/unrealircd/unrealircd && \
+    chown -R 1000:1000 /run/unrealircd && \
+    chmod -R 755 /home/unrealircd/unrealircd && \
+    chmod 755 /run/unrealircd
 
 # Copy entrypoint script
-COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Set working directory
 WORKDIR /home/unrealircd/unrealircd
 
-# Switch to unrealircd user for runtime
-USER unrealircd
-
 # Expose ports
 EXPOSE 6667 6697 6900 8600 8000
 
-# Health check
+# Health check - run as unrealircd user
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD nc -z localhost 6667 || exit 1
+    CMD su-exec unrealircd nc -z localhost 6667 || exit 1
 
 # Use tini as init system with child subreaper
+# Run entrypoint as root to handle permissions, then switch to unrealircd user
 ENTRYPOINT ["/sbin/tini", "-s", "--", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["start"]

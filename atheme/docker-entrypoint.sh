@@ -1,47 +1,57 @@
 #!/bin/sh
+set -e
 
-# Use the data directory for database storage, not the config directory
-DATADIR=/usr/local/atheme/data
+# Atheme entrypoint with proper error handling and security
 
-# Set up environment and detect rootless Docker
-setup_environment() {
-    echo "Setting up Atheme environment and permissions..."
+echo "=== Atheme Services Starting ==="
 
-    # Create required directories
-    mkdir -p "$DATADIR" /usr/local/atheme/logs /usr/local/atheme/var
-
-    # Detect if we're in rootless Docker by checking if we're root but have a user namespace
-    if [ "$(id -u)" = "0" ] && [ -f "/proc/self/uid_map" ]; then
-        local container_uid=$(awk 'NR==1 {print $1}' /proc/self/uid_map)
-        local host_uid=$(awk 'NR==1 {print $2}' /proc/self/uid_map)
-
-        if [ "$container_uid" = "0" ] && [ "$host_uid" != "0" ]; then
-            echo "Detected rootless Docker: container UID 0 maps to host UID $host_uid"
-            # Set ownership to the host user so files are accessible
-            chown -R "$host_uid:$host_uid" "$DATADIR" /usr/local/atheme/logs /usr/local/atheme/var
-        fi
-    fi
-
-    # Set proper permissions for directories
-    chmod 755 "$DATADIR" /usr/local/atheme/logs /usr/local/atheme/var
-
-    # Set umask so new files are group-readable
-    umask 022
-
-    echo "Environment configured"
-}
-
-# Set up environment
-setup_environment
-
-# Verify data directory is accessible
-if ! test -w "$DATADIR/"; then
-    echo "ERROR: $DATADIR is not writable"
+# Ensure we have proper permissions
+if [ "$(id -u)" = "0" ]; then
+    echo "ERROR: Atheme should not run as root for security reasons"
+    echo "Please run with a non-root user (UID 1000 recommended)"
     exit 1
 fi
 
-# Clean up any stale PID file
+# Create directories with proper ownership
+mkdir -p /usr/local/atheme/data /usr/local/atheme/logs /usr/local/atheme/logs/atheme /usr/local/atheme/var
+
+# Validate configuration exists
+if [ ! -f "/usr/local/atheme/etc/atheme.conf" ]; then
+    echo "ERROR: Configuration file not found at /usr/local/atheme/etc/atheme.conf"
+    echo "Please ensure the configuration is properly mounted"
+    exit 1
+fi
+
+# Clean up stale PID file
 rm -f /usr/local/atheme/var/atheme.pid
 
-# Start Atheme services with correct data directory
-exec /usr/local/atheme/bin/atheme-services -n -c /usr/local/atheme/etc/atheme.conf -D "$DATADIR" "$@"
+# Validate database directory is writable
+if [ ! -w "/usr/local/atheme/data" ]; then
+    echo "ERROR: Data directory is not writable"
+    echo "Please check volume mount permissions"
+    exit 1
+fi
+
+# Validate logs directory is writable
+if [ ! -w "/usr/local/atheme/logs" ]; then
+    echo "ERROR: Logs directory is not writable"
+    echo "Please check volume mount permissions"
+    exit 1
+fi
+
+# Check if this is first run (no database exists)
+if [ ! -f "/usr/local/atheme/data/services.db" ]; then
+    echo "First run detected - creating initial database..."
+    /usr/local/atheme/bin/atheme-services -b -c /usr/local/atheme/etc/atheme.conf -D /usr/local/atheme/data
+    echo "Database created successfully"
+else
+    echo "Existing database found - starting with existing data"
+fi
+
+# Start Atheme services
+echo "Starting Atheme services as user $(id -un) (UID: $(id -u))..."
+echo "Configuration: /usr/local/atheme/etc/atheme.conf"
+echo "Data directory: /usr/local/atheme/data"
+echo "Logs directory: /usr/local/atheme/logs"
+
+exec /usr/local/atheme/bin/atheme-services -n -c /usr/local/atheme/etc/atheme.conf -D /usr/local/atheme/data "$@"

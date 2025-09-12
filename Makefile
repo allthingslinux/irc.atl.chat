@@ -5,33 +5,47 @@ help:
 	@echo "IRC.atl.chat - Docker IRC Server"
 	@echo "==============================="
 	@echo ""
-	@echo "QUICK START (like any Docker project):"
-	@echo "  make up             - Start all services"
+	@echo "🚀 ONE COMMAND SETUP (Recommended):"
+	@echo "  make up             - Complete automated setup and start"
 	@echo "  make down           - Stop all services"
-	@echo "  make logs           - View logs"
-	@echo "  make status         - Check status"
 	@echo ""
-	@echo "That's it! Everything else happens automatically."
+	@echo "✅ What 'make up' does automatically:"
+	@echo "  • Creates all required directories"
+	@echo "  • Sets up proper permissions (works on any system)"
+	@echo "  • Processes configuration templates"
+	@echo "  • Builds containers"
+	@echo "  • Starts all services"
+	@echo "  • Ensures host can read log files"
 	@echo ""
-	@echo "ADVANCED COMMANDS:"
-	@echo "  make build          - Build containers"
-	@echo "  make rebuild        - Rebuild without cache"
-	@echo "  make restart        - Restart services"
-	@echo "  make dev-shell      - Access container shell"
+	@echo "📊 MONITORING:"
+	@echo "  make status         - Check service status"
+	@echo "  make logs           - View all logs"
+	@echo "  make logs-ircd      - View UnrealIRCd logs"
 	@echo ""
-	@echo "SSL MANAGEMENT:"
+	@echo "🔧 TROUBLESHOOTING:"
+	@echo "  make restart        - Restart all services"
+	@echo "  make rebuild        - Rebuild containers from scratch"
+	@echo ""
+	@echo "🧪 TESTING:"
+	@echo "  make test           - Run comprehensive test suite"
+	@echo "  make test-env       - Test environment setup only"
+	@echo "  make test-irc       - Test IRC functionality only"
+	@echo "  make test-quick     - Quick environment check"
+	@echo ""
+	@echo "⚙️ ADVANCED OPTIONS:"
+	@echo "  make setup          - Setup only (no start)"
+	@echo "  make start-only     - Start only (assumes setup done)"
+	@echo "  make quick-start    - Alias for 'make up'"
+	@echo ""
+	@echo "🔐 SSL MANAGEMENT:"
 	@echo "  make ssl-setup      - Setup SSL certificates"
 	@echo "  make ssl-status     - Check SSL status"
-	@echo "  make ssl-renew      - Renew certificates"
 	@echo ""
-	@echo "MAINTENANCE:"
-	@echo "  make clean          - Clean containers/images"
-	@echo "  make reset          - Complete reset (CAUTION!)"
-	@echo ""
-	@echo "WORKFLOW:"
-	@echo "  1. make up          (starts everything automatically)"
-	@echo "  2. Access IRC: localhost:6667"
-	@echo "  3. Access WebPanel: http://localhost:8080"
+	@echo "🗂️ ACCESS POINTS:"
+	@echo "  📡 IRC:      localhost:6667 (standard) / localhost:6697 (SSL)"
+	@echo "  🌐 WebPanel: http://localhost:8080"
+	@echo "  📝 Logs:     tail -f logs/unrealircd/ircd.log"
+	@echo "  📋 JSON:     tail -f logs/unrealircd/ircd.json.log"
 
 # Configuration
 DOCKER_COMPOSE := docker compose
@@ -70,13 +84,38 @@ rebuild:
 # Service operations
 up:
 	@echo -e "$(PURPLE)=== Starting IRC.atl.chat ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Setting up directories and configuration..."
-	@./scripts/init.sh || (echo -e "$(RED)[ERROR]$(NC) Setup failed. Please check your .env file."; exit 1)
-	@echo -e "$(BLUE)[INFO]$(NC) Starting all services..."
-	$(DOCKER_COMPOSE) up -d
+	@echo -e "$(BLUE)[INFO]$(NC) Running comprehensive setup and permission handling..."
+	@./scripts/init.sh
+	@./scripts/prepare-config.sh
+	@docker compose up -d
 	@echo -e "$(GREEN)[SUCCESS]$(NC) Services started!"
 	@echo -e "$(BLUE)[INFO]$(NC) IRC Server: localhost:6667"
 	@echo -e "$(BLUE)[INFO]$(NC) WebPanel: http://localhost:8080"
+	@echo -e "$(BLUE)[INFO]$(NC) Log files accessible at: logs/unrealircd/"
+
+# Quick start - alias for up
+quick-start: up
+
+# Fix permissions only (for troubleshooting)
+	@echo -e "$(PURPLE)=== Fixing Permissions ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running comprehensive permission fix..."
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Permission fix completed!"
+
+# Setup only (no start)
+setup:
+	@echo -e "$(PURPLE)=== Setup Only ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running setup without starting services..."
+	@./scripts/init.sh
+	@./scripts/prepare-config.sh
+	@docker compose up -d
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Setup completed! Use 'make start-only' to start services."
+
+# Start services only (assumes setup is done)
+start-only:
+	@echo -e "$(PURPLE)=== Starting Services Only ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Starting services (assuming setup is complete)..."
+	$(DOCKER_COMPOSE) up -d
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Services started!"
 
 down:
 	@echo -e "$(PURPLE)=== Stopping Services ===$(NC)"
@@ -154,7 +193,23 @@ dev-logs:
 
 # Testing and validation
 test:
-	@echo -e "$(PURPLE)=== Running Tests ===$(NC)"
+	@echo -e "$(PURPLE)=== Running Comprehensive Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running environment validation and functionality tests..."
+	@python3 tests/run_tests.py
+	@echo -e "$(GREEN)[SUCCESS]$(NC) Test suite completed!"
+
+test-env:
+	@echo -e "$(PURPLE)=== Environment Validation Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Validating environment setup, permissions, and configuration..."
+	@python3 tests/test_environment_validation.py --verbose
+
+test-irc:
+	@echo -e "$(PURPLE)=== IRC Functionality Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Testing IRC server functionality..."
+	@python3 tests/test_irc_functionality.py
+
+test-quick:
+	@echo -e "$(PURPLE)=== Quick Environment Check ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Checking Docker Compose configuration..."
 	$(DOCKER_COMPOSE) config --quiet
 	@echo -e "$(GREEN)[SUCCESS]$(NC) Docker Compose configuration is valid!"

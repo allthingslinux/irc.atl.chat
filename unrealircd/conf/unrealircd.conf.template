@@ -1,33 +1,7 @@
-/* Configuration file for UnrealIRCd 6
- *
- * This is a template that uses environment variable substitution.
- * The prepare-config.sh script will substitute ${VARIABLE} with actual values.
- *
- * BEFORE YOU PROCEED:
- * Important: all lines, except { and } end with an ;
- * This is very important, if you miss a ; somewhere then the
- * configuration file parser will complain and the file will not
- * be processed correctly!
- */
-
-
-/* Configuration is self-contained with environment variable substitution */
-
-
-
-
-
-/* UnrealIRCd makes heavy use of modules. Modules allow you to completely
- * customize the featureset you wish to enable in UnrealIRCd.
- * See: https://www.unrealircd.org/docs/Modules
- */
 include "modules.default.conf";
 include "modules.optional.conf";
 
-/* Blacklist control socket module to avoid permission issues */
-blacklist-module "control";
 
-/* Now let's include some other files as well */
 include "help/help.conf";
 include "badwords.conf";
 include "spamfilter.conf";
@@ -36,28 +10,22 @@ include "operclass.default.conf";
 include "snomasks.default.conf";
 include "rpc.modules.default.conf";
 
-/* Load the default cloaking module (2021 onwards): */
 loadmodule "cloak_sha256";
-
-/* WebSocket support for web IRC clients */
 loadmodule "websocket";
 loadmodule "webserver";
 
-/* Server Configuration */
 me {
 	name "${IRC_DOMAIN}";
 	info "${IRC_NETWORK_NAME} IRC Server";
 	sid "001";
 }
 
-/* Admin Configuration */
 admin {
 	"${IRC_ADMIN_NAME}";
 	"admin";
 	"${IRC_ADMIN_EMAIL}";
 }
 
-/* Clients and servers are put in class { } blocks, we define them here. */
 class clients {
 	pingfreq 90;
 	maxclients 1000;
@@ -65,7 +33,6 @@ class clients {
 	recvq 8000;
 }
 
-/* Special class for IRCOps with higher limits */
 class opers {
 	pingfreq 90;
 	maxclients 50;
@@ -73,7 +40,6 @@ class opers {
 	recvq 8000;
 }
 
-/* Server class with good defaults */
 class servers {
 	pingfreq 90;
 	maxclients 10;
@@ -81,41 +47,39 @@ class servers {
 	recvq 8000;
 }
 
-/* Standard IRC port 6667 */
 listen {
 	ip *;
 	port 6667;
 }
 
-/* Standard IRC SSL/TLS port 6697 */
 listen {
 	ip *;
 	port 6697;
 	options { tls; }
 }
 
-/* Special SSL/TLS servers-only port for linking */
 listen {
         ip *;
         port 6900;
         options { tls; serversonly; }
 }
 
-/* Non-TLS servers-only port for linking (for Atheme) */
 listen {
         ip *;
         port 6901;
         options { serversonly; }
 }
 
-/* JSON-RPC API port for webpanel */
 listen {
-	ip *;
-	port 8600;
-	options { rpc; }
+     ip *;
+     port 8600;
+     options { rpc; tls; }
+     tls-options {
+         certificate "/home/unrealircd/unrealircd/conf/tls/server.cert.pem";
+         key "/home/unrealircd/unrealircd/conf/tls/server.key.pem";
+     }
 }
 
-/* Secure WebSocket port for web IRC clients (wss://) */
 listen {
 	ip *;
 	port 8000;
@@ -132,7 +96,6 @@ listen {
 	}
 }
 
-/* TLS configuration with modern security settings */
 set {
 	tls {
 		/* Use SSL certificate paths from environment variables */
@@ -145,6 +108,12 @@ set {
 		ciphersuites "TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_8_SHA256:TLS_AES_128_CCM_SHA256";
 
 		/* Modern ECDH curves for better security */
+		/* ECDH groups - updated for UnrealIRCd 6.2.0+ */
+		/* Note: ecdh-curves is deprecated, use 'groups' instead */
+		/* X25519MLKEM768: Post-quantum cryptography hybrid group (requires OpenSSL 3.5.0+) */
+		/* X25519: Standard curve used by most clients today */
+		groups "X25519MLKEM768:X25519:secp521r1:secp384r1:prime256v1";
+		/* Legacy setting for compatibility */
 		ecdh-curves "X25519:secp521r1:secp384r1:prime256v1";
 
 		/* Strict Transport Security (STS) - Automatically redirect users to TLS */
@@ -179,13 +148,6 @@ set {
 link ${IRC_SERVICES_SERVER} {
 	incoming {
 		mask *;
-	}
-
-	outgoing {
-		bind-ip *;
-		hostname atheme;
-		port 6901;
-		options { autoconnect; }
 	}
 
 	password "${IRC_SERVICES_PASSWORD}"; /* Services link password */
@@ -496,6 +458,19 @@ set {
 
         /* Anti-flood settings for enhanced security */
         anti-flood {
+                /* Channel anti-flood protection (UnrealIRCd 6.2.0+) */
+                channel {
+                        /* Default profile for all channels - can be overridden with +F mode */
+                        default-profile normal;
+                        
+                        /* Custom profiles - these override the built-in ones if needed */
+                        profile very-strict { flood-mode "[7c#C15,10j#R10,10k#K15,30m#M10,10n#N15]:15"; }
+                        profile strict { flood-mode "[7c#C15,15j#R10,10k#K15,40m#M10,10n#N15]:15"; }
+                        profile normal { flood-mode "[7c#C15,30j#R10,10k#K15,40m#M10,10n#N15]:15"; }
+                        profile relaxed { flood-mode "[7c#C15,45j#R10,10k#K15,60m#M10,10n#N15]:15"; }
+                        profile very-relaxed { flood-mode "[7c#C15,60j#R10,10k#K15,90m#M10,10n#N15]:15"; }
+                }
+                
                 /* Settings that apply to everyone */
                 everyone {
                         /* Connection flood protection - relaxed for testing: 20 connections per 10 seconds per IP */
@@ -583,10 +558,20 @@ set {
  * - Private message conversation limits to prevent spam bots
  * - Lag penalty system prevents command flooding
  * 
+ * CHANNEL ANTI-FLOOD PROTECTION (UnrealIRCd 6.2.0+):
+ * - Default "normal" profile applied to all channels automatically
+ * - Channel operators can override with MODE +F <profile>:
+ *   +F normal    - Standard protection (default)
+ *   +F relaxed   - For busy channels with lots of activity  
+ *   +F strict    - For channels needing extra protection
+ *   +F off       - Disable channel anti-flood (not recommended)
+ * - Use MODE #channel F to see current effective settings
+ * - Protection covers: messages, notices, joins, parts, nick changes, kicks, CTCPs
+ * 
  * SECURITY PHILOSOPHY:
  * - Balanced approach: Strict enough to prevent abuse, lenient enough for normal use
  * - Graduated penalties: Unknown users have stricter limits than known users
- * - Multiple protection layers: Per-IP, per-user, and per-target limits
+ * - Multiple protection layers: Per-IP, per-user, per-target, and per-channel limits
  */
 
 /*

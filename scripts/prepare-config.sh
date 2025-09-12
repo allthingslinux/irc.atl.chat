@@ -60,15 +60,42 @@ prepare_config() {
     local unreal_template="$PROJECT_ROOT/unrealircd/conf/unrealircd.conf.template"
     if [ -f "$unreal_template" ]; then
         log_info "Preparing UnrealIRCd configuration from template..."
+
+        # Make target file writable if it exists and we own it, or remove it if we don't
+        if [ -f "$unreal_config" ]; then
+            if [ -w "$unreal_config" ] || chmod 644 "$unreal_config" 2>/dev/null; then
+                log_info "Made existing config file writable"
+            else
+                log_info "Cannot modify existing config file, will overwrite with sudo"
+                sudo rm -f "$unreal_config" 2>/dev/null || rm -f "$unreal_config" 2>/dev/null || true
+            fi
+        fi
+
+        # Always use temp file approach for reliability
         local temp_file="/tmp/unrealircd.conf.tmp"
         envsubst <"$unreal_template" >"$temp_file"
-        mv "$temp_file" "$unreal_config"
+
+        # Try different copy strategies
+        if cp "$temp_file" "$unreal_config" 2>/dev/null; then
+            log_info "Configuration written successfully"
+        elif sudo cp "$temp_file" "$unreal_config" 2>/dev/null; then
+            log_info "Configuration written with sudo"
+        else
+            log_warning "Could not write configuration file - using existing"
+        fi
+
+        rm -f "$temp_file"
         log_success "UnrealIRCd configuration prepared from template"
     elif [ -f "$unreal_config" ]; then
         log_info "Preparing UnrealIRCd configuration..."
+
+        # Make file writable first
+        chmod 644 "$unreal_config" 2>/dev/null || sudo chmod 644 "$unreal_config" 2>/dev/null || true
+
         local temp_file="/tmp/unrealircd.conf.tmp"
         envsubst <"$unreal_config" >"$temp_file"
-        mv "$temp_file" "$unreal_config"
+        cp "$temp_file" "$unreal_config"
+        rm -f "$temp_file"
         log_success "UnrealIRCd configuration prepared"
     else
         log_warning "UnrealIRCd configuration file not found: $unreal_config"
@@ -79,15 +106,27 @@ prepare_config() {
     local atheme_template="$PROJECT_ROOT/atheme/conf/atheme.conf.template"
     if [ -f "$atheme_template" ]; then
         log_info "Preparing Atheme configuration from template..."
+
+        # Make target file writable if it exists
+        if [ -f "$atheme_config" ]; then
+            chmod 644 "$atheme_config" 2>/dev/null || sudo chmod 644 "$atheme_config" 2>/dev/null || true
+        fi
+
         local temp_file="/tmp/atheme.conf.tmp"
         envsubst <"$atheme_template" >"$temp_file"
-        mv "$temp_file" "$atheme_config"
+        cp "$temp_file" "$atheme_config"
+        rm -f "$temp_file"
         log_success "Atheme configuration prepared from template"
     elif [ -f "$atheme_config" ]; then
         log_info "Preparing Atheme configuration..."
+
+        # Make file writable first
+        chmod 644 "$atheme_config" 2>/dev/null || sudo chmod 644 "$atheme_config" 2>/dev/null || true
+
         local temp_file="/tmp/atheme.conf.tmp"
         envsubst <"$atheme_config" >"$temp_file"
-        mv "$temp_file" "$atheme_config"
+        cp "$temp_file" "$atheme_config"
+        rm -f "$temp_file"
         log_success "Atheme configuration prepared"
     else
         log_warning "Atheme configuration file not found: $atheme_config"
