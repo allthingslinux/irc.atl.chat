@@ -111,8 +111,8 @@ jobs:
       - name: Build for Security Scan
         uses: docker/build-push-action@v6
         with:
-          context: ./${{ matrix.service == 'unrealircd-webpanel' && '.' || matrix.service }}
-          file: ./${{ matrix.service == 'unrealircd-webpanel' && 'web/webpanel/Containerfile' || format('{0}/Containerfile', matrix.service) }}
+          context: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel' || matrix.service == 'unrealircd' && 'src/backend/unrealircd' || matrix.service == 'atheme' && 'src/backend/atheme' }}
+          file: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel/Containerfile' || format('{0}/Containerfile', matrix.service) }}
           push: false
           load: true
           tags: irc-atl-chat-${{ matrix.service }}:security-scan
