@@ -175,18 +175,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Validate Compose
-        run: |
-          echo "Validating Docker Compose configuration..."
-          docker run --rm -v "$(pwd):/workspace" -w /workspace \
-            docker/compose:2.20.2 config --quiet
-          echo "✅ Docker Compose configuration is valid"
-      - name: Test Compose Build
-        run: |
-          echo "Testing Docker Compose build (dry run)..."
-          docker run --rm -v "$(pwd):/workspace" -w /workspace \
-            docker/compose:2.20.2 config --services
-          echo "✅ Docker Compose services validated"
+      - name: Lint Docker Compose
+        uses: docker-compose-linter/dclint-github-action/reviewdog-action@v1.6.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tool_name: dclint
+          reporter: ${{ env.REVIEWDOG_REPORTER }}
+          filter_mode: ${{ env.REVIEWDOG_FILTER_MODE }}
+          fail_level: ${{ env.REVIEWDOG_FAIL_LEVEL }}
+          level: ${{ env.REVIEWDOG_LEVEL }}
+          dclint_flags: '.'
   security:
     name: Security
     runs-on: ubuntu-latest

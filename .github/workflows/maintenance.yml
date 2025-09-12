@@ -167,10 +167,12 @@ jobs:
         run: |
           {
             echo "### 🐳 Docker Compose Health Check"
-            echo "Validating compose configuration..."
+            echo "Validating compose configuration with DCLint..."
           } >> "$GITHUB_STEP_SUMMARY"
+          
+          # Run DCLint to check Docker Compose configuration
           if docker run --rm -v "$(pwd):/workspace" -w /workspace \
-            docker/compose:2.20.2 config --quiet 2>/dev/null; then
+            docker.io/dockercomposelinter/dclint:latest . --formatter json 2>/dev/null; then
             echo "✅ **Docker Compose configuration is valid**" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "❌ **Docker Compose configuration has issues**" >> "$GITHUB_STEP_SUMMARY"
