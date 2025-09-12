@@ -1,13 +1,23 @@
 #!/bin/sh
 set -e
 
-# Simple UnrealIRCd entrypoint for normal Docker
-# No permission complexity needed!
+# UnrealIRCd entrypoint with proper permission handling
+# Handles both rootless and normal Docker setups
 
 echo "=== UnrealIRCd Starting ==="
 
-# Create directories (normal Docker = no permission issues)
+# Get current user ID and group ID
+USER_ID=${PUID:-1000}
+GROUP_ID=${PGID:-1000}
+
+# Create directories with proper ownership
 mkdir -p /home/unrealircd/unrealircd/{data,logs,tmp}
+
+# Fix ownership of directories (important for rootless Docker)
+chown -R ${USER_ID}:${GROUP_ID} /home/unrealircd/unrealircd/{data,logs,tmp} 2>/dev/null || true
+
+# Ensure data directory has proper permissions for control socket
+chmod 755 /home/unrealircd/unrealircd/data 2>/dev/null || true
 
 # Validate config exists
 if [ ! -f "/home/unrealircd/unrealircd/conf/unrealircd.conf" ]; then
@@ -15,6 +25,12 @@ if [ ! -f "/home/unrealircd/unrealircd/conf/unrealircd.conf" ]; then
     exit 1
 fi
 
-# Start UnrealIRCd
+# Start UnrealIRCd as the specified user
 echo "Starting UnrealIRCd..."
-exec /home/unrealircd/unrealircd/bin/unrealircd -F "$@"
+if [ "$(id -u)" = "0" ]; then
+    # Running as root, switch to the specified user
+    exec su-exec ${USER_ID}:${GROUP_ID} /home/unrealircd/unrealircd/bin/unrealircd -F "$@"
+else
+    # Already running as the correct user
+    exec /home/unrealircd/unrealircd/bin/unrealircd -F "$@"
+fi
