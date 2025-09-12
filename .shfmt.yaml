@@ -1,9 +1,0 @@
-# shfmt configuration for this project
-# This project uses bash scripts, not POSIX shell
-shell: bash
-indent: 2
-case-indent: true
-binary-next-line: true
-space-redirects: true
-keep-padding: true
-simplify: true

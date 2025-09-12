@@ -7,4 +7,11 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 
 [*.sh]
-shell = bash
+# shfmt configuration via EditorConfig
+shell_variant = bash
+indent_style = space
+indent_size = 2
+binary_next_line = true
+switch_case_indent = true
+space_redirects = true
+keep_padding = true

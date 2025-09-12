@@ -1,3 +1,0 @@
-# shfmt configuration
-# Use bash as the default shell for .sh files
-shell = bash

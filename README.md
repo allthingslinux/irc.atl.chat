@@ -39,12 +39,22 @@ make up
 
 ## Shell Script Formatting
 
-This project uses bash scripts with bash-specific features (arrays, `[[` builtin, etc.). The scripts are correctly formatted for bash but may show formatting errors in CI that uses POSIX shell parsing. To format the scripts locally:
+This project uses bash scripts with bash-specific features (arrays, `[[` builtin, etc.). Script formatting is configured via `.editorconfig` and can be applied using shfmt:
 
 ```bash
-# Format all shell scripts (without POSIX flag)
-shfmt -i 2 -ci -bn -sr -kp -w -s scripts/*.sh src/backend/*/scripts/*.sh
+# Format all shell scripts (uses .editorconfig settings)
+shfmt -w scripts/*.sh src/backend/*/scripts/*.sh
+
+# Check formatting without modifying files
+shfmt -d scripts/*.sh src/backend/*/scripts/*.sh
 ```
+
+The `.editorconfig` file automatically configures shfmt with:
+- 2-space indentation
+- Bash shell variant
+- Case statement indentation
+- Space after redirects
+- Binary operators on new lines
 
 ## Configuration
 
