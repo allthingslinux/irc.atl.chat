@@ -7,7 +7,7 @@
 FROM alpine:3.20 AS builder
 
 # Build arguments
-ARG UNREALIRCD_VERSION=6.1.10
+ARG UNREALIRCD_VERSION=6.2.0.1
 ARG UID=0
 ARG GID=0
 
