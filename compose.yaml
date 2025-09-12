@@ -8,15 +8,13 @@ services:
       context: ./unrealircd
       dockerfile: Containerfile
       args:
-        UNREALIRCD_VERSION: "6.1.10"
+        UNREALIRCD_VERSION: "6.2.0.1"
         UID: 0
         GID: 0
     container_name: unrealircd
     hostname: unrealircd
     restart: unless-stopped
     init: true
-    user: "1000:1000"
-    userns_mode: "host"
 
     # Volume mounts - aligned with Containerfile paths
     volumes:
@@ -62,8 +60,8 @@ services:
       context: ./atheme
       dockerfile: Containerfile
       args:
-        UID: 0
-        GID: 0
+        UID: ${PUID:-1000}
+        GID: ${PGID:-1000}
     container_name: atheme
     hostname: atheme
     depends_on:
@@ -83,6 +81,15 @@ services:
     networks:
       - irc_network
     restart: unless-stopped
+    # Security: Run as non-root user
+    user: "${PUID:-1000}:${PGID:-1000}"
+    # Health check
+    healthcheck:
+      test: ['CMD', 'pgrep', '-f', 'atheme-services']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   unrealircd-webpanel:
     build:
