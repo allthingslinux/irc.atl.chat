@@ -98,17 +98,17 @@ jobs:
           echo "✅ Docker build validation for ${{ matrix.service }} completed successfully"
           echo "🔍 Build cache updated for faster future builds"
       - name: Scan Containerfile ${{ matrix.service }}
-        uses: reviewdog/action-trivy@v1
+        uses: reviewdog/action-trivy@v1.13.10
         continue-on-error: true
         with:
           github_token: ${{ github.token }}
           trivy_command: config
           trivy_target: ./${{ matrix.service == 'unrealircd-webpanel' && 'web/webpanel/Containerfile' || format('{0}/Containerfile', matrix.service) }}
-          trivy_version: v0.63.0
           level: warning
           reporter: github-pr-review
           tool_name: trivy-dockerfile-${{ matrix.service }}
           filter_mode: added
+          fail_level: none
           trivy_flags: --severity HIGH,CRITICAL
   build:
     name: Build & Push
@@ -174,17 +174,17 @@ jobs:
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
       - name: Scan Final Image ${{ matrix.service }}
         if: always()
-        uses: reviewdog/action-trivy@v1
+        uses: reviewdog/action-trivy@v1.13.10
         continue-on-error: true
         with:
           github_token: ${{ github.token }}
           trivy_command: image
           trivy_target: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
-          trivy_version: v0.63.0
           level: warning
           reporter: github-pr-review
           tool_name: trivy-final-${{ matrix.service }}
           filter_mode: nofilter
+          fail_level: none
           trivy_flags: --severity HIGH,CRITICAL --exit-code 0
   cleanup:
     name: Cleanup

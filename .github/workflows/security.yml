@@ -117,24 +117,17 @@ jobs:
           load: true
           tags: irc-atl-chat-${{ matrix.service }}:security-scan
       - name: Scan Container Image
-        uses: aquasecurity/trivy-action@master
+        uses: reviewdog/action-trivy@v1.13.10
         with:
-          image-ref: 'irc-atl-chat-${{ matrix.service }}:security-scan'
-          format: 'sarif'
-          output: 'trivy-results-${{ matrix.service }}.sarif'
-          severity: 'HIGH,CRITICAL'
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
-          category: trivy-${{ matrix.service }}
-      - name: Upload Results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-results-${{ matrix.service }}
-          path: trivy-results-${{ matrix.service }}.sarif
-          retention-days: 30
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          trivy_command: image
+          trivy_target: 'irc-atl-chat-${{ matrix.service }}:security-scan'
+          level: warning
+          reporter: github-pr-review
+          tool_name: trivy-${{ matrix.service }}
+          filter_mode: nofilter
+          fail_level: none
+          trivy_flags: --severity HIGH,CRITICAL --exit-code 0
   secrets:
     name: Secret Detection
     runs-on: ubuntu-latest
