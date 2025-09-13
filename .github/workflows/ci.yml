@@ -26,7 +26,7 @@ jobs:
       any: ${{ steps.yaml_changes.outputs.any_changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Check Docker
@@ -89,7 +89,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Lint
         uses: reviewdog/action-shellcheck@v1.31
         with:
@@ -115,7 +115,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Validate
         uses: reviewdog/action-actionlint@v1.67.0
         with:
@@ -134,7 +134,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Lint
         uses: reviewdog/action-hadolint@v1.50.2
         with:
@@ -155,7 +155,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Lint
         uses: reviewdog/action-yamllint@v1.21.0
         with:
@@ -174,7 +174,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Lint
         uses: docker-compose-linter/dclint-github-action/reviewdog-action@v1.6.0
         with:
@@ -195,7 +195,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Scan
         uses: reviewdog/action-gitleaks@v1.8
         with:

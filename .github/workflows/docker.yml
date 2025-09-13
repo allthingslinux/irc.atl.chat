@@ -24,7 +24,7 @@ jobs:
       docker: ${{ steps.docker_changes.outputs.any_changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Check Docker
@@ -52,7 +52,7 @@ jobs:
         service: [unrealircd, atheme, unrealircd-webpanel]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
       - name: Extract metadata
@@ -123,7 +123,7 @@ jobs:
         service: [unrealircd, atheme, unrealircd-webpanel]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to Registry
@@ -198,7 +198,7 @@ jobs:
         service: [unrealircd, atheme, unrealircd-webpanel]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Clean Old Images ${{ matrix.service }}
         uses: actions/delete-package-versions@v5
         with:
