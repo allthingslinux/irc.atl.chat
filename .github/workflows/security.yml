@@ -20,7 +20,7 @@ jobs:
       yaml: ${{ steps.yaml_changes.outputs.any_changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Check Docker
@@ -66,7 +66,7 @@ jobs:
             build-mode: none
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Initialize
         uses: github/codeql-action/init@v3
         with:
@@ -85,7 +85,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Review
         uses: actions/dependency-review-action@v4
         with:
@@ -105,7 +105,7 @@ jobs:
         service: [unrealircd, atheme, unrealircd-webpanel]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build for Security Scan
@@ -138,7 +138,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Shell Script Security Analysis
         run: |
           echo "## 🔍 Shell Script Security Analysis"
