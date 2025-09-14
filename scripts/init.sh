@@ -12,8 +12,10 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 # Load environment variables from .env file if it exists
 if [ -f "$PROJECT_ROOT/.env" ]; then
     set -a # automatically export all variables
+
     # shellcheck disable=SC1091
     source "$PROJECT_ROOT/.env"
+
     set +a # stop automatically exporting
 fi
 
@@ -235,7 +237,7 @@ check_docker() {
         exit 1
   fi
 
-    if ! command -v docker-compose > /dev/null 2>&1 && ! docker compose version > /dev/null 2>&1; then
+    if ! command -v docker compose > /dev/null 2>&1 && ! docker compose version > /dev/null 2>&1; then
         log_error "Docker Compose is not available"
         exit 1
   fi
@@ -248,7 +250,6 @@ show_next_steps() {
     echo ""
     log_info "Next steps:"
     echo "  1. Edit .env file with your configuration (optional)"
-    echo "  2. Run: make quick-start"
     echo "  3. Or run: docker compose up -d"
     echo ""
     log_info "Data will be stored in:"
