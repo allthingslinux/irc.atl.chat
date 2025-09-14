@@ -79,7 +79,7 @@ jobs:
   dependencies:
     name: Dependencies
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.actor != 'renovate[bot]'
     permissions:
       contents: read
       pull-requests: write
@@ -143,67 +143,67 @@ jobs:
         run: |
           echo "## 🔍 Shell Script Security Analysis"
           echo ""
-          
+
           # Find all shell scripts
           SHELL_SCRIPTS=$(find . -name "*.sh" -o -name "*.bash" -o -name "*.zsh" | grep -v ".git" || echo "")
-          
+
           if [ -z "$SHELL_SCRIPTS" ]; then
             echo "No shell scripts found for analysis"
             exit 0
           fi
-          
+
           echo "Found shell scripts:"
           echo "$SHELL_SCRIPTS"
           echo ""
-          
+
           # Security checks for shell scripts
           for script in $SHELL_SCRIPTS; do
             echo "### Analyzing: $script"
-            
+
             # Check for common security issues
             echo "**Security Checks:**"
-            
+
             # Check for hardcoded passwords/secrets
             if grep -n -i "password\|secret\|key\|token" "$script" | grep -v "#.*password\|#.*secret" | grep -v "echo.*password\|echo.*secret"; then
               echo "⚠️ Potential hardcoded credentials found"
             else
               echo "✅ No obvious hardcoded credentials"
             fi
-            
+
             # Check for eval usage (dangerous)
             if grep -n "eval " "$script"; then
               echo "⚠️ Use of 'eval' detected (security risk)"
             else
               echo "✅ No 'eval' usage found"
             fi
-            
+
             # Check for unquoted variables
             if grep -n "\$[a-zA-Z_][a-zA-Z0-9_]*[^\"' ]" "$script" | grep -v "echo\|printf\|test"; then
               echo "⚠️ Potentially unquoted variables found"
             else
               echo "✅ Variables appear properly quoted"
             fi
-            
+
             # Check for rm -rf patterns
             if grep -n "rm.*-rf" "$script"; then
               echo "⚠️ 'rm -rf' usage detected (verify paths are safe)"
             else
               echo "✅ No dangerous rm patterns"
             fi
-            
+
             # Check for curl/wget without SSL verification
             if grep -n "curl.*-k\|wget.*--no-check-certificate" "$script"; then
               echo "⚠️ SSL verification disabled in network requests"
             else
               echo "✅ SSL verification appears enabled"
             fi
-            
+
             echo ""
           done
           {
             echo "## 🛡️ Additional Security Analysis"
             echo ""
-            
+
             # Check for dangerous file permissions
             echo "**File Permission Analysis:**"
             DANGEROUS_PERMS=$(find . -type f -perm /o+w -not -path "./.git/*" 2>/dev/null || echo "")
@@ -213,7 +213,7 @@ jobs:
             else
               echo "✅ No world-writable files found"
             fi
-            
+
             # Check for suid/sgid files
             SUID_FILES=$(find . -type f \( -perm -4000 -o -perm -2000 \) -not -path "./.git/*" 2>/dev/null || echo "")
             if [ -n "$SUID_FILES" ]; then
@@ -222,6 +222,6 @@ jobs:
             else
               echo "✅ No SUID/SGID files found"
             fi
-            
+
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
