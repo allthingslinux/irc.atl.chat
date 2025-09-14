@@ -44,7 +44,7 @@ The webpanel automatically configures itself during the first run. You can custo
 If the webpanel fails to start:
 1. Check that UnrealIRCd is running and healthy
 2. Verify port 8600 is accessible for JSON-RPC
-3. Check container logs: `docker-compose logs webpanel`
+3. Check container logs: `docker compose logs unrealircd-webpanel`
 4. Ensure proper volume permissions
 
 ## More Information
