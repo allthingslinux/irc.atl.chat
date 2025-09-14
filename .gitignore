@@ -14,10 +14,8 @@ runtime/*/
 !runtime/.gitkeep
 
 # SSL certificates and keys
-src/backend/unrealircd/conf/tls/
-*.pem
-*.key
-*.crt
+src/backend/unrealircd/conf/tls/*
+!src/backend/unrealircd/conf/tls/curl-ca-bundle.crt
 
 # Runtime data directories (created at runtime)
 data/
@@ -33,7 +31,7 @@ src/backend/atheme/conf/atheme.conf
 ircd_data/
 ircd_logs/
 ircd_modules/
-ircd_contrib/       # Legacy            
+ircd_contrib/       # Legacy
 atheme_data/
 atheme_logs/
 webpanel_data/
