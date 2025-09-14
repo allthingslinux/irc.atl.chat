@@ -23,12 +23,6 @@
   "dependencyDashboard": true,         // Enable dashboard for manual approvals
   "dependencyDashboardTitle": "Dependency Dashboard",
 
-  // Abandon old PRs after 1 year to keep things clean
-  "abandonments": {
-    "enabled": true,
-    "abandonmentThreshold": "1 year"
-  },
-
   // Security vulnerability handling - process immediately
   "vulnerabilityAlerts": {
     "enabled": true,
