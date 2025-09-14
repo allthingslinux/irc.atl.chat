@@ -30,7 +30,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Check Docker
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         id: docker_changes
         with:
           files: |
@@ -40,7 +40,7 @@ jobs:
             docker-compose*.yml
             .dockerignore
       - name: Check Shell
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         id: shell_changes
         with:
           files: |
@@ -49,12 +49,12 @@ jobs:
             **/*.zsh
             scripts/**
       - name: Check Workflows
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         id: workflow_changes
         with:
           files: .github/workflows/**
       - name: Check YAML
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         id: yaml_changes
         with:
           files: |
