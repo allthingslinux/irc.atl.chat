@@ -56,6 +56,7 @@ The system is built with **enterprise-grade reliability**:
 ### 🛡️ Safety Features
 - **Input validation**: Domain and email format checking
 - **File permission checks**: Ensures proper access rights
+- **Automatic permission fixes**: Handles Docker permission issues automatically
 - **Docker availability**: Validates Docker environment
 - **Confirmation prompts**: Prevents accidental certificate deletion
 - **Graceful degradation**: Continues working despite minor issues
@@ -134,14 +135,15 @@ cat cloudflare-credentials.ini
 # Expected: dns_cloudflare_api_token = YOUR_TOKEN_HERE
 ```
 
-#### ❌ "Certificate file is not readable"
+#### ❌ "Certificate file is not readable" or "Permission denied"
 ```bash
-# Check file permissions
+# The script now automatically fixes Docker permission issues
+# But if you encounter problems, check file permissions:
 ls -la src/backend/unrealircd/conf/tls/
 
-# Fix permissions if needed
-chmod 644 src/backend/unrealircd/conf/tls/server.cert.pem
-chmod 644 src/backend/unrealircd/conf/tls/server.key.pem
+# If needed, the script will automatically fix Let's Encrypt permissions
+# Manual fix (usually not needed):
+sudo chown -R $(id -u):$(id -g) data/letsencrypt/
 ```
 
 #### ❌ "Domain validation failed"

@@ -246,6 +246,9 @@ issue_certificates() {
 
   log_verbose "Docker is available"
 
+  # Fix Let's Encrypt permissions after Docker operations
+  fix_letsencrypt_permissions
+
   # Build the certbot command
   local certbot_cmd=(
     docker run --rm
@@ -272,6 +275,10 @@ issue_certificates() {
   if certbot_output=$("${certbot_cmd[@]}" 2>&1); then
     log_info "Certificates issued successfully"
     log_verbose "Certbot output: $certbot_output"
+    
+    # Fix permissions after Docker operations
+    fix_letsencrypt_permissions
+    
     copy_certificates
     return 0
   else
@@ -333,6 +340,9 @@ renew_certificates() {
     log_debug "Running renewal command:"
     log_debug "  ${renew_cmd[*]}"
 
+    # Fix Let's Encrypt permissions before renewal
+    fix_letsencrypt_permissions
+
     # Run renewal with error capture
     local renew_output
     local renew_exit_code
@@ -342,6 +352,10 @@ renew_certificates() {
       if $VERBOSE; then
         log_verbose "Renewal output: $renew_output"
       fi
+      
+      # Fix permissions after Docker operations
+      fix_letsencrypt_permissions
+      
       copy_certificates
       restart_services
       return 0
@@ -372,11 +386,65 @@ renew_certificates() {
   fi
 }
 
+# Fix Let's Encrypt directory permissions
+# This is needed because Docker creates files with different ownership
+fix_letsencrypt_permissions() {
+  log_debug "Fixing Let's Encrypt directory permissions..."
+  
+  # Check if Let's Encrypt directory exists
+  if [[ ! -d $LETSENCRYPT_DIR ]]; then
+    log_verbose "Let's Encrypt directory doesn't exist yet, skipping permission fix"
+    return 0
+  fi
+  
+  # Get current user and group
+  local current_user current_group
+  current_user=$(id -u)
+  current_group=$(id -g)
+  
+  log_debug "Setting ownership to user $current_user, group $current_group"
+  
+  # Fix ownership recursively
+  if ! chown -R "$current_user:$current_group" "$LETSENCRYPT_DIR" 2>/dev/null; then
+    log_verbose "Permission fix attempted (may require sudo for existing files)"
+    
+    # Try with sudo if available
+    if command -v sudo > /dev/null 2>&1; then
+      log_debug "Attempting permission fix with sudo..."
+      if sudo chown -R "$current_user:$current_group" "$LETSENCRYPT_DIR" 2>/dev/null; then
+        log_verbose "Permission fix successful with sudo"
+      else
+        log_warn "Could not fix permissions with sudo - some operations may fail"
+        log_warn "You may need to manually run: sudo chown -R \$(id -u):\$(id -g) $LETSENCRYPT_DIR"
+      fi
+    else
+      log_warn "Could not fix permissions - sudo not available"
+      log_warn "You may need to manually run: sudo chown -R \$(id -u):\$(id -g) $LETSENCRYPT_DIR"
+    fi
+  else
+    log_verbose "Permission fix successful"
+  fi
+  
+  # Ensure proper directory permissions
+  if [[ -d $LETSENCRYPT_DIR ]]; then
+    chmod 755 "$LETSENCRYPT_DIR" 2>/dev/null || true
+    if [[ -d "$LETSENCRYPT_DIR/live" ]]; then
+      chmod 755 "$LETSENCRYPT_DIR/live" 2>/dev/null || true
+    fi
+    if [[ -d "$LETSENCRYPT_DIR/archive" ]]; then
+      chmod 755 "$LETSENCRYPT_DIR/archive" 2>/dev/null || true
+    fi
+  fi
+}
+
 # Copy certificates to UnrealIRCd
 copy_certificates() {
   log_info "Copying certificates to UnrealIRCd..."
   log_debug "Source directory: $LETSENCRYPT_DIR/live/$DOMAIN"
   log_debug "Target directory: $TLS_DIR"
+
+  # Fix permissions before attempting to copy
+  fix_letsencrypt_permissions
 
   # Check if source certificates exist
   local cert_source="$LETSENCRYPT_DIR/live/$DOMAIN/fullchain.pem"
