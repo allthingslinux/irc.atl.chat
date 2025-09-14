@@ -535,7 +535,6 @@ class ScriptTests(EnvironmentValidator):
     def test_required_scripts_exist(self):
         """Test all required scripts exist and are executable"""
         required_scripts = [
-            "scripts/fix-permissions.sh",
             "scripts/init.sh",
             "scripts/prepare-config.sh",
         ]
@@ -576,7 +575,6 @@ class ScriptTests(EnvironmentValidator):
                 "up",
                 "down",
                 "help",
-                "fix-permissions",
                 "setup",
                 "start-only",
                 "status",

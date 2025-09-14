@@ -96,12 +96,6 @@ up:
 # Quick start - alias for up
 quick-start: up
 
-# Fix permissions only (for troubleshooting)
-fix-permissions:
-	@echo -e "$(PURPLE)=== Fixing Permissions ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Running comprehensive permission fix..."
-	@./scripts/init.sh
-	@echo -e "$(GREEN)[SUCCESS]$(NC) Permission fix completed!"
 
 # Setup only (no start)
 setup:
