@@ -93,10 +93,6 @@ up:
 	@echo -e "$(BLUE)[INFO]$(NC) WebPanel: http://localhost:8080"
 	@echo -e "$(BLUE)[INFO]$(NC) Log files accessible at: logs/unrealircd/"
 
-# Quick start - alias for up
-quick-start: up
-
-
 # Setup only (no start)
 setup:
 	@echo -e "$(PURPLE)=== Setup Only ===$(NC)"
