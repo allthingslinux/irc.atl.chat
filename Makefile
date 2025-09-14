@@ -97,8 +97,10 @@ up:
 quick-start: up
 
 # Fix permissions only (for troubleshooting)
+fix-permissions:
 	@echo -e "$(PURPLE)=== Fixing Permissions ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Running comprehensive permission fix..."
+	@./scripts/init.sh
 	@echo -e "$(GREEN)[SUCCESS]$(NC) Permission fix completed!"
 
 # Setup only (no start)
@@ -232,7 +234,7 @@ lint:
 	fi
 	@if command -v hadolint >/dev/null 2>&1; then \
 		echo -e "$(BLUE)[INFO]$(NC) Running hadolint..."; \
-		hadolint Containerfile src/frontend/webpanel/Containerfile; \
+		hadolint src/backend/unrealircd/Containerfile src/backend/atheme/Containerfile src/frontend/webpanel/Containerfile src/frontend/gamja/Containerfile; \
 		echo -e "$(GREEN)[SUCCESS]$(NC) Hadolint completed!"; \
 	else \
 		echo -e "$(YELLOW)[WARNING]$(NC) hadolint not found. Install it for Containerfile validation."; \
@@ -356,4 +358,4 @@ ssl-clean: ## Remove SSL certificates and monitoring (CAUTION: destroys certific
 
 generate-password: ## Generate new IRC operator password hash
 	@echo -e "$(PURPLE)=== Generating IRC Operator Password ===$(NC)"
-	@./scripts/generate-oper-password.sh
+	@./src/backend/unrealircd/scripts/generate-oper-password.sh
