@@ -15,7 +15,9 @@ runtime/*/
 
 # SSL certificates and keys
 src/backend/unrealircd/conf/tls/*
-!src/backend/unrealircd/conf/tls/curl-ca-bundle.crt
+
+# CA certificate bundles (should be generated locally, not committed)
+docs/examples/unrealircd/tls/curl-ca-bundle.crt
 
 # Runtime data directories (created at runtime)
 data/

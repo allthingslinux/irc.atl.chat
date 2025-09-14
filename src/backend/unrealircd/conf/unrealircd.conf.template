@@ -96,15 +96,28 @@ listen {
 	}
 }
 
+/* ============================================================================
+ * TLS/SSL CONFIGURATION - Enhanced Security Settings
+ * ============================================================================
+ * Based on UnrealIRCd 6.x security recommendations and Let's Encrypt best practices
+ * See: https://www.unrealircd.org/docs/SSL/TLS
+ * ============================================================================ */
+
 set {
 	tls {
-		/* Use SSL certificate paths from environment variables */
+		/* Certificate configuration - paths from environment variables for flexibility */
 		certificate "${IRC_SSL_CERT_PATH}";
 		key "${IRC_SSL_KEY_PATH}";
+		/* CA certificate bundle for certificate validation */
+		trusted-ca-file "/home/unrealircd/unrealircd/conf/tls/curl-ca-bundle.crt";
 
-		/* Modern TLS protocols and ciphers for security */
+		/* Modern TLS protocols - TLS 1.2 and 1.3 only (no older insecure versions) */
 		protocols "TLSv1.2,+TLSv1.3";
+
+		/* Strong TLS 1.2 ciphers with Forward Secrecy - ECDHE provides perfect forward secrecy */
 		ciphers "ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256";
+
+		/* TLS 1.3 cipher suites - modern, secure, and fast */
 		ciphersuites "TLS_CHACHA20_POLY1305_SHA256:TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_8_SHA256:TLS_AES_128_CCM_SHA256";
 
 		/* Modern ECDH curves for better security */
@@ -115,6 +128,12 @@ set {
 		groups "X25519MLKEM768:X25519:secp521r1:secp384r1:prime256v1";
 		/* Legacy setting for compatibility */
 		ecdh-curves "X25519:secp521r1:secp384r1:prime256v1";
+
+		/* Additional TLS options for enhanced security */
+		options {
+			/* Don't require client certificates by default */
+			no-client-certificate;
+		}
 
 		/* Strict Transport Security (STS) - Automatically redirect users to TLS */
 		sts-policy {
@@ -128,6 +147,9 @@ set {
 			/* Preload in client (optional, for advanced security) */
 			preload ${IRC_STS_PRELOAD};
 		}
+
+		/* Certificate expiry notifications */
+		certificate-expiry-notification yes;
 	}
 
 	/* Plaintext policy - control who can use non-TLS connections */
@@ -141,6 +163,19 @@ set {
 		/* Helpful message for non-STS clients when we want to enforce TLS */
 		user-message "For security, please connect using TLS on port 6697. Your client will be automatically redirected if it supports STS.";
 		oper-message "IRCOps must use TLS connections. Please connect to port 6697 with SSL/TLS enabled.";
+	}
+
+	/* Outdated TLS policy - warn users about insecure TLS protocols/ciphers */
+	outdated-tls-policy {
+		/* Warn users about outdated TLS (but still allow connection) */
+		user warn;
+		/* Deny IRCOps with outdated TLS */
+		oper deny;
+		/* Deny server links with outdated TLS */
+		server deny;
+		/* Custom messages for better user experience */
+		user-message "Your IRC client is using an outdated TLS protocol or cipher. Please update your IRC client for better security.";
+		oper-message "IRCOps must use modern TLS. Please update your IRC client.";
 	}
 }
 
@@ -462,7 +497,7 @@ set {
                 channel {
                         /* Default profile for all channels - can be overridden with +F mode */
                         default-profile normal;
-                        
+
                         /* Custom profiles - these override the built-in ones if needed */
                         profile very-strict { flood-mode "[7c#C15,10j#R10,10k#K15,30m#M10,10n#N15]:15"; }
                         profile strict { flood-mode "[7c#C15,15j#R10,10k#K15,40m#M10,10n#N15]:15"; }
@@ -470,19 +505,19 @@ set {
                         profile relaxed { flood-mode "[7c#C15,45j#R10,10k#K15,60m#M10,10n#N15]:15"; }
                         profile very-relaxed { flood-mode "[7c#C15,60j#R10,10k#K15,90m#M10,10n#N15]:15"; }
                 }
-                
+
                 /* Settings that apply to everyone */
                 everyone {
                         /* Connection flood protection - relaxed for testing: 20 connections per 10 seconds per IP */
                         connect-flood 20:10;
-                        
+
                         /* Handshake data flood protection */
                         handshake-data-flood {
                                 amount 4k;
                                 ban-action zline;
                                 ban-time 10m;
                         }
-                        
+
                         /* Target flood protection - prevents high-rate flooding of channels/users */
                         target-flood {
                                 channel-privmsg 45:5;
@@ -531,43 +566,43 @@ set {
 /*
  * ANTI-FLOOD PROTECTION OVERVIEW
  * ===============================
- * 
+ *
  * The anti-flood settings above provide comprehensive protection against various types of flooding:
- * 
+ *
  * CONNECTION FLOOD PROTECTION:
  * - Limits connections per IP address to prevent connection bombing
  * - Default: 3 connections per 60 seconds per IP
- * 
+ *
  * HANDSHAKE DATA FLOOD PROTECTION:
  * - Prevents abuse during IRC protocol handshake
  * - Blocks excessive data during connection establishment
  * - Results in 10-minute Z-line for violators
- * 
+ *
  * TARGET FLOOD PROTECTION:
  * - Prevents high-rate flooding of channels and users
  * - Limits total messages to any target (channel/user) regardless of source count
  * - Protects against coordinated flooding attacks
- * 
+ *
  * USER-BASED FLOOD PROTECTION:
  * - Different limits for known-users vs unknown-users
  * - Known users: Registered with services OR reputation score 25+
  * - Unknown users: New/unregistered users with lower trust
- * 
+ *
  * COMMAND RATE LIMITING:
  * - Nick changes, channel joins, away messages, invites, knocks
  * - Private message conversation limits to prevent spam bots
  * - Lag penalty system prevents command flooding
- * 
+ *
  * CHANNEL ANTI-FLOOD PROTECTION (UnrealIRCd 6.2.0+):
  * - Default "normal" profile applied to all channels automatically
  * - Channel operators can override with MODE +F <profile>:
  *   +F normal    - Standard protection (default)
- *   +F relaxed   - For busy channels with lots of activity  
+ *   +F relaxed   - For busy channels with lots of activity
  *   +F strict    - For channels needing extra protection
  *   +F off       - Disable channel anti-flood (not recommended)
  * - Use MODE #channel F to see current effective settings
  * - Protection covers: messages, notices, joins, parts, nick changes, kicks, CTCPs
- * 
+ *
  * SECURITY PHILOSOPHY:
  * - Balanced approach: Strict enough to prevent abuse, lenient enough for normal use
  * - Graduated penalties: Unknown users have stricter limits than known users
@@ -577,59 +612,59 @@ set {
 /*
  * STRICT TRANSPORT SECURITY (STS) SECURITY PROGRESSION
  * ====================================================
- * 
+ *
  * STS automatically redirects capable clients from plaintext (port 6667) to TLS (port 6697).
- * 
+ *
  * PHASE 1 - TESTING (First week):
  * - IRC_STS_DURATION=1m (1 minute cache)
  * - IRC_STS_PRELOAD=no
  * - plaintext-policy user=allow (users can still use plaintext if STS fails)
- * 
+ *
  * PHASE 2 - GRADUAL ROLLOUT (After 1 week):
- * - IRC_STS_DURATION=1d (1 day cache)  
+ * - IRC_STS_DURATION=1d (1 day cache)
  * - Monitor for any user connection issues
- * 
+ *
  * PHASE 3 - MATURE NETWORK (After 1 month):
  * - IRC_STS_DURATION=30d (30 days cache)
  * - Consider IRC_STS_PRELOAD=yes for advanced security
- * 
+ *
  * PHASE 4 - MAXIMUM SECURITY (After 6 months):
  * - IRC_STS_DURATION=180d (6 months cache)
  * - Optional: Set plaintext-policy user=deny to force TLS for all users
  * - Optional: Remove port 6667 listen block entirely
- * 
- * SUPPORTED CLIENTS: mIRC, AdiIRC, IRCCloud, The Lounge, Ambassador, GLirc, 
+ *
+ * SUPPORTED CLIENTS: mIRC, AdiIRC, IRCCloud, The Lounge, Ambassador, GLirc,
  * CoreIRC, BitBot, Limnoria, and many others.
- * 
+ *
  * NON-STS CLIENTS: Will continue using plaintext unless plaintext-policy denies them.
  */
 
 /*
  * CHANNEL ANTI-FLOOD RECOMMENDATIONS
  * ==================================
- * 
+ *
  * Operators can use channel mode +f for automatic flood protection:
- * 
+ *
  * Recommended for large channels (50+ users):
  * /MODE #channel +f [50j#i10,75m#m10,7c#C15,10n#N15,30k#K10]:15
- * 
- * Recommended for medium channels (10-50 users):  
+ *
+ * Recommended for medium channels (10-50 users):
  * /MODE #channel +f [30j#i10,40m#m10,7c#C15,10n#N15,30k#K10]:15
- * 
+ *
  * Recommended for small channels (<10 users):
  * /MODE #channel +f [15j#i5,20m#m5,5c#C10,7n#N10,15k#K5]:15
- * 
+ *
  * Format explanation:
  * - 30j#i10 = 30 joins per 15 seconds, set +i for 10 minutes if exceeded
- * - 40m#m10 = 40 messages per 15 seconds, set +m for 10 minutes if exceeded  
+ * - 40m#m10 = 40 messages per 15 seconds, set +m for 10 minutes if exceeded
  * - 7c#C15 = 7 CTCPs per 15 seconds, set +C for 15 minutes if exceeded
  * - 10n#N15 = 10 nick changes per 15 seconds, set +N for 15 minutes if exceeded
  * - 30k#K10 = 30 knocks per 15 seconds, set +K for 10 minutes if exceeded
- * 
+ *
  * Emergency flood protection modes for operators:
  * - +M = Only registered users can talk
  * - +N = No nick changes allowed
- * - +C = No CTCPs allowed  
+ * - +C = No CTCPs allowed
  * - +K = No /KNOCK allowed
  * - +i = Invite only
  * - +m = Moderated (only voiced+ can talk)
@@ -638,46 +673,46 @@ set {
 /*
  * SASL AUTHENTICATION GUIDE
  * =========================
- * 
+ *
  * SASL allows users to authenticate to services before they are fully online.
  * This configuration enables SASL support with modern SCRAM-SHA-256 authentication.
- * 
+ *
  * BENEFITS:
  * - Universal identification method (no need for /NS IDENTIFY)
  * - Early authentication receives proper vhost and modes
  * - Can join registered-only channels immediately
  * - Works during connection throttling attacks
  * - Enables selective authentication requirements
- * 
+ *
  * CLIENT SETUP EXAMPLES:
- * 
+ *
  * mIRC:
  * - File -> Select Server -> Edit -> Login Method: SASL (/CAP)
  * - Enter your services password
- * 
+ *
  * irssi:
  * - /NETWORK ADD -sasl_username yourname -sasl_password yourpass -sasl_mechanism SCRAM-SHA-256 NetworkName
- * 
+ *
  * HexChat:
  * - Network List -> Edit -> Login method: SASL (username + password)
  * - Enter your services username and password
- * 
+ *
  * TESTING SASL:
  * - Connect to server and run: /QUOTE CAP LS
  * - Look for 'sasl' in the capability list
  * - If present, SASL is working correctly
- * 
+ *
  * SOFT BANS (Dynamic Authentication Requirements):
  * IRCOps can require authentication dynamically using soft bans:
  * - /GLINE %*@*.suspicious-domain.com 0 Please authenticate to access this server
  * - /KLINE %*@192.168.1.* 0 Authentication required from your IP range
  * The % prefix makes the ban only affect unauthenticated users.
- * 
+ *
  * AUTHENTICATION TYPES SUPPORTED:
  * - SCRAM-SHA-256 (most secure, recommended)
  * - SCRAM-SHA-1 (legacy compatibility)
  * - PLAIN (basic, use only over TLS)
- * 
+ *
  * SECURITY NOTES:
  * - Always use TLS when possible to protect credentials
  * - SCRAM mechanisms are much more secure than PLAIN
@@ -688,45 +723,45 @@ set {
 /*
  * CHANNEL HISTORY GUIDE
  * =====================
- * 
+ *
  * Channel history allows users to see previous messages when joining channels.
  * This server supports multiple methods for retrieving channel history.
- * 
+ *
  * ENABLING HISTORY:
  * To enable history for a channel, set channel mode +H:
  * - /MODE #channel +H 50:1d (store 50 lines for 1 day)
  * - /MODE #channel +H 100:7d (store 100 lines for 7 days)
  * - /MODE #channel +H 1000:31d (store 1000 lines for 31 days)
- * 
+ *
  * HISTORY RETRIEVAL METHODS:
  * 1. ON-JOIN PLAYBACK: Automatic history shown when joining (max 15 lines)
  * 2. HISTORY COMMAND: Manual retrieval via /HISTORY #channel [lines]
  * 3. CHATHISTORY (IRCv3): Advanced client-driven history fetching
- * 
+ *
  * CLIENT SUPPORT:
- * 
+ *
  * FULL CHATHISTORY SUPPORT (unlimited history):
  * - KiwiIRC, Gamja, Goguma, Senpai
- * 
+ *
  * PARTIAL SUPPORT (on-join + HISTORY command):
  * - AdiIRC, Colloquy, HexChat, IceChat, irssi (1.2.3+)
  * - Konversation, KVIrc, mIRC (7.34+), Quassel
  * - Textual, WeeChat (3.3+), Swirc, Glirc
  * - IRCCloud, The Lounge
- * 
+ *
  * NO SUPPORT:
  * - LimeChat, Mibbit
- * 
+ *
  * REQUIREMENTS:
  * - Client must support IRCv3 'server-time' capability
  * - Channel must have +H mode set by channel operators
  * - History is lost on server restart (stored in memory only)
- * 
+ *
  * USAGE EXAMPLES:
  * - /MODE #general +H 50:1d     # Store 50 lines for 1 day
  * - /HISTORY #general           # Get recent history
  * - /HISTORY #general 25        # Get last 25 lines
- * 
+ *
  * OPERATOR NOTES:
  * - History can prevent bots from re-triggering on old messages
  * - Use +P (permanent) mode to prevent history loss when channel empties

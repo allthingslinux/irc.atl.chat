@@ -146,6 +146,64 @@ set_permissions() {
     log_success "Permissions set successfully"
 }
 
+# Function to set up CA certificate bundle
+setup_ca_bundle() {
+    log_info "Setting up CA certificate bundle..."
+
+    local ca_template_dir="$PROJECT_ROOT/docs/examples/unrealircd/tls"
+    local ca_runtime_dir="$PROJECT_ROOT/src/backend/unrealircd/conf/tls"
+    local ca_bundle_file="curl-ca-bundle.crt"
+
+    # Ensure runtime directory exists
+    if [ ! -d "$ca_runtime_dir" ]; then
+        mkdir -p "$ca_runtime_dir"
+        log_info "Created TLS runtime directory: $ca_runtime_dir"
+  fi
+
+    # Ensure template directory exists
+    if [ ! -d "$ca_template_dir" ]; then
+        mkdir -p "$ca_template_dir"
+        log_info "Created TLS template directory: $ca_template_dir"
+  fi
+
+    # Check if system CA bundle exists
+    local system_ca_bundle=""
+    if [ -f "/etc/ca-certificates/extracted/tls-ca-bundle.pem" ]; then
+        system_ca_bundle="/etc/ca-certificates/extracted/tls-ca-bundle.pem"
+  elif   [ -f "/etc/ssl/certs/ca-certificates.crt" ]; then
+        system_ca_bundle="/etc/ssl/certs/ca-certificates.crt"
+  fi
+
+    if [ -n "$system_ca_bundle" ]; then
+        # Create template if it doesn't exist
+        if [ ! -f "$ca_template_dir/$ca_bundle_file" ]; then
+            if cp "$system_ca_bundle" "$ca_template_dir/$ca_bundle_file"; then
+                log_success "Created CA certificate bundle template"
+      else
+                log_warning "Could not create CA certificate bundle template"
+                return 1
+      fi
+    fi
+
+        # Copy to runtime directory if it doesn't exist
+        if [ ! -f "$ca_runtime_dir/$ca_bundle_file" ]; then
+            if cp "$system_ca_bundle" "$ca_runtime_dir/$ca_bundle_file"; then
+                log_success "Created CA certificate bundle in runtime directory"
+      else
+                log_warning "Could not create CA certificate bundle in runtime directory"
+                return 1
+      fi
+    else
+            log_info "CA certificate bundle already exists in runtime directory"
+    fi
+  else
+        log_warning "System CA certificate bundle not found. SSL certificate validation may not work properly."
+        return 1
+  fi
+
+    log_success "CA certificate bundle setup completed"
+}
+
 # Function to prepare configuration files from templates
 prepare_config_files() {
     log_info "Preparing configuration files from templates..."
@@ -275,6 +333,9 @@ main() {
 
     # Set permissions
     set_permissions
+
+    # Set up CA certificate bundle
+    setup_ca_bundle
 
     # Create .env if needed
     create_env_template
