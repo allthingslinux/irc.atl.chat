@@ -28,7 +28,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Check Docker
-        uses: tj-actions/changed-files@v46
+        uses: tj-actions/changed-files@v47
         id: docker_changes
         with:
           files: |
