@@ -473,6 +473,24 @@ copy_certificates() {
     fi
   fi
 
+  # Ensure CA certificate bundle exists (required for SSL validation)
+  local ca_bundle_target="$TLS_DIR/curl-ca-bundle.crt"
+  local ca_bundle_source="docs/examples/unrealircd/tls/curl-ca-bundle.crt"
+  
+  if [[ ! -f $ca_bundle_target ]]; then
+    log_verbose "CA certificate bundle not found, restoring from template..."
+    if [[ -f $ca_bundle_source ]]; then
+      if ! cp "$ca_bundle_source" "$ca_bundle_target"; then
+        log_error "Failed to copy CA certificate bundle"
+        return 1
+      fi
+      log_verbose "CA certificate bundle restored successfully"
+    else
+      log_warn "CA certificate bundle template not found at $ca_bundle_source"
+      log_warn "SSL certificate validation may not work properly"
+    fi
+  fi
+
   # Copy certificates with error handling
   local cert_target="$TLS_DIR/server.cert.pem"
   local key_target="$TLS_DIR/server.key.pem"
