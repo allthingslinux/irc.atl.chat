@@ -1,4 +1,4 @@
-"""Monitoring and health check tests using UnrealIRCd RPC."""
+"""Monitoring and health check tests using UnrealIRCd RPC with controlled server."""
 
 import pytest
 import time
@@ -7,6 +7,9 @@ from datetime import datetime, timedelta
 
 # Import unrealircd-rpc-py conditionally
 unrealircd_rpc = pytest.importorskip("unrealircd_rpc_py")
+
+from ..utils.base_test_cases import BaseServerTestCase
+from ..utils.specifications import mark_specifications
 
 
 class UnrealIRCMonitor:
@@ -60,12 +63,8 @@ class UnrealIRCMonitor:
 
             activity = {
                 "total_users": len(users),
-                "active_connections": len(
-                    [u for u in users if hasattr(u, "idle_time") and u.idle_time < 300]
-                ),
-                "idle_connections": len(
-                    [u for u in users if hasattr(u, "idle_time") and u.idle_time >= 300]
-                ),
+                "active_connections": len([u for u in users if hasattr(u, "idle_time") and u.idle_time < 300]),
+                "idle_connections": len([u for u in users if hasattr(u, "idle_time") and u.idle_time >= 300]),
                 "timestamp": datetime.now().isoformat(),
             }
 
@@ -81,15 +80,9 @@ class UnrealIRCMonitor:
 
             channel_stats = {
                 "total_channels": len(channels),
-                "empty_channels": len(
-                    [c for c in channels if not c.members or len(c.members) == 0]
-                ),
-                "active_channels": len(
-                    [c for c in channels if c.members and len(c.members) > 0]
-                ),
-                "large_channels": len(
-                    [c for c in channels if c.members and len(c.members) > 50]
-                ),
+                "empty_channels": len([c for c in channels if not c.members or len(c.members) == 0]),
+                "active_channels": len([c for c in channels if c.members and len(c.members) > 0]),
+                "large_channels": len([c for c in channels if c.members and len(c.members) > 50]),
                 "timestamp": datetime.now().isoformat(),
             }
 
@@ -111,12 +104,7 @@ class UnrealIRCMonitor:
                 "name_bans": len(name_bans),
                 "spam_filters": len(spam_filters),
                 "active_bans": len(
-                    [
-                        b
-                        for b in server_bans
-                        if hasattr(b, "duration")
-                        and (b.duration == 0 or b.duration > time.time())
-                    ]
+                    [b for b in server_bans if hasattr(b, "duration") and (b.duration == 0 or b.duration > time.time())]
                 ),
                 "timestamp": datetime.now().isoformat(),
             }
@@ -245,9 +233,7 @@ class TestUnrealIRCMonitoring:
         activity = monitor.check_user_activity()
 
         assert activity["total_users"] == 3
-        assert (
-            activity["active_connections"] == 1
-        )  # Only first user is active (< 5 minutes)
+        assert activity["active_connections"] == 1  # Only first user is active (< 5 minutes)
         assert activity["idle_connections"] == 2  # Other two are idle
         assert "timestamp" in activity
 
@@ -317,9 +303,7 @@ class TestUnrealIRCMonitoring:
                 level="error",
                 message="Connection failed",
             ),
-            Mock(
-                timestamp=current_time - 10800, level="info", message="User connected"
-            ),
+            Mock(timestamp=current_time - 10800, level="info", message="User connected"),
             Mock(timestamp=current_time - 14400, level="debug", message="Debug info"),
         ]
         mock_rpc.Log.list.return_value = mock_logs
@@ -403,9 +387,7 @@ class TestUnrealIRCMonitoring:
         mock_stats.uptime = 604800  # 1 week
 
         mock_users = [Mock(idle_time=i * 60) for i in range(50)]  # Various idle times
-        mock_channels = [
-            Mock(members=[f"user{i}" for i in range(j + 1)]) for j in range(15)
-        ]
+        mock_channels = [Mock(members=[f"user{i}" for i in range(j + 1)]) for j in range(15)]
         mock_bans = [Mock(duration=0) for _ in range(5)]
         mock_filters = [Mock() for _ in range(3)]
 
@@ -487,9 +469,7 @@ class TestUnrealIRCMonitoring:
 
         # Create large number of users and channels
         mock_users = [Mock(idle_time=0) for _ in range(1000)]
-        mock_channels = [
-            Mock(members=[f"user{i}" for i in range(50)]) for _ in range(500)
-        ]
+        mock_channels = [Mock(members=[f"user{i}" for i in range(50)]) for _ in range(500)]
 
         mock_rpc.User.list.return_value = mock_users
         mock_rpc.Channel.list.return_value = mock_channels
@@ -522,9 +502,7 @@ def mock_monitor():
 
     mock_rpc.Stats.get.return_value = mock_stats
     mock_rpc.User.list.return_value = [Mock(idle_time=i * 300) for i in range(25)]
-    mock_rpc.Channel.list.return_value = [
-        Mock(members=[f"user{i}" for i in range(5)]) for _ in range(8)
-    ]
+    mock_rpc.Channel.list.return_value = [Mock(members=[f"user{i}" for i in range(5)]) for _ in range(8)]
 
     monitor = UnrealIRCMonitor(mock_rpc)
     yield monitor
@@ -544,9 +522,65 @@ def high_load_monitor():
 
     mock_rpc.Stats.get.return_value = mock_stats
     mock_rpc.User.list.return_value = [Mock(idle_time=0) for _ in range(500)]
-    mock_rpc.Channel.list.return_value = [
-        Mock(members=[f"user{i}" for i in range(20)]) for _ in range(100)
-    ]
+    mock_rpc.Channel.list.return_value = [Mock(members=[f"user{i}" for i in range(20)]) for _ in range(100)]
 
     monitor = UnrealIRCMonitor(mock_rpc)
     yield monitor
+
+
+class TestUnrealIRCMonitoringIntegration(BaseServerTestCase):
+    """Integration tests for UnrealIRCd monitoring with controlled server."""
+
+    @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
+    @pytest.mark.irc
+    @pytest.mark.slow
+    def test_monitoring_with_real_server(self):
+        """Test monitoring functionality with a real controlled server."""
+        # Create some activity on the server first
+        client1 = self.connectClient("monitor_test_1")
+        client2 = self.connectClient("monitor_test_2")
+
+        test_channel = f"#monitor_test_{int(time.time())}"
+        self.joinChannel(client1, test_channel)
+        self.joinChannel(client2, test_channel)
+
+        # Send some messages to create activity
+        self.sendLine(client1, f"PRIVMSG {test_channel} :Monitoring test message")
+        self.sendLine(client2, f"PRIVMSG {test_channel} :Another test message")
+
+        # Note: Actual RPC monitoring would require the UnrealIRCd RPC module to be enabled
+        # and configured in our controller. This test demonstrates the integration framework
+        # is ready for when RPC monitoring is properly configured.
+
+        # For now, just verify the server is running and responsive
+        assert self.controller.proc is not None
+        assert self.controller.port_open
+
+        # Test that our clients are still connected
+        self.sendLine(client1, "PING test")
+        pong = self.getMessage(client1)
+        self.assertMessageMatch(pong, command="PONG", params=["test"])
+
+    @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
+    @pytest.mark.irc
+    def test_server_basic_stats_via_irc(self):
+        """Test basic server statistics gathering via IRC commands."""
+        client = self.connectClient("stats_test")
+
+        # Test LUSERS command for user/server counts
+        self.sendLine(client, "LUSERS")
+        lusers_response = self.getMessage(client)
+        # Should get RPL_LUSERCLIENT or similar
+        assert lusers_response.command in ["251", "252", "253", "254", "255"]
+
+        # Test TIME command
+        self.sendLine(client, "TIME")
+        time_response = self.getMessage(client)
+        self.assertMessageMatch(time_response, command="391")  # RPL_TIME
+
+        # Test INFO command
+        self.sendLine(client, "INFO")
+        info_response = self.getMessage(client)
+        assert info_response.command in ["371", "374"]  # RPL_INFO or RPL_ENDOFINFO

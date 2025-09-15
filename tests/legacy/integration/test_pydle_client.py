@@ -1,11 +1,17 @@
-"""Integration tests using pydle library - showcasing IRCv3 and modular features."""
+"""Integration tests using pydle library with controlled IRC server.
+
+Tests pydle IRC client library functionality against our controller-managed server.
+"""
 
 import pytest
 import asyncio
-from unittest.mock import Mock, AsyncMock, patch
+import time
 
 # Import pydle conditionally
 pydle = pytest.importorskip("pydle")
+
+from ..utils.base_test_cases import BaseServerTestCase
+from ..utils.specifications import mark_specifications
 
 
 class PydleTestBot(pydle.Client):
@@ -34,9 +40,7 @@ class PydleTestBot(pydle.Client):
         await super().on_part(channel, user, reason)
         if user == self.nickname:
             self.joined_channels.discard(channel)
-        self.events_log.append(
-            ("part", {"channel": channel, "user": user, "reason": reason})
-        )
+        self.events_log.append(("part", {"channel": channel, "user": user, "reason": reason}))
 
     async def on_message(self, target, source, message):
         """Called when a message is received."""
@@ -89,8 +93,176 @@ class PydleTestBot(pydle.Client):
         self.events_log.append(("quit", {"user": user, "reason": reason}))
 
 
-class TestPydleIntegration:
-    """Integration tests for pydle library showcasing IRCv3 features."""
+class TestPydleWithController(BaseServerTestCase):
+    """Integration tests for pydle library using controlled IRC server."""
+
+    @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
+    @pytest.mark.irc
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_pydle_basic_connection(self):
+        """Test pydle client connecting to controlled IRC server."""
+        # Start server
+        # Controller is already started by setUp
+
+        # Create pydle client
+        client = PydleTestBot(f"pydle_test_{int(time.time())}")
+
+        try:
+            # Connect to our controlled server
+            await client.connect(self.hostname, self.port, tls=False)
+
+            # Wait for connection and registration
+            await asyncio.sleep(2)
+
+            # Verify connection
+            assert client.connected
+            assert len(client.events_log) > 0
+            assert any(event[0] == "connect" for event in client.events_log)
+
+        finally:
+            await client.disconnect()
+
+    @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
+    @pytest.mark.irc
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_pydle_channel_operations(self):
+        """Test pydle client channel join/part operations."""
+        # Create pydle client
+        client = PydleTestBot(f"pydle_chan_{int(time.time())}")
+
+        try:
+            # Connect to server
+            await client.connect(self.hostname, self.port, tls=False)
+            await asyncio.sleep(1)
+
+            test_channel = f"#pydle_test_{int(time.time())}"
+
+            # Join channel
+            await client.join(test_channel)
+            await asyncio.sleep(1)
+
+            # Verify join
+            assert test_channel in client.joined_channels
+            assert any(event[0] == "join" and event[1]["channel"] == test_channel for event in client.events_log)
+
+            # Part channel
+            await client.part(test_channel, "Testing complete")
+            await asyncio.sleep(1)
+
+            # Verify part
+            assert test_channel not in client.joined_channels
+            assert any(event[0] == "part" and event[1]["channel"] == test_channel for event in client.events_log)
+
+        finally:
+            await client.disconnect()
+
+    @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
+    @pytest.mark.irc
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_pydle_messaging(self):
+        """Test pydle client messaging capabilities."""
+        # Create two pydle clients
+        client1 = PydleTestBot(f"pydle_msg1_{int(time.time())}")
+        client2 = PydleTestBot(f"pydle_msg2_{int(time.time())}")
+
+        try:
+            # Connect both clients
+            await client1.connect(self.hostname, self.port, tls=False)
+            await client2.connect(self.hostname, self.port, tls=False)
+            await asyncio.sleep(1)
+
+            test_channel = f"#pydle_msg_{int(time.time())}"
+
+            # Both join channel
+            await client1.join(test_channel)
+            await client2.join(test_channel)
+            await asyncio.sleep(1)
+
+            # Client1 sends message
+            test_message = f"Hello from pydle client at {int(time.time())}"
+            await client1.message(test_channel, test_message)
+            await asyncio.sleep(1)
+
+            # Client2 should receive message
+            assert len(client2.messages_received) > 0
+            received_msg = client2.messages_received[-1]  # Get latest message
+            assert received_msg["type"] == "channel"
+            assert received_msg["channel"] == test_channel
+            assert received_msg["source"] == client1.nickname
+            assert test_message in received_msg["message"]
+
+        finally:
+            await client1.disconnect()
+            await client2.disconnect()
+
+    @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
+    @pytest.mark.irc
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_pydle_private_messaging(self):
+        """Test pydle private messaging."""
+        client1 = PydleTestBot(f"pydle_priv1_{int(time.time())}")
+        client2 = PydleTestBot(f"pydle_priv2_{int(time.time())}")
+
+        try:
+            # Connect both clients
+            await client1.connect(self.hostname, self.port, tls=False)
+            await client2.connect(self.hostname, self.port, tls=False)
+            await asyncio.sleep(1)
+
+            # Client1 sends private message to client2
+            private_msg = f"Private message at {int(time.time())}"
+            await client1.message(client2.nickname, private_msg)
+            await asyncio.sleep(1)
+
+            # Client2 should receive private message
+            assert len(client2.messages_received) > 0
+            received_msg = client2.messages_received[-1]
+            assert received_msg["type"] == "private"
+            assert received_msg["source"] == client1.nickname
+            assert private_msg in received_msg["message"]
+
+        finally:
+            await client1.disconnect()
+            await client2.disconnect()
+
+    @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
+    @pytest.mark.irc
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_pydle_nick_change(self):
+        """Test pydle nickname change handling."""
+        client = PydleTestBot(f"pydle_nick_{int(time.time())}")
+
+        try:
+            await client.connect(self.hostname, self.port, tls=False)
+            await asyncio.sleep(1)
+
+            original_nick = client.nickname
+            new_nick = f"newnick_{int(time.time())}"
+
+            # Change nickname
+            await client.set_nickname(new_nick)
+            await asyncio.sleep(1)
+
+            # Verify nickname change
+            assert client.nickname == new_nick
+            assert any(event[0] == "nick_change" and event[1]["old"] == original_nick for event in client.events_log)
+
+        finally:
+            await client.disconnect()
+
+
+class TestPydleFeatures:
+    """Tests for pydle library features (non-integration)."""
 
     @pytest.mark.asyncio
     async def test_pydle_client_creation(self):
@@ -109,39 +281,11 @@ class TestPydleIntegration:
     async def test_pydle_modular_features(self):
         """Test pydle's modular feature system."""
         # Test featurize function
-        CustomClient = pydle.featurize(
-            pydle.features.RFC1459Support, pydle.features.CTCPSupport
-        )
+        CustomClient = pydle.featurize(pydle.features.RFC1459Support, pydle.features.CTCPSupport)
 
         client = CustomClient("TestBot")
         assert hasattr(client, "ctcp")  # Should have CTCP support
         assert hasattr(client, "message")  # Should have basic messaging
-
-    @pytest.mark.asyncio
-    async def test_pydle_connection_lifecycle(self):
-        """Test pydle client connection lifecycle."""
-        client = PydleTestBot("TestBot")
-
-        # Mock the connection
-        with patch.object(client, "connect", new_callable=AsyncMock) as mock_connect:
-            mock_connect.return_value = None
-
-            await client.connect("localhost", 6667, tls=False)
-
-            # Verify connection was attempted
-            mock_connect.assert_called_once_with("localhost", 6667, tls=False)
-
-    @pytest.mark.asyncio
-    async def test_pydle_event_handling(self):
-        """Test pydle event handling."""
-        client = PydleTestBot("TestBot")
-
-        # Simulate events
-        await client.on_connect()
-
-        # Check that events were logged
-        assert len(client.events_log) >= 1
-        assert client.events_log[0][0] == "connect"
 
     @pytest.mark.asyncio
     async def test_pydle_message_handling(self):
@@ -156,15 +300,11 @@ class TestPydleIntegration:
         # Verify messages were recorded
         assert len(client.messages_received) == 3
 
-        private_msg = [
-            msg for msg in client.messages_received if msg.get("type") == "private"
-        ][0]
+        private_msg = [msg for msg in client.messages_received if msg.get("type") == "private"][0]
         assert private_msg["source"] == "user1"
         assert private_msg["message"] == "hello bot"
 
-        channel_msg = [
-            msg for msg in client.messages_received if msg.get("type") == "channel"
-        ][0]
+        channel_msg = [msg for msg in client.messages_received if msg.get("type") == "channel"][0]
         assert channel_msg["channel"] == "#test"
         assert channel_msg["source"] == "user2"
 
@@ -225,9 +365,7 @@ class TestPydleIntegration:
 
         # Mock async operations
         with patch.object(client, "join", new_callable=AsyncMock) as mock_join:
-            with patch.object(
-                client, "message", new_callable=AsyncMock
-            ) as mock_message:
+            with patch.object(client, "message", new_callable=AsyncMock) as mock_message:
                 mock_join.return_value = None
                 mock_message.return_value = None
 
@@ -358,8 +496,6 @@ def pydle_client_pool():
 @pytest.fixture
 def custom_pydle_client():
     """Provide a custom-featured pydle client fixture."""
-    CustomClient = pydle.featurize(
-        pydle.features.RFC1459Support, pydle.features.CTCPSupport
-    )
+    CustomClient = pydle.featurize(pydle.features.RFC1459Support, pydle.features.CTCPSupport)
     client = CustomClient("TestBot")
     yield client

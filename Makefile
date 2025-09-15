@@ -1,4 +1,4 @@
-.PHONY: help build rebuild up down restart status logs logs-ircd logs-atheme logs-webpanel dev-shell dev-logs test lint clean reset info ssl-setup ssl-status ssl-renew ssl-logs ssl-stop ssl-clean generate-password modules-list modules-installed webpanel stop
+.PHONY: help build rebuild up down restart status logs logs-ircd logs-atheme logs-webpanel dev-shell dev-logs test test-unit test-integration test-e2e test-protocol test-performance test-services test-env test-irc test-docker test-quick lint clean reset info ssl-setup ssl-status ssl-renew ssl-logs ssl-stop ssl-clean generate-password modules-list modules-installed webpanel stop
 
 # Default target - comprehensive help
 help:
@@ -28,8 +28,15 @@ help:
 	@echo ""
 	@echo "🧪 TESTING:"
 	@echo "  make test           - Run comprehensive test suite"
+	@echo "  make test-unit      - Run unit tests only"
+	@echo "  make test-integration - Run integration tests only"
+	@echo "  make test-e2e       - Run end-to-end tests only"
+	@echo "  make test-protocol  - Run IRC protocol tests only"
+	@echo "  make test-performance - Run performance tests only"
+	@echo "  make test-services  - Run service integration tests only"
 	@echo "  make test-env       - Test environment setup only"
 	@echo "  make test-irc       - Test IRC functionality only"
+	@echo "  make test-docker    - Run Docker-related tests"
 	@echo "  make test-quick     - Quick environment check"
 	@echo ""
 	@echo "⚙️ ADVANCED OPTIONS:"
@@ -193,27 +200,43 @@ test:
 test-env:
 	@echo -e "$(PURPLE)=== Environment Validation Tests ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Validating environment setup, permissions, and configuration..."
-	@uv run pytest tests/unit/test_docker_client.py -v
+	@uv run pytest tests/unit/test_environment_validation.py tests/unit/test_docker_client.py -v
 
 test-irc:
 	@echo -e "$(PURPLE)=== IRC Functionality Tests ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Testing IRC server functionality..."
-	@uv run pytest tests/integration/test_docker_services.py -v
+	@uv run pytest tests/integration/test_irc_functionality.py tests/integration/test_protocol.py -v
 
 test-unit:
 	@echo -e "$(PURPLE)=== Unit Tests ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Running unit tests..."
-	@uv run pytest tests/unit/ -v
+	@echo -e "$(BLUE)[INFO]$(NC) Running unit tests and protocol tests..."
+	@uv run pytest tests/unit/ tests/protocol/ -v
 
 test-integration:
 	@echo -e "$(PURPLE)=== Integration Tests ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Running integration tests..."
 	@uv run pytest tests/integration/ -v
 
-test-cov:
-	@echo -e "$(PURPLE)=== Tests with Coverage ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Running tests with coverage report..."
-	@uv run pytest --cov=src --cov-report=html --cov-report=term-missing
+test-e2e:
+	@echo -e "$(PURPLE)=== End-to-End Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running end-to-end tests..."
+	@uv run pytest tests/e2e/ -v
+
+test-protocol:
+	@echo -e "$(PURPLE)=== Protocol Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running IRC protocol tests..."
+	@uv run pytest tests/protocol/ -v
+
+test-performance:
+	@echo -e "$(PURPLE)=== Performance Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running performance tests..."
+	@uv run pytest tests/performance/ -v
+
+test-services:
+	@echo -e "$(PURPLE)=== Service Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running service integration tests..."
+	@uv run pytest tests/services/ -v
+
 
 test-docker:
 	@echo -e "$(PURPLE)=== Docker-related Tests ===$(NC)"

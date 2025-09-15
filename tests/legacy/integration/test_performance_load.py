@@ -1,4 +1,4 @@
-"""Performance and load testing for IRC.atl.chat services."""
+"""Performance and load testing for IRC servers using controlled test environment."""
 
 import pytest
 import time
@@ -10,18 +10,21 @@ from typing import List, Dict, Any
 import psutil
 import requests
 
+from ..utils.base_test_cases import BaseServerTestCase
+from ..utils.specifications import mark_specifications
+
 
 class IRCPerformanceClient:
-    """IRC client for performance testing."""
+    """IRC client for performance testing with controlled server."""
 
-    def __init__(self, host="localhost", port=6667, client_id=0):
+    def __init__(self, host: str, port: int, client_id: int = 0):
         self.host = host
         self.port = port
         self.client_id = client_id
-        self.socket = None
+        self.socket: socket.socket | None = None
         self.connected = False
-        self.connect_time = 0
-        self.response_times = []
+        self.connect_time = 0.0
+        self.response_times: List[float] = []
 
     def connect(self) -> float:
         """Connect to IRC server and return connection time."""
@@ -198,14 +201,15 @@ class LoadTestRunner:
         return {"messages_sent": messages_sent, "response_times": response_times}
 
 
-class TestPerformanceLoad:
+class TestPerformanceLoad(BaseServerTestCase):
     """Performance and load testing for IRC services."""
 
     @pytest.fixture
     def load_tester(self):
-        """Create load test runner."""
-        return LoadTestRunner()
+        """Create load test runner with controlled server info."""
+        return LoadTestRunner(self.hostname, self.port)
 
+    @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.performance
     @pytest.mark.slow
     def test_connection_performance(self, load_tester):
@@ -223,6 +227,7 @@ class TestPerformanceLoad:
         print(".3f")
         print(".1f")
 
+    @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.performance
     @pytest.mark.slow
     def test_message_performance(self, load_tester):
@@ -239,6 +244,7 @@ class TestPerformanceLoad:
             print(".3f")
             print(".1f")
 
+    @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.performance
     @pytest.mark.slow
     def test_concurrent_channel_joins(self, load_tester):

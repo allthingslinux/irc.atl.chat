@@ -1,4 +1,4 @@
-"""Integration tests using the IRC library to test IRC server functionality."""
+"""Integration tests using the IRC library with controlled IRC server."""
 
 import pytest
 import time
@@ -7,6 +7,9 @@ from typing import Optional
 
 # Import IRC library conditionally to avoid import errors if not installed
 irc = pytest.importorskip("irc")
+
+from ..utils.base_test_cases import BaseServerTestCase
+from ..utils.specifications import mark_specifications
 
 
 class IRCClientTest:
@@ -114,25 +117,24 @@ class IRCClientTest:
         self.events.append(("quit", user))
 
 
-class TestIRCIntegration:
-    """Integration tests for IRC server using python-irc library."""
+class TestIRCIntegration(BaseServerTestCase):
+    """Integration tests for IRC server using python-irc library with controlled server."""
 
+    @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
     @pytest.mark.slow
     def test_irc_server_connection(self):
-        """Test connecting to IRC server using IRC library."""
-        client = IRCClientTest()
+        """Test connecting to controlled IRC server using IRC library."""
+        # Create IRC library client
+        client = IRCClientTest(self.hostname, self.port)
 
         try:
-            # Attempt to connect
+            # Connect to our controlled server
             connected = client.connect()
 
-            if not connected:
-                pytest.skip("IRC server not available for testing")
-
-            # Verify connection
-            assert client.connected, "Failed to connect to IRC server"
+            assert connected, "Failed to connect to controlled IRC server"
+            assert client.connected, "Client not marked as connected"
             assert len(client.events) > 0, "No events received from server"
 
             # Check for welcome message
@@ -142,24 +144,24 @@ class TestIRCIntegration:
         finally:
             client.disconnect()
 
+    @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
     @pytest.mark.slow
     def test_irc_channel_operations(self):
-        """Test IRC channel join/part operations."""
-        client1 = IRCClientTest()
-        client2 = IRCClientTest()
+        """Test IRC channel join/part operations with controlled server."""
+        client1 = IRCClientTest(self.hostname, self.port)
+        client2 = IRCClientTest(self.hostname, self.port)
 
         try:
-            # Connect both clients
+            # Connect both clients to our controlled server
             connected1 = client1.connect()
             connected2 = client2.connect()
 
-            if not (connected1 and connected2):
-                pytest.skip("IRC server not available for testing")
+            assert connected1 and connected2, "Both clients must connect to controlled server"
 
             # Client 1 joins a test channel
-            test_channel = "#testchannel"
+            test_channel = f"#irc_lib_test_{int(time.time())}"
             client1.join_channel(test_channel)
 
             # Wait a bit for join to process
@@ -174,16 +176,14 @@ class TestIRCIntegration:
             time.sleep(2)
 
             # Client 1 sends a message to the channel
-            test_message = "Hello from test client!"
+            test_message = f"Hello from test client at {int(time.time())}!"
             client1.send_message(test_channel, test_message)
             time.sleep(1)
 
             # Check that client2 received the message
             pubmsg_events = [e for e in client2.events if e[0] == "pubmsg"]
             received_messages = [e[3] for e in pubmsg_events if len(e) > 3]
-            assert test_message in received_messages, (
-                "Client2 did not receive channel message"
-            )
+            assert test_message in received_messages, "Client2 did not receive channel message"
 
             # Client 2 parts the channel
             client2.part_channel(test_channel)
@@ -197,55 +197,54 @@ class TestIRCIntegration:
             client1.disconnect()
             client2.disconnect()
 
+    @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
     @pytest.mark.slow
     def test_irc_private_messages(self):
-        """Test private messaging between IRC clients."""
-        client1 = IRCClientTest()
-        client2 = IRCClientTest()
+        """Test private messaging between IRC clients with controlled server."""
+        client1 = IRCClientTest(self.hostname, self.port)
+        client2 = IRCClientTest(self.hostname, self.port)
 
         try:
-            # Connect both clients with different nicknames
-            # Note: This is a simplified test - in practice you'd need to handle nick conflicts
+            # Connect both clients to our controlled server with different nicknames
+            # Set different nicknames to avoid conflicts
+            client1.nickname = f"priv_client1_{int(time.time())}"
+            client2.nickname = f"priv_client2_{int(time.time())}"
+
             connected1 = client1.connect()
             connected2 = client2.connect()
 
-            if not (connected1 and connected2):
-                pytest.skip("IRC server not available for testing")
+            assert connected1 and connected2, "Both clients must connect to controlled server"
 
             # Wait for connections to stabilize
             time.sleep(2)
 
             # Client 1 sends private message to client 2
-            test_message = "Private message test!"
-            client1.send_message(
-                "testuser", test_message
-            )  # Assuming client2 is testuser
+            test_message = f"Private message test at {int(time.time())}!"
+            client1.send_message(client2.nickname, test_message)
             time.sleep(1)
 
             # Check that client2 received the private message
             privmsg_events = [e for e in client2.events if e[0] == "privmsg"]
             received_messages = [e[2] for e in privmsg_events if len(e) > 2]
-            assert test_message in received_messages, (
-                "Client2 did not receive private message"
-            )
+            assert test_message in received_messages, "Client2 did not receive private message"
 
         finally:
             client1.disconnect()
             client2.disconnect()
 
+    @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
     def test_irc_server_info(self):
-        """Test retrieving IRC server information."""
-        client = IRCClientTest()
+        """Test retrieving IRC server information from controlled server."""
+        client = IRCClientTest(self.hostname, self.port)
 
         try:
             connected = client.connect()
 
-            if not connected:
-                pytest.skip("IRC server not available for testing")
+            assert connected, "Must connect to controlled IRC server"
 
             # Send VERSION command to get server info
             if client.client:

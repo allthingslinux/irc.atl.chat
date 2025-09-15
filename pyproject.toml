@@ -83,6 +83,45 @@ markers = [
     "protocol: marks tests for IRC protocol compliance",
     "unrealircd: marks tests specific to UnrealIRCd",
     "ircv3: marks tests for IRCv3 features",
+
+    # IRC specification markers (from irctest)
+    "RFC1459",
+    "RFC2812",
+    "IRCv3",
+    "modern",
+    "ircdocs",
+    "Ergo",
+    "strict",
+    "deprecated",
+    "services",
+
+    # IRCv3 capabilities
+    "account-notify",
+    "account-tag",
+    "away-notify",
+    "batch",
+    "echo-message",
+    "extended-join",
+    "extended-monitor",
+    "labeled-response",
+    "message-tags",
+    "metadata-2",
+    "draft/multiline",
+    "multi-prefix",
+    "server-time",
+    "setname",
+    "sts",
+
+    # ISUPPORT tokens
+    "BOT",
+    "ELIST",
+    "INVEX",
+    "MONITOR",
+    "PREFIX",
+    "STATUSMSG",
+    "TARGMAX",
+    "UTF8ONLY",
+    "WHOX",
 ]
 
 # Filter warnings

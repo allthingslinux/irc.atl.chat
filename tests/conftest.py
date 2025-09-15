@@ -1,12 +1,68 @@
-"""Test configuration and shared fixtures for IRC.atl.chat testing."""
+"""Test configuration and shared fixtures for IRC.atl.chat testing.
 
+This conftest.py supports both the legacy test structure and the new consolidated structure.
+New tests should use the consolidated structure in tests/consolidated/.
+
+Legacy tests in tests/legacy/integration/ are still supported for backward compatibility.
+"""
+
+import importlib
 import pytest
 import docker
 import requests
 import os
 import time
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Generator, Optional, Type
+
+from .utils.base_test_cases import BaseServerTestCase
+from .controllers.base_controllers import BaseServerController, TestCaseControllerConfig
+
+
+def pytest_addoption(parser):
+    """Called by pytest, registers CLI options passed to the pytest command."""
+    parser.addoption("--controller", help="Which module to use to run the tested software.")
+    parser.addoption("--services-controller", help="Which module to use to run a services package.")
+    parser.addoption("--openssl-bin", type=str, default="openssl", help="The openssl binary to use")
+
+
+def pytest_configure(config):
+    """Called by pytest, after it parsed the command-line."""
+    module_name = config.getoption("controller")
+    services_module_name = config.getoption("services_controller")
+
+    if module_name is None:
+        # Default to UnrealIRCd controller if not specified
+        from .controllers.unrealircd_controller import get_unrealircd_controller_class
+
+        BaseServerTestCase.controllerClass = get_unrealircd_controller_class()
+        BaseServerTestCase.show_io = True
+        return
+
+    try:
+        module = importlib.import_module(module_name)
+    except ImportError:
+        pytest.exit("Cannot import module {}".format(module_name), 1)
+
+    controller_class = module.get_irctest_controller_class()
+    if issubclass(controller_class, BaseServerController):
+        from . import server_tests as module
+    else:
+        pytest.exit(
+            "{}.Controller should be a subclass of irctest.basecontroller.BaseServerController".format(module_name),
+            1,
+        )
+
+    if services_module_name is not None:
+        try:
+            services_module = importlib.import_module(services_module_name)
+        except ImportError:
+            pytest.exit("Cannot import module {}".format(services_module_name), 1)
+        controller_class.services_controller_class = services_module.get_irctest_controller_class()
+
+    BaseServerTestCase.controllerClass = controller_class
+    BaseServerTestCase.controllerClass.openssl_bin = config.getoption("openssl_bin")
+    BaseServerTestCase.show_io = True
 
 
 @pytest.fixture(scope="session")

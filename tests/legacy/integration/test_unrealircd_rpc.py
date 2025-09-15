@@ -6,6 +6,9 @@ from unittest.mock import Mock, patch, AsyncMock
 # Import unrealircd-rpc-py conditionally
 unrealircd_rpc = pytest.importorskip("unrealircd_rpc_py")
 
+from ..utils.base_test_cases import BaseServerTestCase
+from ..utils.specifications import mark_specifications
+
 
 class UnrealIRCTestHelper:
     """Helper class for UnrealIRCd RPC testing."""
@@ -36,9 +39,7 @@ class UnrealIRCTestHelper:
 
         return self.rpc_client
 
-    async def connect_via_requests(
-        self, url="http://localhost:8600/api", username="test", password="test"
-    ):
+    async def connect_via_requests(self, url="http://localhost:8600/api", username="test", password="test"):
         """Mock connection via HTTP requests."""
         with patch("unrealircd_rpc_py.Loader.Loader") as mock_loader:
             mock_client = self.create_mock_rpc_client()
@@ -56,9 +57,7 @@ class UnrealIRCTestHelper:
             mock_client = self.create_mock_rpc_client()
             mock_loader.return_value = mock_client
 
-            self.rpc_client = unrealircd_rpc.Loader.Loader(
-                req_method="unixsocket", path_to_socket_file=socket_path
-            )
+            self.rpc_client = unrealircd_rpc.Loader.Loader(req_method="unixsocket", path_to_socket_file=socket_path)
             self.connected = True
             return self.rpc_client
 
@@ -114,12 +113,8 @@ class UnrealIRCTestHelper:
                     topic="Channel 1",
                     modes=["n", "t"],
                 ),
-                Mock(
-                    name="#channel2", members=["user3"], topic="Channel 2", modes=["p"]
-                ),
-                Mock(
-                    name="&local", members=["user1"], topic="Local channel", modes=["n"]
-                ),
+                Mock(name="#channel2", members=["user3"], topic="Channel 2", modes=["p"]),
+                Mock(name="&local", members=["user1"], topic="Local channel", modes=["n"]),
             ]
             # Configure mock attributes
             for i, channel in enumerate(mock_channels):
@@ -139,14 +134,10 @@ class UnrealIRCTestHelper:
             ]
 
             # Mock name ban operations
-            self.rpc_client.Name_ban.list.return_value = [
-                Mock(name="spamuser", reason="Spam account")
-            ]
+            self.rpc_client.Name_ban.list.return_value = [Mock(name="spamuser", reason="Spam account")]
 
             # Mock spamfilter operations
-            self.rpc_client.Spamfilter.list.return_value = [
-                Mock(match="badword", action="block", reason="Spam word")
-            ]
+            self.rpc_client.Spamfilter.list.return_value = [Mock(match="badword", action="block", reason="Spam word")]
 
             # Mock stats operations
             mock_stats = Mock()
@@ -161,12 +152,8 @@ class UnrealIRCTestHelper:
         if self.rpc_client:
             mock_logs = [
                 Mock(timestamp=1234567890, level="info", message="Server started"),
-                Mock(
-                    timestamp=1234567891, level="warning", message="Connection attempt"
-                ),
-                Mock(
-                    timestamp=1234567892, level="error", message="Authentication failed"
-                ),
+                Mock(timestamp=1234567891, level="warning", message="Connection attempt"),
+                Mock(timestamp=1234567892, level="error", message="Authentication failed"),
             ]
             self.rpc_client.Log.list.return_value = mock_logs
 
@@ -345,9 +332,7 @@ class TestUnrealIRCRPCIntegration:
         client = helper.create_mock_rpc_client()
 
         # Mock server ban exceptions
-        mock_exceptions = [
-            Mock(type="eline", mask="gooduser!*@*", reason="Trusted user", duration=0)
-        ]
+        mock_exceptions = [Mock(type="eline", mask="gooduser!*@*", reason="Trusted user", duration=0)]
         client.Server_ban_exception.list.return_value = mock_exceptions
 
         exceptions = client.Server_ban_exception.list()
