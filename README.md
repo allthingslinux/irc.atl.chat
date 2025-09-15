@@ -22,6 +22,7 @@ cp env.example .env
 
 # 2. Edit configuration
 # BE SURE TO READ THIS CAREFULLY AND DOUBLE CHECK ALL VARIABLES
+# ATHEME WILL NOT START WITHOUT THE SEND AND RECEIVE PASSWORD SET PROPERLY
 vim .env
 
 # 3. Setup Cloudflare DNS credentials
@@ -199,6 +200,25 @@ make build
 ```bash
 make test
 ```
+
+#### Test Structure
+IRC.atl.chat uses a comprehensive testing framework organized by testing level (traditional approach):
+
+- **`tests/unit/`** - Unit tests for individual components and functions
+  - Configuration validation, Docker client testing, environment setup
+- **`tests/integration/`** - Integration tests using controlled IRC servers
+  - `test_protocol.py` - IRC protocol compliance (RFC1459, RFC2812)
+  - `test_clients.py` - Client library integration (pydle, python-irc)
+  - `test_services.py` - Service integration (NickServ, ChanServ, Atheme)
+  - `test_monitoring.py` - Server monitoring and RPC functionality
+  - `test_performance.py` - Performance and load testing
+  - `test_infrastructure.py` - Infrastructure and deployment tests
+  - `test_irc_functionality.py` - General IRC server functionality
+- **`tests/e2e/`** - End-to-end workflow tests
+- **`tests/protocol/`** - Basic IRC message protocol tests (unit-level)
+- **`tests/legacy/integration/`** - Legacy integration tests (deprecated, kept for reference)
+
+All integration tests use a **controller pattern** inspired by [irctest](https://github.com/progval/irctest), providing controlled IRC server instances, service integration, and comprehensive protocol validation.
 
 ### Linting
 ```bash
