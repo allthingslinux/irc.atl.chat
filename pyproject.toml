@@ -146,6 +146,7 @@ norecursedirs = [
     ".pytest_cache",
     "logs",
     "data",
+    "tests/legacy/**",
 ]
 
 [tool.ruff]
