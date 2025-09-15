@@ -45,3 +45,13 @@ webpanel_config/
 *.bak
 # WebPanel config (part of data)
 data/webpanel/config/
+
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.uv_cache/

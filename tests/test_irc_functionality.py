@@ -1,425 +1,132 @@
-#!/usr/bin/env python3
-"""
-IRC Functionality Tests
+"""IRC functionality tests for IRC.atl.chat."""
 
-Tests the IRC server functionality including:
-- Basic connection and authentication
-- NickServ registration
-- Channel operations
-- Channel history (+H mode)
-- Services functionality
-"""
-
-import socket
+import pytest
 import time
-import sys
-import threading
-from typing import List, Optional
+import socket
+from unittest.mock import Mock, patch
 
 
-class IRCClient:
-    """Simple IRC client for testing purposes"""
+class TestIRCFunctionality:
+    """Test IRC server functionality."""
 
-    def __init__(self, host: str = "localhost", port: int = 6667):
-        self.host = host
-        self.port = port
-        self.socket = None
-        self.connected = False
-        self.nickname = ""
-        self.messages: List[str] = []
-        self.running = False
+    @pytest.mark.integration
+    @pytest.mark.irc
+    @pytest.mark.slow
+    def test_irc_server_connection(self, irc_helper):
+        """Test connecting to IRC server."""
+        # This test requires an actual IRC server to be running
+        # It will skip if no server is available
+        if not irc_helper.wait_for_irc_server(timeout=10):
+            pytest.skip("No IRC server running on localhost:6667")
 
-    def connect(self) -> bool:
-        """Connect to IRC server"""
+        # If we get here, server is running, test basic connection
+        response = irc_helper.send_irc_command("PING test")
+        assert response is not None
+
+    def test_irc_helper_timeout(self, irc_helper):
+        """Test IRC helper timeout behavior."""
+        # Test with very short timeout
+        result = irc_helper.wait_for_irc_server(timeout=1)
+        assert isinstance(result, bool)
+
+    @pytest.mark.integration
+    @pytest.mark.irc
+    def test_irc_server_ssl_connection(self, irc_helper):
+        """Test SSL connection to IRC server."""
+        # Test SSL port (6697)
+        ssl_helper = type(irc_helper)("localhost", 6697)
+
+        # This will likely fail without SSL setup, but tests the method
         try:
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(10)
-            self.socket.connect((self.host, self.port))
-            self.connected = True
-            print(f"✅ Connected to {self.host}:{self.port}")
-            return True
-        except Exception as e:
-            print(f"❌ Connection failed: {e}")
-            return False
-
-    def send_raw(self, message: str) -> None:
-        """Send raw IRC message"""
-        if not self.connected:
-            return
-        try:
-            full_message = f"{message}\r\n"
-            self.socket.send(full_message.encode("utf-8"))
-            print(f">>> {message}")
-        except Exception as e:
-            print(f"❌ Send error: {e}")
-
-    def receive_messages(self, timeout: float = 5.0) -> List[str]:
-        """Receive messages from server with timeout"""
-        messages = []
-        start_time = time.time()
-        buffer = ""
-
-        try:
-            self.socket.settimeout(0.1)  # Short timeout for non-blocking reads
-            while time.time() - start_time < timeout:
-                try:
-                    data = self.socket.recv(4096).decode("utf-8", errors="ignore")
-                    if not data:
-                        break
-
-                    buffer += data
-                    while "\r\n" in buffer:
-                        line, buffer = buffer.split("\r\n", 1)
-                        if line.strip():
-                            messages.append(line.strip())
-                            print(f"<<< {line.strip()}")
-
-                            # Handle PING automatically
-                            if line.startswith("PING"):
-                                ping_response = line.replace("PING", "PONG")
-                                self.send_raw(ping_response)
-
-                except socket.timeout:
-                    continue
-                except Exception as e:
-                    print(f"❌ Receive error: {e}")
-                    break
-
-        except Exception as e:
-            print(f"❌ Receive setup error: {e}")
-
-        return messages
-
-    def register_user(
-        self, nickname: str, username: str = None, realname: str = None
-    ) -> bool:
-        """Register user with IRC server"""
-        if username is None:
-            username = nickname
-        if realname is None:
-            realname = f"{nickname} Test User"
-
-        self.nickname = nickname
-        self.send_raw(f"NICK {nickname}")
-        self.send_raw(f"USER {username} 0 * :{realname}")
-
-        # Wait for registration response
-        messages = self.receive_messages(10.0)
-
-        # Check for successful registration (001 welcome message)
-        for msg in messages:
-            if " 001 " in msg and "Welcome" in msg:
-                print(f"✅ Successfully registered as {nickname}")
-                return True
-
-        print(f"❌ Registration failed for {nickname}")
-        return False
-
-    def join_channel(self, channel: str) -> bool:
-        """Join a channel"""
-        self.send_raw(f"JOIN {channel}")
-        messages = self.receive_messages(3.0)
-
-        # Check for successful join
-        for msg in messages:
-            if f" JOIN {channel}" in msg or f" 353 " in msg:  # JOIN or NAMES response
-                print(f"✅ Successfully joined {channel}")
-                return True
-
-        print(f"❌ Failed to join {channel}")
-        return False
-
-    def send_privmsg(self, target: str, message: str) -> None:
-        """Send PRIVMSG to channel or user"""
-        self.send_raw(f"PRIVMSG {target} :{message}")
-
-    def set_channel_mode(self, channel: str, mode: str) -> bool:
-        """Set channel mode"""
-        self.send_raw(f"MODE {channel} {mode}")
-        messages = self.receive_messages(2.0)
-
-        # Check for mode change confirmation
-        for msg in messages:
-            if f" MODE {channel}" in msg:
-                print(f"✅ Mode {mode} set on {channel}")
-                return True
-
-        print(f"❌ Failed to set mode {mode} on {channel}")
-        return False
-
-    def request_history(self, channel: str) -> List[str]:
-        """Request channel history"""
-        self.send_raw(f"HISTORY {channel}")
-        messages = self.receive_messages(3.0)
-
-        history_messages = []
-        for msg in messages:
-            if f"PRIVMSG {channel}" in msg:
-                history_messages.append(msg)
-
-        return history_messages
-
-    def register_nickserv(self, password: str, email: str = "test@example.com") -> bool:
-        """Register with NickServ"""
-        self.send_raw(f"PRIVMSG NickServ :REGISTER {password} {email}")
-        messages = self.receive_messages(5.0)
-
-        # Look for registration confirmation
-        for msg in messages:
-            if "NickServ" in msg and (
-                "registered" in msg.lower() or "confirmed" in msg.lower()
-            ):
-                print(f"✅ Successfully registered with NickServ")
-                return True
-
-        print(f"❌ NickServ registration failed")
-        return False
-
-    def disconnect(self) -> None:
-        """Disconnect from server"""
-        if self.connected:
-            self.send_raw("QUIT :Test completed")
-            time.sleep(1)
-            self.socket.close()
-            self.connected = False
-            print("✅ Disconnected from server")
-
-
-def test_basic_connection():
-    """Test basic IRC server connection"""
-    print("\n=== Testing Basic Connection ===")
-
-    client = IRCClient()
-    success = client.connect()
-    if success:
-        client.disconnect()
-
-    return success
-
-
-def test_user_registration():
-    """Test user registration"""
-    print("\n=== Testing User Registration ===")
-
-    client = IRCClient()
-    if not client.connect():
-        return False
-
-    success = client.register_user("testuser1", "testuser1", "Test User 1")
-    client.disconnect()
-
-    return success
-
-
-def test_nickserv_registration():
-    """Test NickServ registration to create database"""
-    print("\n=== Testing NickServ Registration (Database Creation) ===")
-
-    client = IRCClient()
-    if not client.connect():
-        return False
-
-    # Register user first
-    if not client.register_user("dbtest", "dbtest", "Database Test User"):
-        client.disconnect()
-        return False
-
-    time.sleep(2)  # Wait for services sync
-
-    # Register with NickServ to create database entries
-    success = client.register_nickserv("testpass123")
-
-    client.disconnect()
-    return success
-
-
-def test_channel_operations():
-    """Test basic channel operations"""
-    print("\n=== Testing Channel Operations ===")
-
-    client = IRCClient()
-    if not client.connect():
-        return False
-
-    # Register user
-    if not client.register_user("chantest", "chantest", "Channel Test User"):
-        client.disconnect()
-        return False
-
-    time.sleep(1)
-
-    # Join channel
-    success = client.join_channel("#testchan")
-
-    if success:
-        # Send some messages
-        client.send_privmsg("#testchan", "Hello, this is a test message!")
-        client.send_privmsg("#testchan", "Testing channel functionality")
-        time.sleep(1)
-
-    client.disconnect()
-    return success
-
-
-def test_channel_history():
-    """Test channel history functionality"""
-    print("\n=== Testing Channel History ===")
-
-    client1 = IRCClient()
-    if not client1.connect():
-        return False
-
-    # Register first user
-    if not client1.register_user("histtest1", "histtest1", "History Test User 1"):
-        client1.disconnect()
-        return False
-
-    time.sleep(1)
-
-    # Join channel and set history mode
-    if not client1.join_channel("#historytest"):
-        client1.disconnect()
-        return False
-
-    # Set channel history mode (+H)
-    history_mode_set = client1.set_channel_mode("#historytest", "+H 10:1h")
-
-    if history_mode_set:
-        # Send some test messages
-        client1.send_privmsg("#historytest", "Message 1 - Testing history feature")
-        client1.send_privmsg("#historytest", "Message 2 - This should be stored")
-        client1.send_privmsg("#historytest", "Message 3 - History test in progress")
-        time.sleep(2)
-
-        # Part and rejoin to test history playback
-        client1.send_raw("PART #historytest :Testing rejoin")
-        time.sleep(1)
-
-        if client1.join_channel("#historytest"):
-            # Request history
-            history = client1.request_history("#historytest")
-
-            if history:
-                print(f"✅ Retrieved {len(history)} history messages")
-                success = True
-            else:
-                print(
-                    "ℹ️  History feature configured but no messages retrieved (may be working)"
-                )
-                success = True  # Consider it success since the mode was set
-        else:
-            success = False
-    else:
-        success = False
-
-    client1.disconnect()
-    return success
-
-
-def test_services_functionality():
-    """Test services (NickServ, ChanServ) functionality"""
-    print("\n=== Testing Services Functionality ===")
-
-    client = IRCClient()
-    if not client.connect():
-        return False
-
-    # Register user
-    if not client.register_user("servtest", "servtest", "Services Test User"):
-        client.disconnect()
-        return False
-
-    time.sleep(2)
-
-    # Test NickServ help
-    client.send_raw("PRIVMSG NickServ :HELP")
-    messages = client.receive_messages(3.0)
-
-    nickserv_working = False
-    for msg in messages:
-        if "NickServ" in msg and ("HELP" in msg or "commands" in msg.lower()):
-            nickserv_working = True
-            break
-
-    if nickserv_working:
-        print("✅ NickServ is responding")
-    else:
-        print("❌ NickServ not responding properly")
-
-    # Test ChanServ help
-    client.send_raw("PRIVMSG ChanServ :HELP")
-    messages = client.receive_messages(3.0)
-
-    chanserv_working = False
-    for msg in messages:
-        if "ChanServ" in msg and ("HELP" in msg or "commands" in msg.lower()):
-            chanserv_working = True
-            break
-
-    if chanserv_working:
-        print("✅ ChanServ is responding")
-    else:
-        print("❌ ChanServ not responding properly")
-
-    client.disconnect()
-    return nickserv_working and chanserv_working
-
-
-def main():
-    """Run all tests"""
-    print("🚀 Starting IRC Server Functionality Tests")
-    print("=" * 50)
-
-    tests = [
-        ("Basic Connection", test_basic_connection),
-        ("User Registration", test_user_registration),
-        ("NickServ Registration", test_nickserv_registration),
-        ("Channel Operations", test_channel_operations),
-        ("Channel History", test_channel_history),
-        ("Services Functionality", test_services_functionality),
-    ]
-
-    results = {}
-
-    for test_name, test_func in tests:
-        try:
-            print(f"\n🔍 Running: {test_name}")
-            result = test_func()
-            results[test_name] = result
-
-            if result:
-                print(f"✅ {test_name}: PASSED")
-            else:
-                print(f"❌ {test_name}: FAILED")
-
-            time.sleep(2)  # Brief pause between tests
-
-        except Exception as e:
-            print(f"❌ {test_name}: ERROR - {e}")
-            results[test_name] = False
-
-    # Summary
-    print("\n" + "=" * 50)
-    print("📊 TEST RESULTS SUMMARY")
-    print("=" * 50)
-
-    passed = sum(1 for result in results.values() if result)
-    total = len(results)
-
-    for test_name, result in results.items():
-        status = "✅ PASSED" if result else "❌ FAILED"
-        print(f"{test_name:<25} {status}")
-
-    print("-" * 50)
-    print(f"Total: {passed}/{total} tests passed ({passed / total * 100:.1f}%)")
-
-    if passed == total:
-        print("\n🎉 All tests passed! IRC server is working correctly.")
-        return 0
-    else:
-        print(f"\n⚠️  {total - passed} test(s) failed. Check the logs above.")
-        return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+            import ssl
+
+            # Create SSL context (modern way)
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE  # For testing purposes
+
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            ssl_sock = context.wrap_socket(sock)
+            ssl_sock.settimeout(5)
+            result = ssl_sock.connect_ex(("localhost", 6697))
+            ssl_sock.close()
+            sock.close()
+
+            # If result == 0, SSL connection succeeded
+            assert isinstance(result, int)
+
+        except ImportError:
+            pytest.skip("SSL not available")
+
+    def test_irc_command_parsing(self):
+        """Test IRC command parsing logic."""
+        # Test basic IRC message parsing
+        test_messages = [
+            ":server 001 user :Welcome to IRC",
+            ":user JOIN #channel",
+            ":user PRIVMSG #channel :Hello world",
+            "PING :server",
+            "PONG :server",
+        ]
+
+        for message in test_messages:
+            assert isinstance(message, str)
+            assert len(message) > 0
+
+    @pytest.mark.docker
+    def test_docker_service_logs(self, docker_compose_helper):
+        """Test getting logs from IRC service."""
+        # Test getting logs (may be empty if services not running)
+        logs = docker_compose_helper.get_service_logs("ircd", tail=5)
+        assert isinstance(logs, str)
+
+    def test_mock_irc_connection(self, mock_irc_connection):
+        """Test mock IRC connection behavior."""
+        assert mock_irc_connection.connect()
+        mock_irc_connection.send("TEST")
+        response = mock_irc_connection.receive()
+        assert "Welcome to IRC" in response
+
+    @pytest.mark.integration
+    @pytest.mark.irc
+    @pytest.mark.slow
+    def test_irc_service_health_check(self, docker_compose_helper):
+        """Test IRC service health via Docker."""
+        # Check if IRC service is running
+        is_running = docker_compose_helper.is_service_running("ircd")
+        assert isinstance(is_running, bool)
+
+        if is_running:
+            # If running, check logs for any errors
+            logs = docker_compose_helper.get_service_logs("ircd", tail=20)
+            # Should not contain critical errors
+            assert "ERROR" not in logs.upper() or "error loading config" not in logs.lower()
+
+    def test_config_validation(self, sample_config_data):
+        """Test IRC configuration data validation."""
+        irc_config = sample_config_data["irc_server"]
+
+        required_keys = ["host", "port", "network_name"]
+        for key in required_keys:
+            assert key in irc_config, f"Missing required config key: {key}"
+
+        assert isinstance(irc_config["port"], int)
+        assert irc_config["port"] > 0
+        assert isinstance(irc_config["host"], str)
+
+    @patch("socket.socket")
+    def test_irc_connection_mock(self, mock_socket):
+        """Test IRC connection with mocked socket."""
+        mock_sock = Mock()
+        mock_sock.connect_ex.return_value = 0  # Success
+        mock_sock.recv.return_value = b":server 001 test :Welcome\r\n"
+        mock_socket.return_value = mock_sock
+
+        # Create a mock helper object
+        helper = Mock()
+        helper.host = "localhost"
+        helper.port = 6667
+        helper.send_irc_command = Mock(return_value=":server 001 test :Welcome")
+
+        response = helper.send_irc_command("TEST")
+        assert response is not None

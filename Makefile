@@ -186,19 +186,39 @@ dev-logs:
 # Testing and validation
 test:
 	@echo -e "$(PURPLE)=== Running Comprehensive Tests ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Running environment validation and functionality tests..."
-	@python3 tests/run_tests.py
+	@echo -e "$(BLUE)[INFO]$(NC) Running test suite with uv..."
+	@uv run pytest tests/
 	@echo -e "$(GREEN)[SUCCESS]$(NC) Test suite completed!"
 
 test-env:
 	@echo -e "$(PURPLE)=== Environment Validation Tests ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Validating environment setup, permissions, and configuration..."
-	@python3 tests/test_environment_validation.py --verbose
+	@uv run pytest tests/unit/test_docker_client.py -v
 
 test-irc:
 	@echo -e "$(PURPLE)=== IRC Functionality Tests ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Testing IRC server functionality..."
-	@python3 tests/test_irc_functionality.py
+	@uv run pytest tests/integration/test_docker_services.py -v
+
+test-unit:
+	@echo -e "$(PURPLE)=== Unit Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running unit tests..."
+	@uv run pytest tests/unit/ -v
+
+test-integration:
+	@echo -e "$(PURPLE)=== Integration Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running integration tests..."
+	@uv run pytest tests/integration/ -v
+
+test-cov:
+	@echo -e "$(PURPLE)=== Tests with Coverage ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running tests with coverage report..."
+	@uv run pytest --cov=src --cov-report=html --cov-report=term-missing
+
+test-docker:
+	@echo -e "$(PURPLE)=== Docker-related Tests ===$(NC)"
+	@echo -e "$(BLUE)[INFO]$(NC) Running tests that require Docker..."
+	@uv run pytest -m docker -v
 
 test-quick:
 	@echo -e "$(PURPLE)=== Quick Environment Check ===$(NC)"

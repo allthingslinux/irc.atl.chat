@@ -21,6 +21,7 @@ cd irc.atl.chat
 cp env.example .env
 
 # 2. Edit configuration
+# BE SURE TO READ THIS CAREFULLY AND DOUBLE CHECK ALL VARIABLES
 vim .env
 
 # 3. Setup Cloudflare DNS credentials
