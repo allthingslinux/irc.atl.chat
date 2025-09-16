@@ -6,22 +6,22 @@
 set -e
 
 # Configuration
-IRC_PORT=${IRC_PORT:-6667}
+IRC_PORT=${IRC_PORT:-6697}
 
 # Function to check port
 check_port() {
     local port=$1
 
-    if command -v nc >/dev/null 2>&1; then
-        nc -z localhost "$port" 2>/dev/null
+    if command -v nc > /dev/null 2>&1; then
+        nc -z localhost "$port" 2> /dev/null
         return $?
-    elif command -v netcat >/dev/null 2>&1; then
-        netcat -z localhost "$port" 2>/dev/null
+  elif   command -v netcat > /dev/null 2>&1; then
+        netcat -z localhost "$port" 2> /dev/null
         return $?
-    else
+  else
         echo "ERROR: Neither 'nc' nor 'netcat' available for health check"
         return 1
-    fi
+  fi
 }
 
 # Main health check
