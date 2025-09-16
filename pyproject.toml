@@ -172,3 +172,8 @@ line-ending = "lf"
 [tool.uv]
 # uv-specific configuration
 cache-dir = ".uv_cache"
+
+[dependency-groups]
+dev = [
+    "pytest-github-actions-annotate-failures>=0.3.0",
+]
