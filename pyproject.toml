@@ -10,23 +10,16 @@ maintainers = [
     { name = "All Things Linux", email = "admin@allthingslinux.org" },
 ]
 
-
-# All dependencies (this is a testing/infrastructure project)
 dependencies = [
-    # Core infrastructure
     "docker>=7.1.0",
     "pyyaml>=6.0.2",
     "requests>=2.32.5",
     "psutil>=5.9.0",
-
-    # IRC libraries
     "irc>=20.5.0",
     "irc-toolkit>=0.2.0",
     "pydle>=1.1.0",
     "unrealircd-rpc-py>=2.0.0",
     "websocket-client>=1.0.0",
-
-    # Testing framework
     "pytest>=8.0.0",
     "pytest-mock>=3.12.0",
     "pytest-asyncio>=0.23.0",
@@ -35,8 +28,7 @@ dependencies = [
     "pytest-timeout>=2.4.0",
     "pytest-sugar>=1.1.1",
     "pytest-docker>=3.0.0",
-
-    # Code quality
+    "pytest-docker-tools>=3.1.0",
     "ruff>=0.6.0",
     "basedpyright>=0.6.0",
     "pre-commit>=3.0.0",
@@ -177,26 +169,6 @@ quote-style = "double"
 indent-style = "space"
 line-ending = "lf"
 
-[tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
-strict_equality = true
-show_error_codes = true
-
 [tool.uv]
 # uv-specific configuration
 cache-dir = ".uv_cache"
-
-[[tool.mypy.overrides]]
-module = ["docker.*", "irc.*", "pydle.*", "unrealircd_rpc_py.*"]
-ignore_missing_imports = true
