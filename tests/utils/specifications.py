@@ -3,8 +3,9 @@
 Adapted from irctest's specifications module for marking tests by IRC specification.
 """
 
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, TypeVar
 
 import pytest
 
@@ -89,7 +90,7 @@ def mark_specifications(
     """Mark a test function with IRC specifications."""
     specifications = frozenset(Specification.from_name(s) if isinstance(s, str) else s for s in specifications_str)
     if None in specifications:
-        raise ValueError("Invalid set of specifications: {}".format(specifications))
+        raise ValueError(f"Invalid set of specifications: {specifications}")
 
     def decorator(f: TCallable) -> TCallable:
         for specification in specifications:
@@ -109,7 +110,7 @@ def mark_capabilities(
     """Mark a test function with IRCv3 capabilities."""
     capabilities = frozenset(Capability.from_name(c) if isinstance(c, str) else c for c in capabilities_str)
     if None in capabilities:
-        raise ValueError("Invalid set of capabilities: {}".format(capabilities))
+        raise ValueError(f"Invalid set of capabilities: {capabilities}")
 
     def decorator(f: TCallable) -> TCallable:
         for capability in capabilities:
@@ -125,7 +126,7 @@ def mark_isupport(*tokens_str: str, deprecated: bool = False, strict: bool = Fal
     """Mark a test function with ISUPPORT tokens."""
     tokens = frozenset(ISupportToken.from_name(c) if isinstance(c, str) else c for c in tokens_str)
     if None in tokens:
-        raise ValueError("Invalid set of isupport tokens: {}".format(tokens))
+        raise ValueError(f"Invalid set of isupport tokens: {tokens}")
 
     def decorator(f: TCallable) -> TCallable:
         for token in tokens:

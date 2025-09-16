@@ -1,9 +1,10 @@
 """Unit tests with mock IRC server using python-irc library."""
 
-import pytest
 import threading
 import time
 from unittest.mock import Mock, patch
+
+import pytest
 
 # Import IRC library conditionally
 irc = pytest.importorskip("irc")

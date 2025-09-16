@@ -7,34 +7,20 @@ from __future__ import annotations
 
 import contextlib
 import functools
-import socket
-import ssl
-import tempfile
 import time
+from collections.abc import Callable, Container, Hashable, Iterable, Iterator
 from typing import (
     Any,
-    Callable,
-    Container,
-    Dict,
     Generic,
-    Hashable,
-    Iterable,
-    Iterator,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
     TypeVar,
-    Union,
     cast,
 )
 
 import pytest
 
 from ..controllers.base_controllers import BaseServerController, TestCaseControllerConfig
-from .irc_test_client import IRCTestClient
 from ..irc_utils.message_parser import Message
+from .irc_test_client import IRCTestClient
 
 
 class ConnectionClosed(Exception):
@@ -46,7 +32,7 @@ class ConnectionClosed(Exception):
 class ChannelJoinException(Exception):
     """Raised when joining a channel fails"""
 
-    def __init__(self, code: str, params: List[str]):
+    def __init__(self, code: str, params: list[str]):
         super().__init__(f"Failed to join channel ({code}): {params}")
         self.code = code
         self.params = params
@@ -72,7 +58,7 @@ CHANNEL_JOIN_FAIL_NUMERICS = frozenset(
 
 # Type variables for generic test cases
 TController = TypeVar("TController", bound=BaseServerController)
-TClientName = TypeVar("TClientName", bound=Union[Hashable, int])
+TClientName = TypeVar("TClientName", bound=Hashable | int)
 
 
 def retry(f: Callable[..., Any]) -> Callable[..., Any]:
@@ -110,7 +96,7 @@ class _IRCTestCase(Generic[TController]):
     """
 
     # Will be set by conftest.py
-    controllerClass: Optional[Type[TController]] = None
+    controllerClass: type[TController] | None = None
     show_io: bool = False
 
     controller: TController
@@ -125,8 +111,13 @@ class _IRCTestCase(Generic[TController]):
         """
         return TestCaseControllerConfig()
 
-    def setUp(self) -> None:
-        if self.controllerClass is not None:
+    def setUp(self, controller=None) -> None:
+        if controller is not None:
+            self.controller = controller
+        elif hasattr(self, "controller") and self.controller is not None:
+            # Controller was already injected by autouse fixture
+            pass
+        elif self.controllerClass is not None:
             self.controller = self.controllerClass(self.config())
         if self.show_io:
             print("---- new test ----")
@@ -143,14 +134,14 @@ class _IRCTestCase(Generic[TController]):
     def assertMessageMatch(
         self,
         msg: Message,
-        command: Optional[Union[str, Any]] = None,
-        params: Optional[List[Union[str, None, Any]]] = None,
-        target: Optional[str] = None,
-        tags: Optional[Dict[Union[str, Any], Union[str, Any, None]]] = None,
-        nick: Optional[str] = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
-        prefix: Union[None, str, Any] = None,
+        command: str | Any | None = None,
+        params: list[str | None | Any] | None = None,
+        target: str | None = None,
+        tags: dict[str | Any, str | Any | None] | None = None,
+        nick: str | None = None,
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
+        prefix: None | str | Any = None,
         **kwargs: Any,
     ) -> None:
         """Helper for partially comparing a message.
@@ -178,8 +169,8 @@ class _IRCTestCase(Generic[TController]):
     def messageEqual(
         self,
         msg: Message,
-        command: Optional[Union[str, Any]] = None,
-        params: Optional[List[Union[str, None, Any]]] = None,
+        command: str | Any | None = None,
+        params: list[str | None | Any] | None = None,
         **kwargs: Any,
     ) -> bool:
         """Boolean negation of `messageDiffers` (returns a boolean,
@@ -189,16 +180,16 @@ class _IRCTestCase(Generic[TController]):
     def messageDiffers(
         self,
         msg: Message,
-        command: Union[str, None, Any] = None,
-        params: Optional[List[Union[str, None, Any]]] = None,
-        target: Optional[str] = None,
-        tags: Optional[Dict[Union[str, Any], Union[str, Any, None]]] = None,
-        nick: Optional[str] = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
-        prefix: Union[None, str, Any] = None,
+        command: str | None | Any = None,
+        params: list[str | None | Any] | None = None,
+        target: str | None = None,
+        tags: dict[str | Any, str | Any | None] | None = None,
+        nick: str | None = None,
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
+        prefix: None | str | Any = None,
         **kwargs: Any,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Returns an error message if the message doesn't match the given arguments,
         or None if it matches."""
         for key, value in kwargs.items():
@@ -236,19 +227,19 @@ class _IRCTestCase(Generic[TController]):
 
         return None
 
-    def _match_string(self, got: Optional[str], expected: Union[str, Any]) -> bool:
+    def _match_string(self, got: str | None, expected: str | Any) -> bool:
         """Match a string against expected value (supports wildcards)."""
         if hasattr(expected, "match"):
             # It's a pattern object
             return expected.match(got) if got else False
         return got == expected
 
-    def _match_list(self, got: List[str], expected: List[Union[str, None, Any]]) -> bool:
+    def _match_list(self, got: list[str], expected: list[str | None | Any]) -> bool:
         """Match a list against expected pattern."""
         if len(got) != len(expected):
             return False
 
-        for g, e in zip(got, expected):
+        for g, e in zip(got, expected, strict=False):
             if e is None:
                 continue  # None means we don't care about this parameter
             if hasattr(e, "match"):
@@ -259,7 +250,7 @@ class _IRCTestCase(Generic[TController]):
 
         return True
 
-    def _match_dict(self, got: Dict[str, str], expected: Dict[Union[str, Any], Union[str, Any, None]]) -> bool:
+    def _match_dict(self, got: dict[str, str], expected: dict[str | Any, str | Any | None]) -> bool:
         """Match a dict against expected pattern."""
         for key, expected_value in expected.items():
             if hasattr(key, "match"):
@@ -279,26 +270,25 @@ class _IRCTestCase(Generic[TController]):
                             break
                 if not found:
                     return False
-            else:
-                # Exact key match
-                if expected_value is None:
-                    if key not in got:
-                        return False
-                elif hasattr(expected_value, "match"):
-                    if not expected_value.match(got.get(key, "")):
-                        return False
-                elif got.get(key) != expected_value:
+            # Exact key match
+            elif expected_value is None:
+                if key not in got:
                     return False
+            elif hasattr(expected_value, "match"):
+                if not expected_value.match(got.get(key, "")):
+                    return False
+            elif got.get(key) != expected_value:
+                return False
 
         return True
 
     def assertIn(
         self,
         member: Any,
-        container: Union[Iterable[Any], Container[Any]],
-        msg: Optional[str] = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        container: Iterable[Any] | Container[Any],
+        msg: str | None = None,
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, item=member, list=container, msg=msg)
@@ -307,10 +297,10 @@ class _IRCTestCase(Generic[TController]):
     def assertNotIn(
         self,
         member: Any,
-        container: Union[Iterable[Any], Container[Any]],
-        msg: Optional[str] = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        container: Iterable[Any] | Container[Any],
+        msg: str | None = None,
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, item=member, list=container, msg=msg)
@@ -321,8 +311,8 @@ class _IRCTestCase(Generic[TController]):
         got: Any,
         expects: Any,
         msg: Any = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, got=got, expects=expects, msg=msg)
@@ -333,8 +323,8 @@ class _IRCTestCase(Generic[TController]):
         got: Any,
         expects: Any,
         msg: Any = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, got=got, expects=expects, msg=msg)
@@ -345,8 +335,8 @@ class _IRCTestCase(Generic[TController]):
         got: Any,
         expects: Any,
         msg: Any = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, got=got, expects=expects, msg=msg)
@@ -357,8 +347,8 @@ class _IRCTestCase(Generic[TController]):
         got: Any,
         expects: Any,
         msg: Any = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, got=got, expects=expects, msg=msg)
@@ -369,8 +359,8 @@ class _IRCTestCase(Generic[TController]):
         got: Any,
         expects: Any,
         msg: Any = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, got=got, expects=expects, msg=msg)
@@ -381,8 +371,8 @@ class _IRCTestCase(Generic[TController]):
         got: Any,
         expects: Any,
         msg: Any = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, got=got, expects=expects, msg=msg)
@@ -392,8 +382,8 @@ class _IRCTestCase(Generic[TController]):
         self,
         got: Any,
         msg: Any = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, got=got, msg=msg)
@@ -403,15 +393,15 @@ class _IRCTestCase(Generic[TController]):
         self,
         got: Any,
         msg: Any = None,
-        fail_msg: Optional[str] = None,
-        extra_format: Tuple = (),
+        fail_msg: str | None = None,
+        extra_format: tuple = (),
     ) -> None:
         if fail_msg:
             msg = fail_msg.format(*extra_format, got=got, msg=msg)
         assert not got, msg
 
     @contextlib.contextmanager
-    def assertRaises(self, exception: Type[Exception]) -> Iterator[None]:
+    def assertRaises(self, exception: type[Exception]) -> Iterator[None]:
         with pytest.raises(exception):
             yield
 
@@ -422,12 +412,12 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
 
     show_io: bool  # set by conftest.py
 
-    password: Optional[str] = None
+    password: str | None = None
     ssl = False
-    server_support: Optional[Dict[str, Optional[str]]]
+    server_support: dict[str, str | None] | None
     run_services = False
 
-    faketime: Optional[str] = None
+    faketime: str | None = None
     """If not None and the controller supports it and libfaketime is available,
     runs the server using faketime and this value set as the $FAKETIME env variable.
     Tests must check ``self.controller.faketime_enabled`` is True before
@@ -447,21 +437,22 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
             run_services=self.run_services,
             faketime=self.faketime,
         )
-        self.clients: Dict[TClientName, IRCTestClient] = {}
+        self.clients: dict[TClientName, IRCTestClient] = {}
 
     def tearDown(self) -> None:
-        self.controller.kill()
+        if hasattr(self, "controller") and self.controller is not None:
+            self.controller.kill()
         for client in list(self.clients):
             self.removeClient(client)
 
-    def addClient(self, name: Optional[TClientName] = None, show_io: Optional[bool] = None) -> TClientName:
+    def addClient(self, name: TClientName | None = None, show_io: bool | None = None) -> TClientName:
         """Connects a client to the server and adds it to the dict.
         If 'name' is not given, uses the lowest unused non-negative integer."""
         self.controller.wait_for_port()
         if self.run_services:
             self.controller.wait_for_services()
         if not name:
-            used_ids: List[int] = [int(name) for name in self.clients if isinstance(name, (int, str))]
+            used_ids: list[int] = [int(name) for name in self.clients if isinstance(name, (int, str))]
             new_name = max(used_ids + [0]) + 1
             name = cast(TClientName, new_name)
         show_io = show_io if show_io is not None else self.show_io
@@ -475,7 +466,7 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
             self.clients[name].disconnect()
             del self.clients[name]
 
-    def getMessages(self, client: TClientName, **kwargs: Any) -> List[Message]:
+    def getMessages(self, client: TClientName, **kwargs: Any) -> list[Message]:
         if kwargs.get("synchronize", True):
             time.sleep(self.controller.sync_sleep_time)
         return self.clients[client].getMessages(**kwargs)
@@ -499,10 +490,10 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
             else:
                 return msg
 
-    def sendLine(self, client: TClientName, line: Union[str, bytes]) -> None:
+    def sendLine(self, client: TClientName, line: str | bytes) -> None:
         return self.clients[client].sendLine(line)
 
-    def getCapLs(self, client: TClientName, as_list: bool = False) -> Union[List[str], Dict[str, Optional[str]]]:
+    def getCapLs(self, client: TClientName, as_list: bool = False) -> list[str] | dict[str, str | None]:
         """Waits for a CAP LS block, parses all CAP LS messages, and return
         the dict capabilities, with their values.
 
@@ -521,7 +512,7 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
                     return self._cap_list_to_dict(caps)
                 return caps
 
-    def _cap_list_to_dict(self, caps: List[str]) -> Dict[str, Optional[str]]:
+    def _cap_list_to_dict(self, caps: list[str]) -> dict[str, str | None]:
         """Convert capability list to dictionary."""
         result = {}
         for cap in caps:
@@ -536,14 +527,14 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
         try:
             self.getMessages(client)
             self.getMessages(client)
-        except (socket.error, ConnectionClosed):
+        except (OSError, ConnectionClosed):
             if client in self.clients:
                 del self.clients[client]
             return
         else:
             raise AssertionError("Client not disconnected.")
 
-    def skipToWelcome(self, client: TClientName) -> List[Message]:
+    def skipToWelcome(self, client: TClientName) -> list[Message]:
         """Skip to the point where we are registered
         <https://tools.ietf.org/html/rfc2812#section-3.1>
         """
@@ -555,12 +546,12 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
                 return result
             elif m.command == "PING":
                 # Hi, Unreal
-                self.sendLine(client, "PONG :" + msg.params[0])
+                self.sendLine(client, "PONG :" + m.params[0])
 
     def requestCapabilities(
         self,
         client: TClientName,
-        capabilities: List[str],
+        capabilities: list[str],
         skip_if_cap_nak: bool = False,
     ) -> None:
         self.sendLine(client, "CAP REQ :{}".format(" ".join(capabilities)))
@@ -593,14 +584,14 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
     def connectClient(
         self,
         nick: str,
-        name: Optional[TClientName] = None,
-        capabilities: Optional[List[str]] = None,
+        name: TClientName | None = None,
+        capabilities: list[str] | None = None,
         skip_if_cap_nak: bool = False,
-        show_io: Optional[bool] = None,
-        account: Optional[str] = None,
-        password: Optional[str] = None,
+        show_io: bool | None = None,
+        account: str | None = None,
+        password: str | None = None,
         ident: str = "username",
-    ) -> List[Message]:
+    ) -> list[Message]:
         """Connections a new client, does the cap negotiation
         and connection registration, and skips to the end of the MOTD.
         Returns the list of all messages received after registration,
@@ -615,7 +606,7 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
                 raise ValueError("Used 'password' option without sasl capability")
             self.authenticateClient(client, account or nick, password)
 
-        self.sendLine(client, "NICK {}".format(nick))
+        self.sendLine(client, f"NICK {nick}")
         self.sendLine(client, "USER %s * * :Realname" % (ident,))
         if capabilities:
             self.sendLine(client, "CAP END")
@@ -638,14 +629,14 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
                         self.server_support[param] = None
             welcome.append(m)
 
-        self.targmax: Dict[str, Optional[str]] = dict(  # type: ignore[assignment]
+        self.targmax: dict[str, str | None] = dict(  # type: ignore[assignment]
             item.split(":", 1) for item in (self.server_support.get("TARGMAX") or "").split(",") if item
         )
 
         return welcome
 
     def joinClient(self, client: TClientName, channel: str) -> None:
-        self.sendLine(client, "JOIN {}".format(channel))
+        self.sendLine(client, f"JOIN {channel}")
         received = {m.command for m in self.getMessages(client)}
         self.assertIn(
             "366",
@@ -655,12 +646,12 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
         )
 
     def joinChannel(self, client: TClientName, channel: str) -> None:
-        self.sendLine(client, "JOIN {}".format(channel))
+        self.sendLine(client, f"JOIN {channel}")
         # wait until we see them join the channel
         joined = False
         while not joined:
             for msg in self.getMessages(client):
-                if msg.command == "JOIN" and 0 < len(msg.params) and msg.params[0].lower() == channel.lower():
+                if msg.command == "JOIN" and len(msg.params) > 0 and msg.params[0].lower() == channel.lower():
                     joined = True
                     break
                 elif msg.command in CHANNEL_JOIN_FAIL_NUMERICS:

@@ -1,12 +1,10 @@
 """Unit tests for configuration generation and validation."""
 
-import pytest
 import os
-import tempfile
 import subprocess
-from pathlib import Path
-from unittest.mock import patch, mock_open
-import yaml
+from unittest.mock import patch
+
+import pytest
 
 
 class TestConfigurationGeneration:
@@ -25,7 +23,7 @@ IRC_ADMIN_EMAIL=admin@test.com
 
         # Test that variables can be loaded
         env_vars = {}
-        with open(env_file, "r") as f:
+        with open(env_file) as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith("#"):
@@ -64,7 +62,7 @@ IRC_ADMIN_EMAIL=admin@test.com
 
         # Test envsubst functionality
         with patch.dict(os.environ, test_env):
-            result = subprocess.run(["envsubst"], input=template_content, text=True, capture_output=True)
+            result = subprocess.run(["envsubst"], check=False, input=template_content, text=True, capture_output=True)
 
             assert result.returncode == 0
             output = result.stdout
@@ -137,7 +135,7 @@ IRC_ADMIN_EMAIL=admin@test.com
 
     def test_envsubst_command_availability(self):
         """Test that envsubst command is available."""
-        result = subprocess.run(["which", "envsubst"], capture_output=True, text=True)
+        result = subprocess.run(["which", "envsubst"], check=False, capture_output=True, text=True)
 
         # This might fail in some environments, so we'll make it a soft check
         if result.returncode != 0:
@@ -169,6 +167,7 @@ IRC_ADMIN_EMAIL=admin@test.com
         with patch.dict(os.environ, {}, clear=True):
             result = subprocess.run(
                 ["envsubst"],
+                check=False,
                 input=invalid_template.read_text(),
                 text=True,
                 capture_output=True,

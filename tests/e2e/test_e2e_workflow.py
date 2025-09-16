@@ -1,14 +1,14 @@
 """End-to-end workflow tests for IRC.atl.chat."""
 
-import pytest
+import os
+import shutil
+import socket
 import subprocess
 import time
-import os
-import tempfile
-import shutil
 from pathlib import Path
+
+import pytest
 import requests
-import socket
 
 
 class E2EWorkflowTest:
@@ -62,12 +62,8 @@ class E2EWorkflowTest:
 
             # Modify environment variables for testing
             env_content = env_file.read_text()
-            env_content = env_content.replace(
-                "IRC_DOMAIN=irc.atl.chat", "IRC_DOMAIN=localhost"
-            )
-            env_content = env_content.replace(
-                "IRC_NETWORK_NAME=atl.chat", "IRC_NETWORK_NAME=E2E Test Network"
-            )
+            env_content = env_content.replace("IRC_DOMAIN=irc.atl.chat", "IRC_DOMAIN=localhost")
+            env_content = env_content.replace("IRC_NETWORK_NAME=atl.chat", "IRC_NETWORK_NAME=E2E Test Network")
             env_file.write_text(env_content)
 
         yield temp_project_dir
@@ -90,30 +86,29 @@ class E2EWorkflowTest:
             if prepare_script.exists():
                 result = subprocess.run(
                     [str(prepare_script)],
+                    check=False,
                     cwd=project_dir,
                     capture_output=True,
                     text=True,
                     timeout=30,
                 )
-                assert result.returncode == 0, (
-                    f"Config preparation failed: {result.stderr}"
-                )
+                assert result.returncode == 0, f"Config preparation failed: {result.stderr}"
 
             # Step 3: Docker Compose validation
             compose_file = project_dir / "compose.yaml"
             result = subprocess.run(
                 ["docker", "compose", "config"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
             )
-            assert result.returncode == 0, (
-                f"Docker Compose config invalid: {result.stderr}"
-            )
+            assert result.returncode == 0, f"Docker Compose config invalid: {result.stderr}"
 
             # Step 4: Service startup (limited for E2E)
             result = subprocess.run(
                 ["docker", "compose", "up", "-d", "--scale", "ssl-monitor=0"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
@@ -125,9 +120,7 @@ class E2EWorkflowTest:
             time.sleep(10)
 
             # Step 5: Verify services are running
-            containers = docker_client.containers.list(
-                filters={"label": "com.docker.compose.project=irc.atl.chat"}
-            )
+            containers = docker_client.containers.list(filters={"label": "com.docker.compose.project=irc.atl.chat"})
             assert len(containers) >= 2, "Should have at least 2 containers running"
 
             # Step 6: Test IRC connectivity
@@ -138,9 +131,7 @@ class E2EWorkflowTest:
 
         finally:
             # Cleanup: stop services
-            subprocess.run(
-                ["docker", "compose", "down"], cwd=project_dir, capture_output=True
-            )
+            subprocess.run(["docker", "compose", "down"], check=False, cwd=project_dir, capture_output=True)
 
     def _test_irc_connectivity(self):
         """Test IRC server connectivity."""
@@ -170,9 +161,7 @@ class E2EWorkflowTest:
         project_dir = e2e_env_setup
 
         # Test template processing
-        unreal_template = (
-            project_dir / "src/backend/unrealircd/conf/unrealircd.conf.template"
-        )
+        unreal_template = project_dir / "src/backend/unrealircd/conf/unrealircd.conf.template"
         if unreal_template.exists():
             # Create mock environment
             test_env = {
@@ -183,7 +172,7 @@ class E2EWorkflowTest:
             }
 
             # Test envsubst functionality
-            with open(unreal_template, "r") as f:
+            with open(unreal_template) as f:
                 template_content = f.read()
 
             # Simulate envsubst
@@ -204,6 +193,7 @@ class E2EWorkflowTest:
             # Start services
             result = subprocess.run(
                 ["docker", "compose", "up", "-d"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
@@ -215,9 +205,7 @@ class E2EWorkflowTest:
             time.sleep(15)
 
             # Verify startup sequence
-            containers = docker_client.containers.list(
-                filters={"label": "com.docker.compose.project=irc.atl.chat"}
-            )
+            containers = docker_client.containers.list(filters={"label": "com.docker.compose.project=irc.atl.chat"})
 
             unrealircd_container = None
             atheme_container = None
@@ -232,14 +220,10 @@ class E2EWorkflowTest:
                 unrealircd_start = unrealircd_container.attrs["State"]["StartedAt"]
                 atheme_start = atheme_container.attrs["State"]["StartedAt"]
 
-                assert atheme_start > unrealircd_start, (
-                    "Atheme should start after UnrealIRCd"
-                )
+                assert atheme_start > unrealircd_start, "Atheme should start after UnrealIRCd"
 
         finally:
-            subprocess.run(
-                ["docker", "compose", "down"], cwd=project_dir, capture_output=True
-            )
+            subprocess.run(["docker", "compose", "down"], check=False, cwd=project_dir, capture_output=True)
 
     @pytest.mark.e2e
     @pytest.mark.slow
@@ -251,6 +235,7 @@ class E2EWorkflowTest:
             # Start services
             result = subprocess.run(
                 ["docker", "compose", "up", "-d"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
@@ -271,7 +256,7 @@ class E2EWorkflowTest:
                 # Send NICK and USER commands
                 test_nick = f"e2e_test_{int(time.time())}"
                 sock.send(f"NICK {test_nick}\r\n".encode())
-                sock.send(f"USER e2euser 0 * :E2E Test User\r\n".encode())
+                sock.send(b"USER e2euser 0 * :E2E Test User\r\n")
 
                 # Wait for welcome message
                 response = sock.recv(4096).decode()
@@ -288,9 +273,7 @@ class E2EWorkflowTest:
                 sock.close()
 
         finally:
-            subprocess.run(
-                ["docker", "compose", "down"], cwd=project_dir, capture_output=True
-            )
+            subprocess.run(["docker", "compose", "down"], check=False, cwd=project_dir, capture_output=True)
 
     @pytest.mark.e2e
     @pytest.mark.slow
@@ -302,6 +285,7 @@ class E2EWorkflowTest:
             # Start services
             result = subprocess.run(
                 ["docker", "compose", "up", "-d"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
@@ -313,6 +297,7 @@ class E2EWorkflowTest:
             # Simulate service failure and recovery
             containers = subprocess.run(
                 ["docker", "compose", "ps", "-q"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
@@ -322,6 +307,7 @@ class E2EWorkflowTest:
                 # Test restart functionality
                 result = subprocess.run(
                     ["docker", "compose", "restart"],
+                    check=False,
                     cwd=project_dir,
                     capture_output=True,
                     text=True,
@@ -333,6 +319,7 @@ class E2EWorkflowTest:
                 # Verify services are still running
                 result = subprocess.run(
                     ["docker", "compose", "ps"],
+                    check=False,
                     cwd=project_dir,
                     capture_output=True,
                     text=True,
@@ -340,9 +327,7 @@ class E2EWorkflowTest:
                 assert "Up" in result.stdout, "Services should be running after restart"
 
         finally:
-            subprocess.run(
-                ["docker", "compose", "down"], cwd=project_dir, capture_output=True
-            )
+            subprocess.run(["docker", "compose", "down"], check=False, cwd=project_dir, capture_output=True)
 
     @pytest.mark.e2e
     @pytest.mark.slow
@@ -364,6 +349,7 @@ class E2EWorkflowTest:
                 # Restart services
                 result = subprocess.run(
                     ["docker", "compose", "down"],
+                    check=False,
                     cwd=project_dir,
                     capture_output=True,
                     text=True,
@@ -372,6 +358,7 @@ class E2EWorkflowTest:
 
                 result = subprocess.run(
                     ["docker", "compose", "up", "-d"],
+                    check=False,
                     cwd=project_dir,
                     capture_output=True,
                     text=True,
@@ -383,6 +370,7 @@ class E2EWorkflowTest:
                 # Verify services are running with new configuration
                 containers = subprocess.run(
                     ["docker", "compose", "ps"],
+                    check=False,
                     cwd=project_dir,
                     capture_output=True,
                     text=True,
@@ -390,9 +378,7 @@ class E2EWorkflowTest:
                 assert "Up" in containers.stdout
 
             finally:
-                subprocess.run(
-                    ["docker", "compose", "down"], cwd=project_dir, capture_output=True
-                )
+                subprocess.run(["docker", "compose", "down"], check=False, cwd=project_dir, capture_output=True)
 
     @pytest.mark.e2e
     @pytest.mark.slow
@@ -404,6 +390,7 @@ class E2EWorkflowTest:
             # Start services
             result = subprocess.run(
                 ["docker", "compose", "up", "-d"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
@@ -415,6 +402,7 @@ class E2EWorkflowTest:
             # Verify resources exist
             containers_before = subprocess.run(
                 ["docker", "compose", "ps", "-q"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
@@ -424,6 +412,7 @@ class E2EWorkflowTest:
             # Stop services
             result = subprocess.run(
                 ["docker", "compose", "down"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
@@ -433,15 +422,14 @@ class E2EWorkflowTest:
             # Verify resources are cleaned up
             containers_after = subprocess.run(
                 ["docker", "compose", "ps", "-q"],
+                check=False,
                 cwd=project_dir,
                 capture_output=True,
                 text=True,
             )
             assert not containers_after.stdout.strip(), "Containers should be stopped"
 
-        except Exception as e:
+        except Exception:
             # Ensure cleanup even if test fails
-            subprocess.run(
-                ["docker", "compose", "down"], cwd=project_dir, capture_output=True
-            )
+            subprocess.run(["docker", "compose", "down"], check=False, cwd=project_dir, capture_output=True)
             raise

@@ -9,13 +9,13 @@ import contextlib
 import dataclasses
 import json
 import os
-from pathlib import Path
 import shutil
 import socket
 import subprocess
 import tempfile
 import time
 from collections.abc import Callable, Iterator, Sequence
+from pathlib import Path
 from typing import IO, Any
 
 
@@ -72,10 +72,11 @@ class BaseController:
     _used_ports_path = Path(tempfile.gettempdir()) / "irc_atl_test_ports.json"
     _port_lock = Path(tempfile.gettempdir()) / "irc_atl_test_ports.json.lock"
 
-    def __init__(self, test_config: TestCaseControllerConfig):
+    def __init__(self, test_config: TestCaseControllerConfig, container_fixture=None, **kwargs):
         self.debug_mode = os.getenv("IRC_ATL_DEBUG_LOGS", "0").lower() in ("true", "1")
         self.test_config = test_config
         self.proc = None
+        self.container = container_fixture
         self._own_ports: set[tuple[str, int]] = set()
 
     @contextlib.contextmanager
@@ -161,8 +162,8 @@ class DirectoryBasedController(BaseController):
 
     directory: Optional[Path] = None
 
-    def __init__(self, test_config: TestCaseControllerConfig):
-        super().__init__(test_config)
+    def __init__(self, test_config: TestCaseControllerConfig, **kwargs):
+        super().__init__(test_config, **kwargs)
         self.directory = None
 
     def kill(self) -> None:
@@ -327,7 +328,7 @@ class BaseServerController(BaseController):
                         # Some servers cut the connection without a message if registration
                         # is not complete.
                         pass
-                    except socket.timeout:
+                    except TimeoutError:
                         # Some servers just keep it open
                         pass
 
@@ -405,18 +406,15 @@ class BaseServicesController(BaseController):
                 if msg.command == "401":
                     # NickServ not available yet
                     pass
-                elif msg.command in ("MODE", "221"):  # RPL_UMODEIS
-                    pass
-                elif msg.command == "396":  # RPL_VISIBLEHOST
+                elif msg.command in ("MODE", "221") or msg.command == "396":  # RPL_UMODEIS
                     pass
                 elif msg.command == "NOTICE":
                     if "!" not in (msg.prefix or "") and "." in (msg.prefix or ""):
                         # Server notice
                         pass
-                    else:
-                        # NickServ is available
-                        if "nickserv" in (msg.prefix or "").lower():
-                            break
+                    # NickServ is available
+                    elif "nickserv" in (msg.prefix or "").lower():
+                        break
                 else:
                     assert False, f"unexpected reply from NickServ: {msg}"
             else:

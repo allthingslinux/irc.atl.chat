@@ -4,15 +4,48 @@ Comprehensive tests for IRC protocol compliance using the controller framework.
 Tests cover RFC1459, RFC2812, and modern IRC specifications.
 """
 
-import pytest
 import time
+
+import pytest
 
 from ..utils.base_test_cases import BaseServerTestCase
 from ..utils.specifications import mark_specifications
 
 
+@pytest.fixture(scope="function")
+def controller(unrealircd_container, prepared_config_dir):
+    """Controller fixture with Docker container."""
+    from ..controllers.base_controllers import TestCaseControllerConfig
+    from ..controllers.unrealircd_controller import get_unrealircd_controller_class
+
+    controller_class = get_unrealircd_controller_class()
+    config = TestCaseControllerConfig()
+    controller = controller_class(config, container_fixture=unrealircd_container)
+
+    # Set the controller's directory to the prepared config dir
+    controller.directory = prepared_config_dir
+
+    print(f"DEBUG: Controller created: {controller}")
+    print(f"DEBUG: Controller container: {getattr(controller, 'container', 'no container attr')}")
+    print(f"DEBUG: Container fixture: {unrealircd_container}")
+    print(f"DEBUG: Config dir: {prepared_config_dir}")
+    print(f"DEBUG: Files in config dir: {list(prepared_config_dir.glob('*'))}")
+
+    return controller
+
+
 class TestConnectionProtocol(BaseServerTestCase):
     """Test basic IRC connection and registration protocols."""
+
+    def setup_method(self, method, controller):
+        """Override setup to use controller fixture."""
+        self.controller = controller
+        self.clients = {}
+        self.server_support = None
+        # Set up connection details from controller
+        container_ports = self.controller.get_container_ports()
+        self.hostname = "localhost"
+        self.port = container_ports.get("6667/tcp", 6667)
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
@@ -20,14 +53,18 @@ class TestConnectionProtocol(BaseServerTestCase):
     @pytest.mark.slow
     def test_basic_connection_registration(self):
         """Test basic client connection and registration."""
-        client = self.connectClient("testuser")
-        welcome = self.getRegistrationMessage(client)
+        # Set up test state (don't call controller.run() since container is already started)
+        client_name = self.addClient("testuser")
+        self.sendLine(client_name, "NICK testuser")
+        self.sendLine(client_name, "USER username * * :Realname")
+        messages = self.skipToWelcome(client_name)
+        welcome = messages[-1]  # The last message should be 001
         self.assertMessageMatch(welcome, command="001")
 
         # Test PING/PONG
-        self.sendLine(client, "PING test123")
-        pong = self.getMessage(client)
-        self.assertMessageMatch(pong, command="PONG", params=["test123"])
+        self.sendLine(client_name, "PING test123")
+        pong = self.getMessage(client_name)
+        self.assertMessageMatch(pong, command="PONG", params=["irc.atl.dev", "test123"])
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
@@ -91,6 +128,29 @@ class TestConnectionProtocol(BaseServerTestCase):
 class TestChannelProtocol(BaseServerTestCase):
     """Test IRC channel operations and protocols."""
 
+    def setup_method(self, method):
+        """Override setup to use controller fixture."""
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = False
+            self.run_services = False
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
+        self.clients = {}
+
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
@@ -142,6 +202,29 @@ class TestChannelProtocol(BaseServerTestCase):
 
 class TestMessagingProtocol(BaseServerTestCase):
     """Test IRC messaging protocols (PRIVMSG, NOTICE)."""
+
+    def setup_method(self, method):
+        """Override setup to use controller fixture."""
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = False
+            self.run_services = False
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
+        self.clients = {}
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
@@ -235,6 +318,29 @@ class TestMessagingProtocol(BaseServerTestCase):
 class TestMultipleClients(BaseServerTestCase):
     """Test scenarios with multiple clients."""
 
+    def setup_method(self, method):
+        """Override setup to use controller fixture."""
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = False
+            self.run_services = False
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
+        self.clients = {}
+
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
@@ -298,6 +404,29 @@ class TestMultipleClients(BaseServerTestCase):
 
 class TestEdgeCases(BaseServerTestCase):
     """Test IRC protocol edge cases and error conditions."""
+
+    def setup_method(self, method):
+        """Override setup to use controller fixture."""
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = False
+            self.run_services = False
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
+        self.clients = {}
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration

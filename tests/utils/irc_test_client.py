@@ -6,7 +6,7 @@ Adapted from irctest's client_mock.py for our testing infrastructure.
 import socket
 import ssl
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from ..irc_utils.message_parser import Message
 
@@ -17,10 +17,10 @@ class IRCTestClient:
     def __init__(self, name: str = "testclient", show_io: bool = False):
         self.name = name
         self.show_io = show_io
-        self.sock: Optional[socket.socket] = None
+        self.sock: socket.socket | None = None
         self.connected = False
         self.buffer = ""
-        self.messages: List[Message] = []
+        self.messages: list[Message] = []
 
     def connect(self, hostname: str, port: int, use_ssl: bool = False) -> None:
         """Connect to IRC server."""
@@ -37,7 +37,7 @@ class IRCTestClient:
                 context.verify_mode = ssl.CERT_NONE
                 self.sock = context.wrap_socket(self.sock)
 
-        except (socket.error, ssl.SSLError) as e:
+        except (OSError, ssl.SSLError) as e:
             self.connected = False
             raise e
 
@@ -75,13 +75,13 @@ class IRCTestClient:
             if self.show_io and data:
                 print(f"{time.time():.3f} S: {data.strip()}")
             return data
-        except socket.timeout:
+        except TimeoutError:
             return ""
-        except (socket.error, OSError):
+        except OSError:
             self.connected = False
             return ""
 
-    def getMessages(self, synchronize: bool = True) -> List[Message]:
+    def getMessages(self, synchronize: bool = True) -> list[Message]:
         """Get all available messages from the server."""
         if synchronize:
             # Send a PING to synchronize

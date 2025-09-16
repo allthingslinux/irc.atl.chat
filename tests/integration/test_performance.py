@@ -4,12 +4,13 @@ Comprehensive performance and load testing for IRC servers using controlled envi
 Tests connection throughput, message performance, and concurrent operations.
 """
 
-import pytest
-import time
 import socket
 import statistics
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Dict, Any
+from typing import Any
+
+import pytest
 
 from ..utils.base_test_cases import BaseServerTestCase
 from ..utils.specifications import mark_specifications
@@ -25,29 +26,53 @@ class IRCPerformanceClient:
         self.socket: socket.socket | None = None
         self.connected = False
         self.connect_time = 0.0
-        self.response_times: List[float] = []
+        self.response_times: list[float] = []
 
     def connect(self) -> float:
         """Connect to IRC server and return connection time."""
         start_time = time.time()
         try:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.settimeout(10)
+            self.socket.settimeout(2)
             self.socket.connect((self.host, self.port))
 
-            # Register user
-            nick = f"perf_test_{self.client_id}_{int(time.time())}"
+            # Register user with more human-like nickname
+            nick = f"User{self.client_id + 100}"
+            username = f"user{self.client_id + 100}"
             self.socket.send(f"NICK {nick}\r\n".encode())
-            self.socket.send(f"USER perfuser{self.client_id} 0 * :Performance Test User\r\n".encode())
+            self.socket.send(f"USER {username} 0 * :Test User {self.client_id}\r\n".encode())
 
-            # Wait for welcome
-            response = self.socket.recv(4096).decode()
-            if "001" in response:
-                self.connected = True
-                self.connect_time = time.time() - start_time
-                return self.connect_time
+            # Read responses and handle PING/PONG
+            buffer = ""
+            while time.time() - start_time < 10:  # Increased timeout
+                try:
+                    data = self.socket.recv(1024).decode()
+                    if not data:
+                        break
+                    buffer += data
+
+                    # Handle PING requests
+                    lines = buffer.split("\r\n")
+                    for line in lines[:-1]:  # Process complete lines
+                        if line.startswith("PING "):
+                            ping_token = line.split(" ", 1)[1]
+                            self.socket.send(f"PONG {ping_token}\r\n".encode())
+
+                        # Check if we received welcome message
+                        if " 001 " in line or ":001" in line:
+                            self.connected = True
+                            self.connect_time = time.time() - start_time
+                            return self.connect_time
+
+                    # Keep the last incomplete line in buffer
+                    buffer = lines[-1]
+
+                except TimeoutError:
+                    continue
 
         except Exception:
+            # Debug: uncomment to see connection errors
+            # print(f"Connection error for client {self.client_id}: {e}")
             pass
 
         return 0
@@ -98,9 +123,9 @@ class LoadTestRunner:
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
-        self.clients: List[IRCPerformanceClient] = []
+        self.clients: list[IRCPerformanceClient] = []
 
-    def create_clients(self, count: int) -> List[IRCPerformanceClient]:
+    def create_clients(self, count: int) -> list[IRCPerformanceClient]:
         """Create multiple IRC clients."""
         clients = []
         for i in range(count):
@@ -108,7 +133,7 @@ class LoadTestRunner:
             clients.append(client)
         return clients
 
-    def run_connect_test(self, client_count: int = 10) -> Dict[str, Any]:
+    def run_connect_test(self, client_count: int = 10) -> dict[str, Any]:
         """Test connection performance."""
         clients = self.create_clients(client_count)
         connect_times = []
@@ -135,7 +160,7 @@ class LoadTestRunner:
             "connections_per_second": len(connect_times) / max(connect_times) if connect_times else 0,
         }
 
-    def run_message_test(self, client_count: int = 5, messages_per_client: int = 10) -> Dict[str, Any]:
+    def run_message_test(self, client_count: int = 5, messages_per_client: int = 10) -> dict[str, Any]:
         """Test message throughput performance."""
         clients = self.create_clients(client_count)
         connected_clients = []
@@ -187,7 +212,7 @@ class LoadTestRunner:
             "messages_per_second": total_messages / sum(response_times) if response_times else 0,
         }
 
-    def run_channel_join_test(self, client_count: int = 20) -> Dict[str, Any]:
+    def run_channel_join_test(self, client_count: int = 20) -> dict[str, Any]:
         """Test concurrent channel join performance."""
         clients = self.create_clients(client_count)
         connected_clients = []
@@ -231,17 +256,36 @@ class LoadTestRunner:
 class TestPerformanceLoad(BaseServerTestCase):
     """Performance and load testing for IRC services with controlled server."""
 
-    @pytest.fixture
-    def load_tester(self):
-        """Create load test runner with controlled server info."""
-        return LoadTestRunner(self.hostname, self.port)
+    def setup_method(self, method):
+        """Override setup to use controller fixture."""
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = False
+            self.run_services = False
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
+        self.clients = {}
+        self.load_tester = LoadTestRunner(self.hostname, self.port)
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.performance
     @pytest.mark.slow
-    def test_connection_performance(self, load_tester):
+    def test_connection_performance(self):
         """Test IRC server connection performance."""
-        result = load_tester.run_connect_test(client_count=10)
+        result = self.load_tester.run_connect_test(client_count=10)
 
         assert "error" not in result, f"Connection test failed: {result.get('error')}"
         assert result["client_count"] > 0, "Should have successful connections"
@@ -257,9 +301,9 @@ class TestPerformanceLoad(BaseServerTestCase):
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.performance
     @pytest.mark.slow
-    def test_message_performance(self, load_tester):
+    def test_message_performance(self):
         """Test IRC message throughput performance."""
-        result = load_tester.run_message_test(client_count=5, messages_per_client=10)
+        result = self.load_tester.run_message_test(client_count=5, messages_per_client=10)
 
         if "error" in result:
             pytest.skip(f"Message test failed: {result['error']}")
@@ -276,9 +320,9 @@ class TestPerformanceLoad(BaseServerTestCase):
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.performance
     @pytest.mark.slow
-    def test_concurrent_channel_joins(self, load_tester):
+    def test_concurrent_channel_joins(self):
         """Test performance of concurrent channel joins."""
-        result = load_tester.run_channel_join_test(client_count=20)
+        result = self.load_tester.run_channel_join_test(client_count=20)
 
         if "error" in result:
             pytest.skip(f"Channel join test failed: {result['error']}")
@@ -297,10 +341,10 @@ class TestPerformanceLoad(BaseServerTestCase):
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.performance
     @pytest.mark.slow
-    def test_mixed_workload_performance(self, load_tester):
+    def test_mixed_workload_performance(self):
         """Test mixed workload performance (connects, joins, messages)."""
         # Create a comprehensive test scenario
-        clients = load_tester.create_clients(15)
+        clients = self.load_tester.create_clients(15)
         connected_clients = []
         test_channel = f"#mixed_test_{int(time.time())}"
 
@@ -358,13 +402,13 @@ class TestPerformanceLoad(BaseServerTestCase):
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.performance
     @pytest.mark.slow
-    def test_server_scalability(self, load_tester):
+    def test_server_scalability(self):
         """Test server scalability under increasing load."""
         scalability_results = []
 
         # Test with increasing client counts
         for client_count in [5, 10, 20]:
-            result = load_tester.run_connect_test(client_count=client_count)
+            result = self.load_tester.run_connect_test(client_count=client_count)
             if "error" not in result:
                 scalability_results.append(
                     {

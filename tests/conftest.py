@@ -7,16 +7,78 @@ Legacy tests in tests/legacy/integration/ are still supported for backward compa
 """
 
 import importlib
-import pytest
-import docker
-import requests
 import os
 import time
 from pathlib import Path
-from typing import Generator, Optional, Type
 
-from .utils.base_test_cases import BaseServerTestCase
+import docker
+import pytest
+
+# Docker fixtures using pytest-docker-tools
+from pytest_docker_tools import container, image
+
 from .controllers.base_controllers import BaseServerController, TestCaseControllerConfig
+from .utils.base_test_cases import BaseServerTestCase
+
+unrealircd_image = image(name="ircatlchat-unrealircd:latest")
+
+
+@pytest.fixture(scope="function")
+def prepared_config_dir(tmp_path):
+    """Create and prepare a temporary directory with UnrealIRCd config files."""
+    import shutil
+    from pathlib import Path
+
+    config_dir = tmp_path / "container_config"
+    config_dir.mkdir(exist_ok=True)
+
+    # Source directory with real configs
+    source_dir = Path("src/backend/unrealircd/conf")
+
+    # Copy all config files
+    for config_file in source_dir.glob("*.conf"):
+        dest_file = config_dir / config_file.name
+        shutil.copy2(config_file, dest_file)
+        dest_file.chmod(0o644)  # Make readable by anyone
+
+    # Copy subdirectories
+    for subdir in ["help", "aliases", "tls"]:
+        if (source_dir / subdir).exists():
+            shutil.copytree(source_dir / subdir, config_dir / subdir, dirs_exist_ok=True)
+            # Set permissions on subdirectory files
+            for file in (config_dir / subdir).rglob("*"):
+                if file.is_file():
+                    file.chmod(0o644)
+
+    # Copy other necessary files
+    for pattern in ["*.list", "*.default.conf", "*.optional.conf"]:
+        for file in source_dir.glob(pattern):
+            dest_file = config_dir / file.name
+            shutil.copy2(file, dest_file)
+            dest_file.chmod(0o644)
+
+    print(f"DEBUG: Prepared config dir: {config_dir}")
+    print(f"DEBUG: Files in config dir: {list(config_dir.glob('*'))}")
+    print(f"DEBUG: unrealircd.conf exists: {(config_dir / 'unrealircd.conf').exists()}")
+
+    return config_dir
+
+
+unrealircd_container = container(
+    image="{unrealircd_image.id}",
+    ports={
+        "6667/tcp": None,  # Main IRC port
+        "6697/tcp": None,  # TLS port
+    },
+    volumes={
+        "{prepared_config_dir}": {"bind": "/home/unrealircd/unrealircd/conf", "mode": "rw"},
+    },
+    command=[
+        "-t",  # Test configuration
+        "-F",  # Don't fork
+    ],
+    scope="function",
+)
 
 
 def pytest_addoption(parser):
@@ -42,14 +104,14 @@ def pytest_configure(config):
     try:
         module = importlib.import_module(module_name)
     except ImportError:
-        pytest.exit("Cannot import module {}".format(module_name), 1)
+        pytest.exit(f"Cannot import module {module_name}", 1)
 
     controller_class = module.get_irctest_controller_class()
     if issubclass(controller_class, BaseServerController):
         from . import server_tests as module
     else:
         pytest.exit(
-            "{}.Controller should be a subclass of irctest.basecontroller.BaseServerController".format(module_name),
+            f"{module_name}.Controller should be a subclass of irctest.basecontroller.BaseServerController",
             1,
         )
 
@@ -57,7 +119,7 @@ def pytest_configure(config):
         try:
             services_module = importlib.import_module(services_module_name)
         except ImportError:
-            pytest.exit("Cannot import module {}".format(services_module_name), 1)
+            pytest.exit(f"Cannot import module {services_module_name}", 1)
         controller_class.services_controller_class = services_module.get_irctest_controller_class()
 
     BaseServerTestCase.controllerClass = controller_class
@@ -178,6 +240,19 @@ def mock_docker_container(mocker):
 
 
 @pytest.fixture
+def controller(unrealircd_container):
+    """Controller instance with Docker container support."""
+    from .controllers.unrealircd_controller import get_unrealircd_controller_class
+
+    controller_class = get_unrealircd_controller_class()
+    config = TestCaseControllerConfig()
+    return controller_class(config, container_fixture=unrealircd_container)
+
+
+# Removed autouse controller injection - tests should explicitly request controller fixture when needed
+
+
+@pytest.fixture
 def mock_requests_get(mocker):
     """Mock requests.get for testing HTTP calls."""
     mock_response = mocker.Mock()
@@ -204,6 +279,7 @@ class DockerComposeHelper:
 
             result = subprocess.run(
                 ["docker", "compose", "ps", service_name],
+                check=False,
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
@@ -219,6 +295,7 @@ class DockerComposeHelper:
 
             result = subprocess.run(
                 ["docker", "compose", "logs", "--tail", str(tail), service_name],
+                check=False,
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
@@ -264,7 +341,7 @@ class IRCTestHelper:
 
         return False
 
-    def send_irc_command(self, command: str) -> Optional[str]:
+    def send_irc_command(self, command: str) -> str | None:
         """Send a command to the IRC server and get response."""
         import socket
 
@@ -399,3 +476,23 @@ def setup_test_environment(project_root: Path, tmp_path_factory):
     test_env_vars = ["TESTING", "DOCKER_COMPOSE_FILE"]
     for var in test_env_vars:
         os.environ.pop(var, None)
+
+
+def _inject_controller_if_needed(request):
+    """Helper to inject controller only when needed."""
+    if hasattr(request.instance, "setup_method"):
+        # Check if this is an integration test that needs Docker
+        if any(marker in ["integration", "irc", "docker", "atheme", "webpanel"] for marker in request.keywords):
+            # Only request controller fixture when actually needed
+            controller = request.getfixturevalue("controller")
+            request.instance.controller = controller
+            # Set up connection details
+            container_ports = controller.get_container_ports()
+            request.instance.hostname = "localhost"
+            request.instance.port = container_ports.get("6667/tcp", 6667)
+
+
+@pytest.fixture(autouse=True)
+def inject_controller(request):
+    """Automatically inject controller fixture into test classes that need it."""
+    _inject_controller_if_needed(request)

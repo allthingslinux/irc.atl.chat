@@ -1,7 +1,6 @@
 """IRC-specific test data and fixtures."""
 
-from typing import Dict, List, Any
-
+from typing import Any
 
 # Sample IRC server configurations for testing
 IRC_SERVER_CONFIGS = {
@@ -77,9 +76,7 @@ IRC_SERVER_RESPONSES = {
         ":irc.example.com 351 testuser UnrealIRCd-6.1.0. iowrsxOaAbceijklmntuv",
         ":irc.example.com 351 testuser iowrsxOaAbceijklmntuv :End of VERSION",
     ],
-    "time": [
-        ":irc.example.com 391 testuser irc.example.com 1640995200 1640995200 :Wed Dec 31 2021 23:59:59 UTC"
-    ],
+    "time": [":irc.example.com 391 testuser irc.example.com 1640995200 1640995200 :Wed Dec 31 2021 23:59:59 UTC"],
     "info": [
         ":irc.example.com 371 testuser :Test IRC Server",
         ":irc.example.com 371 testuser :Running UnrealIRCd",
@@ -152,7 +149,7 @@ IRC_CAPABILITIES = [
 ]
 
 
-def get_irc_config(config_name: str) -> Dict[str, Any]:
+def get_irc_config(config_name: str) -> dict[str, Any]:
     """Get IRC server configuration by name."""
     return IRC_SERVER_CONFIGS.get(config_name, IRC_SERVER_CONFIGS["basic"])
 
@@ -162,12 +159,12 @@ def get_irc_message(message_type: str) -> str:
     return IRC_TEST_MESSAGES.get(message_type, "")
 
 
-def get_command_sequence(sequence_name: str) -> List[str]:
+def get_command_sequence(sequence_name: str) -> list[str]:
     """Get IRC command sequence by name."""
     return IRC_COMMAND_SEQUENCES.get(sequence_name, [])
 
 
-def get_server_responses(response_type: str) -> List[str]:
+def get_server_responses(response_type: str) -> list[str]:
     """Get IRC server responses by type."""
     return IRC_SERVER_RESPONSES.get(response_type, [])
 

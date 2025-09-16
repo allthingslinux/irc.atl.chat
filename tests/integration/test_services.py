@@ -4,9 +4,9 @@ Tests for IRC services integration including NickServ, ChanServ, and Atheme.
 Uses controlled server with services enabled.
 """
 
-import pytest
 import time
-import threading
+
+import pytest
 import requests
 
 from ..utils.base_test_cases import BaseServerTestCase
@@ -44,7 +44,7 @@ class IRCIntegrationClient:
 
             self.nickname = nickname or f"testuser_{int(time.time())}"
             self.send_command(f"NICK {self.nickname}")
-            self.send_command(f"USER testuser 0 * :Test User")
+            self.send_command("USER testuser 0 * :Test User")
 
             response = self.socket.recv(4096).decode()
             if "001" in response:
@@ -90,127 +90,198 @@ class IRCIntegrationClient:
 class TestNickServIntegration(BaseServerTestCase):
     """Test NickServ functionality with controlled server and services."""
 
-    @pytest.fixture
-    def irc_client(self):
-        """Create IRC client for NickServ testing."""
-        client = IRCIntegrationClient(self.hostname, self.port)
-        yield client
-        client.disconnect()
+    def setup_method(self, method):
+        """Override setup to use controller fixture."""
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = False
+            self.run_services = True  # Enable services for service tests
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
+        self.clients = {}
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
     @pytest.mark.atheme
     @pytest.mark.slow
-    def test_nickserv_registration_workflow(self, irc_client):
+    def test_nickserv_registration_workflow(self):
         """Test complete NickServ registration workflow."""
         test_nick = f"nickserv_test_{int(time.time())}"
         password = "testpass123"
 
-        assert irc_client.connect(test_nick)
-        time.sleep(2)
+        client = IRCIntegrationClient(self.hostname, self.port)
+        try:
+            assert client.connect(test_nick)
+            time.sleep(2)
 
-        # Register nickname
-        email = "test@example.com"
-        assert irc_client.send_command(f"NICKSERV REGISTER {password} {email}")
+            # Register nickname
+            email = "test@example.com"
+            assert client.send_command(f"NICKSERV REGISTER {password} {email}")
 
-        # Should receive confirmation
-        assert irc_client.wait_for_response("NOTICE", timeout=10)
+            # Should receive confirmation
+            assert client.wait_for_response("NOTICE", timeout=10)
 
-        # Try to identify with the registered nick
-        time.sleep(2)
-        assert irc_client.send_command(f"NICKSERV IDENTIFY {password}")
+            # Try to identify with the registered nick
+            time.sleep(2)
+            assert client.send_command(f"NICKSERV IDENTIFY {password}")
 
-        # Should receive identification confirmation
-        assert irc_client.wait_for_response("NOTICE", timeout=10)
+            # Should receive identification confirmation
+            assert client.wait_for_response("NOTICE", timeout=10)
+        finally:
+            client.disconnect()
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
     @pytest.mark.atheme
     @pytest.mark.slow
-    def test_nickserv_ghost_command(self, irc_client):
+    def test_nickserv_ghost_command(self):
         """Test NickServ GHOST command."""
         test_nick = f"ghost_test_{int(time.time())}"
         password = "ghostpass123"
 
-        assert irc_client.connect(test_nick)
-        time.sleep(2)
+        client = IRCIntegrationClient(self.hostname, self.port)
+        try:
+            assert client.connect(test_nick)
+            time.sleep(2)
 
-        # Register the nickname first
-        email = "ghost@example.com"
-        assert irc_client.send_command(f"NICKSERV REGISTER {password} {email}")
-        time.sleep(3)
+            # Register the nickname first
+            email = "ghost@example.com"
+            assert client.send_command(f"NICKSERV REGISTER {password} {email}")
+            time.sleep(3)
 
-        # Try GHOST command (should work even without ghost present)
-        assert irc_client.send_command(f"NICKSERV GHOST {test_nick}")
-        # Should receive some response
-        assert irc_client.wait_for_response("NOTICE", timeout=10)
+            # Try GHOST command (should work even without ghost present)
+            assert client.send_command(f"NICKSERV GHOST {test_nick}")
+            # Should receive some response
+            assert client.wait_for_response("NOTICE", timeout=10)
+        finally:
+            client.disconnect()
 
 
 @mark_services
 class TestChanServIntegration(BaseServerTestCase):
     """Test ChanServ functionality with controlled server and services."""
 
-    @pytest.fixture
-    def irc_client(self):
-        """Create IRC client for ChanServ testing."""
-        client = IRCIntegrationClient(self.hostname, self.port)
-        yield client
-        client.disconnect()
+    def setup_method(self, method):
+        """Override setup to use controller fixture."""
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = False
+            self.run_services = True  # Enable services for service tests
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
+        self.clients = {}
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
     @pytest.mark.atheme
     @pytest.mark.slow
-    def test_chanserv_channel_registration(self, irc_client):
+    def test_chanserv_channel_registration(self):
         """Test ChanServ channel registration."""
         test_nick = f"chanserv_user_{int(time.time())}"
         test_channel = f"#chanserv_test_{int(time.time())}"
 
-        assert irc_client.connect(test_nick)
-        time.sleep(2)
+        client = IRCIntegrationClient(self.hostname, self.port)
+        try:
+            assert client.connect(test_nick)
+            time.sleep(2)
 
-        # Join channel first
-        assert irc_client.send_command(f"JOIN {test_channel}")
-        time.sleep(2)
+            # Join channel first
+            assert client.send_command(f"JOIN {test_channel}")
+            time.sleep(2)
 
-        # Register channel with ChanServ
-        assert irc_client.send_command(f"CHANSERV REGISTER {test_channel}")
+            # Register channel with ChanServ
+            assert client.send_command(f"CHANSERV REGISTER {test_channel}")
 
-        # Should receive registration confirmation
-        assert irc_client.wait_for_response("NOTICE", timeout=10)
+            # Should receive registration confirmation
+            assert client.wait_for_response("NOTICE", timeout=10)
+        finally:
+            client.disconnect()
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
     @pytest.mark.irc
     @pytest.mark.atheme
     @pytest.mark.slow
-    def test_chanserv_channel_info(self, irc_client):
+    def test_chanserv_channel_info(self):
         """Test ChanServ INFO command."""
         test_nick = f"chanserv_info_{int(time.time())}"
         test_channel = f"#chanserv_info_{int(time.time())}"
 
-        assert irc_client.connect(test_nick)
-        time.sleep(2)
+        client = IRCIntegrationClient(self.hostname, self.port)
+        try:
+            assert client.connect(test_nick)
+            time.sleep(2)
 
-        # Join and register channel
-        assert irc_client.send_command(f"JOIN {test_channel}")
-        time.sleep(2)
-        assert irc_client.send_command(f"CHANSERV REGISTER {test_channel}")
-        time.sleep(3)
+            # Join and register channel
+            assert client.send_command(f"JOIN {test_channel}")
+            time.sleep(2)
+            assert client.send_command(f"CHANSERV REGISTER {test_channel}")
+            time.sleep(3)
 
-        # Get channel info
-        assert irc_client.send_command(f"CHANSERV INFO {test_channel}")
+            # Get channel info
+            assert client.send_command(f"CHANSERV INFO {test_channel}")
 
-        # Should receive channel information
-        assert irc_client.wait_for_response("NOTICE", timeout=10)
+            # Should receive channel information
+            assert client.wait_for_response("NOTICE", timeout=10)
+        finally:
+            client.disconnect()
 
 
 @mark_services
 class TestServiceIntegration(BaseServerTestCase):
     """Test overall service integration and coordination."""
+
+    def setup_method(self, method):
+        """Override setup to use controller fixture."""
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = False
+            self.run_services = True  # Enable services for service tests
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
+        self.clients = {}
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
@@ -268,6 +339,29 @@ class TestServiceIntegration(BaseServerTestCase):
 
 class TestWebPanelIntegration(BaseServerTestCase):
     """Test WebPanel integration (may require separate WebPanel service)."""
+
+    def setup_method(self, method):
+        """Override setup to use controller fixture."""
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = False
+            self.run_services = True  # Enable services for service tests
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
+        self.clients = {}
 
     @pytest.mark.integration
     @pytest.mark.webpanel

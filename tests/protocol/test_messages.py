@@ -13,6 +13,7 @@ class PrivmsgTestCase(BaseServerTestCase):
     """Test PRIVMSG command functionality."""
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_privmsg_basic(self):
         """Test basic PRIVMSG functionality."""
         # Connect two clients
@@ -35,6 +36,7 @@ class PrivmsgTestCase(BaseServerTestCase):
         self.assertMessageMatch(messages[0], command="PRIVMSG", params=["#test", "Hello from Alice!"])
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_privmsg_to_user(self):
         """Test PRIVMSG to a specific user."""
         self.connectClient("alice")
@@ -50,6 +52,7 @@ class PrivmsgTestCase(BaseServerTestCase):
         self.assertMessageMatch(messages[0], command="PRIVMSG", params=["bob", "Private message!"])
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_privmsg_nonexistent_channel(self):
         """Test PRIVMSG to nonexistent channel."""
         self.connectClient("alice")
@@ -60,6 +63,7 @@ class PrivmsgTestCase(BaseServerTestCase):
         self.assertIn(msg.command, ["401", "403", "404"])  # ERR_NOSUCHNICK/NOSUCHCHANNEL/CANNOTSENDTOCHAN
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_privmsg_nonexistent_user(self):
         """Test PRIVMSG to nonexistent user."""
         self.connectClient("alice")
@@ -80,6 +84,7 @@ class NoticeTestCase(BaseServerTestCase):
     """Test NOTICE command functionality."""
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_notice_basic(self):
         """Test basic NOTICE functionality."""
         # Connect two clients
@@ -106,6 +111,7 @@ class PingPongTestCase(BaseServerTestCase):
     """Test PING/PONG functionality."""
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_ping_pong(self):
         """Test PING/PONG mechanism."""
         self.connectClient("alice")
@@ -123,6 +129,7 @@ class NickTestCase(BaseServerTestCase):
     """Test NICK command functionality."""
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_nick_change(self):
         """Test changing nickname."""
         self.connectClient("alice")
@@ -135,6 +142,7 @@ class NickTestCase(BaseServerTestCase):
         self.assertMessageMatch(nick_msg, command="NICK", params=["bob"], nick="alice")
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_nick_in_use(self):
         """Test nickname collision."""
         self.connectClient("alice")
@@ -149,6 +157,7 @@ class JoinTestCase(BaseServerTestCase):
     """Test JOIN command functionality."""
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_join_channel(self):
         """Test joining a channel."""
         self.connectClient("alice")
@@ -165,6 +174,7 @@ class JoinTestCase(BaseServerTestCase):
         self.assertTrue(endofnames_found, "Should receive RPL_ENDOFNAMES (366)")
 
     @mark_specifications("RFC1459", "RFC2812")
+    @pytest.mark.integration
     def test_join_multiple_channels(self):
         """Test joining multiple channels."""
         self.connectClient("alice")

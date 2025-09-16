@@ -1,10 +1,6 @@
 """Unit tests for Docker client functionality."""
 
-import pytest
-from unittest.mock import Mock, patch, mock_open
-import os
-import subprocess
-from pathlib import Path
+from unittest.mock import Mock, patch
 
 
 class TestDockerClient:
@@ -40,9 +36,7 @@ class TestDockerClient:
         """Test Docker Compose helper logs retrieval."""
         # Test with mock subprocess
         with patch("subprocess.run") as mock_run:
-            mock_run.return_value = Mock(
-                returncode=0, stdout="Test log output\n", stderr=""
-            )
+            mock_run.return_value = Mock(returncode=0, stdout="Test log output\n", stderr="")
 
             logs = docker_compose_helper.get_service_logs("test_service")
             assert logs == "Test log output\n"

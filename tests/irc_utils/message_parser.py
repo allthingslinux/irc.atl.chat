@@ -3,16 +3,11 @@
 Adapted from irctest's message parser for IRC protocol testing.
 """
 
-import re
-from typing import Dict, List, Optional, Union
-
 
 class Message:
     """Represents an IRC message."""
 
-    def __init__(
-        self, command: str, params: List[str], prefix: Optional[str] = None, tags: Optional[Dict[str, str]] = None
-    ):
+    def __init__(self, command: str, params: list[str], prefix: str | None = None, tags: dict[str, str] | None = None):
         self.command = command
         self.params = params
         self.prefix = prefix
@@ -25,7 +20,7 @@ class Message:
             raise ValueError("Empty message")
 
         original_line = line
-        tags: Dict[str, str] = {}
+        tags: dict[str, str] = {}
 
         # Handle message tags (IRCv3)
         if line.startswith("@"):

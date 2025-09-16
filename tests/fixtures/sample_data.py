@@ -1,7 +1,6 @@
 """Sample data and fixtures for testing."""
 
-from typing import Dict, Any
-
+from typing import Any
 
 # Sample IRC configuration data
 SAMPLE_IRC_CONFIG = {
@@ -11,9 +10,7 @@ SAMPLE_IRC_CONFIG = {
         "network": "TestNet",
     },
     "listen": [{"port": 6667, "ssl": False}, {"port": 6697, "ssl": True}],
-    "operators": [
-        {"name": "testop", "password": "$2a$10$hashedpassword", "class": "netadmin"}
-    ],
+    "operators": [{"name": "testop", "password": "$2a$10$hashedpassword", "class": "netadmin"}],
 }
 
 # Sample Docker Compose configuration
@@ -55,7 +52,7 @@ SAMPLE_HTTP_RESPONSES = {
 }
 
 
-def get_sample_config(config_type: str) -> Dict[str, Any]:
+def get_sample_config(config_type: str) -> dict[str, Any]:
     """Get sample configuration data by type."""
     configs = {
         "irc": SAMPLE_IRC_CONFIG,

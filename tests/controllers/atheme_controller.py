@@ -3,77 +3,10 @@
 Adapted from irctest's Atheme controller for our testing infrastructure.
 """
 
-from typing import Optional
+import shutil
+from pathlib import Path
 
 from .base_controllers import BaseServicesController, DirectoryBasedController
-
-
-TEMPLATE_CONFIG = """
-me {{
-    name "My.Little.Services";
-    sid "001";
-    description "test services";
-    uplink "My.Little.Server";
-}}
-
-numeric "001";
-
-connpass {{
-    password "password";
-}}
-
-log {{
-    method {{
-        file {{
-            filename "{log_file}";
-        }}
-    }}
-    level {{
-        all;
-    }}
-}}
-
-modules {{
-    load "modules/protocol/unreal4";
-    load "modules/backend/file";
-    load "modules/crypto/pbkdf2";
-    load "modules/crypto/scram-sha";
-}}
-
-database {{
-    type "file";
-    name "{db_file}";
-}}
-
-nickserv {{
-    guestnick "Guest";
-}}
-
-chanserv {{
-    maxchans "100";
-}}
-
-operserv {{
-    autokill "30";
-    akilltime "30";
-}}
-
-global {{
-    language "en";
-}}
-
-serverinfo {{
-    name "My.Little.Services";
-    description "test services";
-    numeric "001";
-    reconnect "10";
-    netname "ExampleNET";
-}}
-
-ulines {{
-    "My.Little.Services";
-}}
-"""
 
 
 class AthemeController(BaseServicesController, DirectoryBasedController):
@@ -85,10 +18,20 @@ class AthemeController(BaseServicesController, DirectoryBasedController):
         self.services_port: int | None = None
 
     def create_config(self) -> None:
-        """Create the configuration directory and basic files."""
+        """Create the configuration directory and copy real config files."""
         super().create_config()
+
         if self.directory:
-            (self.directory / "atheme.conf").touch()
+            # Source directory with real configs
+            source_dir = Path(__file__).parent.parent.parent / "src" / "backend" / "atheme" / "conf"
+
+            # Copy all config files (just like UnrealIRCd does)
+            for config_file in source_dir.glob("*.conf"):
+                shutil.copy2(config_file, self.directory / config_file.name)
+
+            # For testing, we need to modify the uplink configuration
+            # The production config has hardcoded values, but tests need dynamic ones
+            # We'll update it in the run() method with the correct hostname/port
 
     def run(self, protocol: str, server_hostname: str, server_port: int) -> None:
         """Start the Atheme services."""
@@ -100,28 +43,24 @@ class AthemeController(BaseServicesController, DirectoryBasedController):
         self.create_config()
 
         if self.directory:
-            # Create log and database files
-            log_file = self.directory / "atheme.log"
-            db_file = self.directory / "services.db"
-
-            config_content = TEMPLATE_CONFIG.format(
-                log_file=log_file,
-                db_file=db_file,
-            )
-
             config_file = self.directory / "atheme.conf"
-            with config_file.open("w") as f:
-                f.write(config_content)
+
+            # Update the config file with the correct server connection details
+            if config_file.exists():
+                content = config_file.read_text()
+                # Replace the uplink configuration with test values
+                import re
+
+                content = re.sub(r'uplink "[^"]*" \{', 'uplink "test.server" {', content)
+                content = re.sub(r'host = "[^"]*";', f'host = "{server_hostname}";', content)
+                content = re.sub(r"port = \d+;", f"port = {server_port};", content)
+                config_file.write_text(content)
 
             self.proc = self.execute(
                 [
                     "atheme-services",
                     "-f",
                     config_file,
-                    "-p",
-                    str(server_port),
-                    "-h",
-                    server_hostname,
                 ]
             )
 

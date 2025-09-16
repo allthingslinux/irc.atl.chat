@@ -1,10 +1,10 @@
 """Environment validation tests for IRC.atl.chat."""
 
-import pytest
 import os
 import subprocess
-from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 
 class TestEnvironmentValidation:
@@ -25,7 +25,7 @@ class TestEnvironmentValidation:
         import yaml
 
         try:
-            with open(compose_file, "r") as f:
+            with open(compose_file) as f:
                 data = yaml.safe_load(f)
             assert isinstance(data, dict)
             assert "services" in data
@@ -46,9 +46,7 @@ class TestEnvironmentValidation:
         scripts_dir = project_root / "scripts"
         if scripts_dir.exists():
             for script in scripts_dir.glob("*.sh"):
-                assert os.access(script, os.X_OK), (
-                    f"Script {script.name} is not executable"
-                )
+                assert os.access(script, os.X_OK), f"Script {script.name} is not executable"
 
     def test_docker_available(self, docker_client):
         """Test that Docker is available (when Docker is running)."""
@@ -96,6 +94,7 @@ class TestEnvironmentValidation:
 
         result = subprocess.run(
             ["docker", "compose", "config"],
+            check=False,
             cwd=project_root,
             capture_output=True,
             text=True,

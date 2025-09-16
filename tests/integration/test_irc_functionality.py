@@ -1,9 +1,9 @@
 """IRC functionality tests for IRC.atl.chat."""
 
-import pytest
-import time
 import socket
 from unittest.mock import Mock, patch
+
+import pytest
 
 
 class TestIRCFunctionality:
