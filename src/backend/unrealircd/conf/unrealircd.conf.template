@@ -1,6 +1,5 @@
 include "modules.default.conf";
-include "modules.optional.conf";
-
+include "modules.custom.conf";
 
 include "help/help.conf";
 include "badwords.conf";
@@ -8,11 +7,12 @@ include "spamfilter.conf";
 include "dccallow.conf";
 include "operclass.default.conf";
 include "snomasks.default.conf";
+
 include "rpc.modules.default.conf";
 
 loadmodule "cloak_sha256";
-loadmodule "websocket";
-loadmodule "webserver";
+
+loadmodule "third/showwebirc";
 
 me {
 	name "${IRC_DOMAIN}";
@@ -48,14 +48,14 @@ class servers {
 }
 
 listen {
-	ip *;
-	port 6667;
-}
+	file "/home/unrealircd/unrealircd/data/services.sock";
+	mode 0770;
+}  /* Unix socket for services - exempt from plaintext security */
 
 listen {
 	ip *;
 	port 6697;
-	options { tls; }
+	options { tls; }  /* Allows both clients and servers */
 }
 
 listen {
@@ -154,7 +154,7 @@ set {
 
 	/* Plaintext policy - control who can use non-TLS connections */
 	plaintext-policy {
-		/* Allow services to use plaintext (Atheme doesn't support TLS for server links) */
+		/* Allow localhost server connections (Atheme) - localhost is exempt from link security */
 		server allow;
 		/* Allow users for now, but they'll be redirected to TLS via STS if client supports it */
 		user allow;
@@ -179,13 +179,13 @@ set {
 	}
 }
 
-/* Link block for services */
+/* Link block for services - localhost connections are exempt from link security */
 link ${IRC_SERVICES_SERVER} {
 	incoming {
+		/* Allow all connections for services - Docker shared network */
 		mask *;
 	}
-
-	password "${IRC_SERVICES_PASSWORD}"; /* Services link password */
+	password "${ATHEME_SEND_PASSWORD}";
 	class servers;
 }
 
@@ -372,7 +372,6 @@ set {
 
 	/* Normal defaults */
 	help-channel 		"#support";
-	cloak-prefix		"${IRC_CLOAK_PREFIX}";
 	prefix-quit 		"quit";
 
 	/* Cloak keys - these should be generated securely */
@@ -462,6 +461,12 @@ set {
 
 	/* Restrict user modes - prevent users from disabling cloaking for security */
 	restrict-usermodes "x"; /* Users cannot remove +x (cloaking) */
+
+	/* Configure who can see webirc and websocket information in WHOIS */
+	whois-details {
+		webirc { everyone none; self full; oper full; };
+		websocket { everyone none; self full; oper full; };
+	}
 	oper-auto-join "#mod-chat"; /* IRCOps are auto-joined to this channel */
 	options {
 		hide-ulines; /* hide U-lines in /MAP and /LINKS */
