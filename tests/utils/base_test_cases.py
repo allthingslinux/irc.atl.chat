@@ -457,7 +457,7 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
             name = cast(TClientName, new_name)
         show_io = show_io if show_io is not None else self.show_io
         self.clients[name] = IRCTestClient(name=name, show_io=show_io)
-        self.clients[name].connect(self.hostname, self.port)
+        self.clients[name].connect(self.hostname, self.port, use_ssl=getattr(self, "ssl", False))
         return name
 
     def removeClient(self, name: TClientName) -> None:
@@ -591,11 +591,10 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
         account: str | None = None,
         password: str | None = None,
         ident: str = "username",
-    ) -> list[Message]:
+    ) -> TClientName:
         """Connections a new client, does the cap negotiation
         and connection registration, and skips to the end of the MOTD.
-        Returns the list of all messages received after registration,
-        just like `skipToWelcome`."""
+        Returns the client name."""
         client = self.addClient(name, show_io=show_io)
         if capabilities:
             self.sendLine(client, "CAP LS 302")
@@ -633,7 +632,7 @@ class BaseServerTestCase(_IRCTestCase[BaseServerController], Generic[TClientName
             item.split(":", 1) for item in (self.server_support.get("TARGMAX") or "").split(",") if item
         )
 
-        return welcome
+        return client
 
     def joinClient(self, client: TClientName, channel: str) -> None:
         self.sendLine(client, f"JOIN {channel}")

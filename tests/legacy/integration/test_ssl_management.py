@@ -1,14 +1,9 @@
 """Integration tests for SSL certificate management."""
 
-import pytest
-import subprocess
-import tempfile
-import shutil
 import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import time
-import socket
+
+import pytest
 
 
 class TestSSLHealthCheck:
@@ -197,7 +192,7 @@ MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgZ8y8V2Z3Z3Z3Z3Z3
 
         import yaml
 
-        with open(compose_file, "r") as f:
+        with open(compose_file) as f:
             config = yaml.safe_load(f)
 
         unrealircd = config["services"]["unrealircd"]
@@ -225,7 +220,7 @@ MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgZ8y8V2Z3Z3Z3Z3Z3
 
         import yaml
 
-        with open(compose_file, "r") as f:
+        with open(compose_file) as f:
             config = yaml.safe_load(f)
 
         unrealircd = config["services"]["unrealircd"]
@@ -237,7 +232,7 @@ MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgZ8y8V2Z3Z3Z3Z3Z3
         ssl_port_present = any("6697" in port for port in port_mappings)
         standard_port_present = any("6667" in port for port in port_mappings)
 
-        assert standard_port_present, "Standard IRC port (6667) should be exposed"
+        assert standard_port_present, "TLS IRC port (6697) should be exposed"
         assert ssl_port_present, "SSL IRC port (6697) should be exposed"
 
     @pytest.mark.integration

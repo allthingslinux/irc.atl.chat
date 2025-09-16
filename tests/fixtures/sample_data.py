@@ -9,7 +9,7 @@ SAMPLE_IRC_CONFIG = {
         "description": "Test IRC Server",
         "network": "TestNet",
     },
-    "listen": [{"port": 6667, "ssl": False}, {"port": 6697, "ssl": True}],
+    "listen": [{"port": 6697, "ssl": True}],
     "operators": [{"name": "testop", "password": "$2a$10$hashedpassword", "class": "netadmin"}],
 }
 
@@ -19,7 +19,7 @@ SAMPLE_DOCKER_CONFIG = {
     "services": {
         "ircd": {
             "image": "unrealircd:latest",
-            "ports": ["6667:6667", "6697:6697"],
+            "ports": ["6697:6697"],
             "volumes": ["./data:/data"],
             "environment": ["IRC_NETWORK=testnet"],
         },
@@ -35,7 +35,7 @@ SAMPLE_DOCKER_CONFIG = {
 SAMPLE_IRC_LOGS = [
     "[2024-01-01 12:00:00] IRC Server starting",
     "[2024-01-01 12:00:01] Loading configuration",
-    "[2024-01-01 12:00:02] Server ready on port 6667",
+    "[2024-01-01 12:00:02] Server ready on port 6697",
     "[2024-01-01 12:00:05] Client connecting: testuser",
     "[2024-01-01 12:00:06] JOIN #testchannel testuser",
 ]

@@ -1,13 +1,11 @@
 """Integration tests for Docker services."""
 
-import pytest
-import time
 import socket
-import subprocess
-import requests
-from pathlib import Path
+import time
+
 import docker
-import os
+import pytest
+import requests
 
 
 class TestDockerServices:
@@ -57,9 +55,7 @@ class TestRealDockerIntegration:
         """Ensure Docker services are running for integration tests."""
         # Check if services are already running
         try:
-            containers = docker_client.containers.list(
-                filters={"label": "com.docker.compose.project=irc.atl.chat"}
-            )
+            containers = docker_client.containers.list(filters={"label": "com.docker.compose.project=irc.atl.chat"})
 
             if not containers:
                 pytest.skip("Docker services not running. Run 'make up' first.")
@@ -81,18 +77,14 @@ class TestRealDockerIntegration:
                 unrealircd_container = container
                 break
 
-        assert unrealircd_container is not None, (
-            "UnrealIRCd container should be running"
-        )
+        assert unrealircd_container is not None, "UnrealIRCd container should be running"
         assert unrealircd_container.status == "running", "UnrealIRCd should be running"
 
         # Check health status if available
         container_info = unrealircd_container.attrs
         health = container_info.get("State", {}).get("Health", {}).get("Status")
         if health:
-            assert health in ["healthy", "starting"], (
-                f"UnrealIRCd health status: {health}"
-            )
+            assert health in ["healthy", "starting"], f"UnrealIRCd health status: {health}"
 
     @pytest.mark.integration
     @pytest.mark.docker
@@ -125,7 +117,7 @@ class TestRealDockerIntegration:
     @pytest.mark.slow
     def test_irc_ports_open(self, running_services):
         """Test that IRC ports are open and accepting connections."""
-        ports_to_test = [6667, 6697]  # Standard IRC and SSL ports
+        ports_to_test = [6697]  # TLS only
 
         for port in ports_to_test:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -133,7 +125,7 @@ class TestRealDockerIntegration:
                 try:
                     result = sock.connect_ex(("localhost", port))
                     assert result == 0, f"Port {port} should be open"
-                except socket.error:
+                except OSError:
                     pytest.fail(f"Could not connect to port {port}")
 
     @pytest.mark.integration
@@ -165,9 +157,7 @@ class TestRealDockerIntegration:
         for container in running_services:
             try:
                 logs = container.logs(tail=10)
-                assert logs is not None, (
-                    f"Logs should be accessible for {container.name}"
-                )
+                assert logs is not None, f"Logs should be accessible for {container.name}"
             except docker.errors.DockerException:
                 pytest.fail(f"Could not access logs for {container.name}")
 
@@ -188,9 +178,7 @@ class TestRealDockerIntegration:
 
         if unrealircd_start and atheme_start:
             # Atheme should start after UnrealIRCd
-            assert atheme_start > unrealircd_start, (
-                "Atheme should start after UnrealIRCd"
-            )
+            assert atheme_start > unrealircd_start, "Atheme should start after UnrealIRCd"
 
     @pytest.mark.integration
     @pytest.mark.docker
@@ -202,9 +190,7 @@ class TestRealDockerIntegration:
             # Check if memory limits are set (optional but good practice)
             memory_limit = config.get("Memory")
             if memory_limit:
-                assert memory_limit > 0, (
-                    f"Container {container.name} should have memory limit"
-                )
+                assert memory_limit > 0, f"Container {container.name} should have memory limit"
 
     @pytest.mark.integration
     @pytest.mark.docker
@@ -215,7 +201,7 @@ class TestRealDockerIntegration:
         if env_file.exists():
             # Read expected variables
             expected_vars = {}
-            with open(env_file, "r") as f:
+            with open(env_file) as f:
                 for line in f:
                     line = line.strip()
                     if line and not line.startswith("#") and "=" in line:
@@ -234,9 +220,7 @@ class TestRealDockerIntegration:
 
                     # Check some key variables are present
                     for var in ["TZ", "PUID", "PGID"]:
-                        assert var in env_dict, (
-                            f"Environment variable {var} should be set"
-                        )
+                        assert var in env_dict, f"Environment variable {var} should be set"
 
     @pytest.mark.integration
     @pytest.mark.docker
@@ -244,14 +228,10 @@ class TestRealDockerIntegration:
     def test_container_restart_policy(self, running_services):
         """Test that containers have appropriate restart policies."""
         for container in running_services:
-            restart_policy = container.attrs.get("HostConfig", {}).get(
-                "RestartPolicy", {}
-            )
+            restart_policy = container.attrs.get("HostConfig", {}).get("RestartPolicy", {})
 
             # Most services should have unless-stopped policy
-            if (
-                "ssl-monitor" not in container.name
-            ):  # SSL monitor might have different policy
+            if "ssl-monitor" not in container.name:  # SSL monitor might have different policy
                 assert restart_policy.get("Name") in ["unless-stopped", "always"], (
                     f"Container {container.name} should have restart policy"
                 )

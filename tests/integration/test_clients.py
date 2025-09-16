@@ -119,7 +119,7 @@ class PydleTestBot(pydle.Client):
 class IRCClientTest(client.SimpleIRCClient if client else object):
     """IRC client for testing purposes using the python-irc library."""
 
-    def __init__(self, host: str = "localhost", port: int = 6667):
+    def __init__(self, host: str = "localhost", port: int = 6697):
         if client:
             client.SimpleIRCClient.__init__(self)
         self.host = host
@@ -265,7 +265,7 @@ class TestPydleIntegration(BaseServerTestCase):
         # Set up connection details from controller
         container_ports = self.controller.get_container_ports()
         self.hostname = "localhost"
-        self.port = container_ports.get("6667/tcp", 6667)
+        self.port = container_ports.get("6697/tcp", 6697)
 
         client = PydleTestBot(f"pydle_test_{int(time.time())}")
 
@@ -292,7 +292,7 @@ class TestPydleIntegration(BaseServerTestCase):
         # Set up connection details from controller
         container_ports = self.controller.get_container_ports()
         self.hostname = "localhost"
-        self.port = container_ports.get("6667/tcp", 6667)
+        self.port = container_ports.get("6697/tcp", 6697)
 
         client = PydleTestBot(f"pydle_chan_{int(time.time())}")
 
@@ -325,7 +325,7 @@ class TestPydleIntegration(BaseServerTestCase):
         # Set up connection details from controller
         container_ports = self.controller.get_container_ports()
         self.hostname = "localhost"
-        self.port = container_ports.get("6667/tcp", 6667)
+        self.port = container_ports.get("6697/tcp", 6697)
 
         client1 = PydleTestBot(f"pydle_msg1_{int(time.time())}")
         client2 = PydleTestBot(f"pydle_msg2_{int(time.time())}")
@@ -376,7 +376,7 @@ class TestPydleIntegration(BaseServerTestCase):
         # Set up connection details from controller
         container_ports = self.controller.get_container_ports()
         self.hostname = "localhost"
-        self.port = container_ports.get("6667/tcp", 6667)
+        self.port = container_ports.get("6697/tcp", 6697)
 
         client1 = PydleTestBot(f"pydle_priv1_{int(time.time())}")
         client2 = PydleTestBot(f"pydle_priv2_{int(time.time())}")
@@ -424,7 +424,7 @@ class TestIRCLibraryIntegration(BaseServerTestCase):
         self.controller = controller
         container_ports = self.controller.get_container_ports()
         self.hostname = "localhost"
-        self.port = container_ports.get("6667/tcp", 6667)
+        self.port = container_ports.get("6697/tcp", 6697)
 
         client = IRCClientTest(self.hostname, self.port)
         yield client

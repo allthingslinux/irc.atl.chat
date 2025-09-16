@@ -17,7 +17,7 @@ class TestIRCFunctionality:
         # This test requires an actual IRC server to be running
         # It will skip if no server is available
         if not irc_helper.wait_for_irc_server(timeout=10):
-            pytest.skip("No IRC server running on localhost:6667")
+            pytest.skip("No IRC server running on localhost:6697")
 
         # If we get here, server is running, test basic connection
         response = irc_helper.send_irc_command("PING test")
@@ -125,7 +125,7 @@ class TestIRCFunctionality:
         # Create a mock helper object
         helper = Mock()
         helper.host = "localhost"
-        helper.port = 6667
+        helper.port = 6697
         helper.send_irc_command = Mock(return_value=":server 001 test :Welcome")
 
         response = helper.send_irc_command("TEST")

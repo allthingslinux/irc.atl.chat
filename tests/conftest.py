@@ -67,8 +67,7 @@ def prepared_config_dir(tmp_path):
 unrealircd_container = container(
     image="{unrealircd_image.id}",
     ports={
-        "6667/tcp": None,  # Main IRC port
-        "6697/tcp": None,  # TLS port
+        "6697/tcp": None,  # Main IRC port (TLS only)
     },
     volumes={
         "{prepared_config_dir}": {"bind": "/home/unrealircd/unrealircd/conf", "mode": "rw"},
@@ -168,7 +167,7 @@ def docker_cleanup():
     return ["down -v"]
 
 
-def is_irc_service_responsive(host, port=6667):
+def is_irc_service_responsive(host, port=6697):
     """Check if IRC service is responsive."""
     import socket
 
@@ -185,7 +184,7 @@ def is_irc_service_responsive(host, port=6667):
 @pytest.fixture(scope="session")
 def irc_service(docker_ip, docker_services):
     """Ensure IRC service is up and responsive."""
-    port = docker_services.port_for("unrealircd", 6667)
+    port = docker_services.port_for("unrealircd", 6697)
     url = f"{docker_ip}:{port}"
 
     docker_services.wait_until_responsive(
@@ -218,7 +217,7 @@ def sample_config_data() -> dict:
     return {
         "irc_server": {
             "host": "localhost",
-            "port": 6667,
+            "port": 6697,
             "ssl_port": 6697,
             "network_name": "test.network",
         },
@@ -314,7 +313,7 @@ def docker_compose_helper(compose_file: Path, project_root: Path) -> DockerCompo
 class IRCTestHelper:
     """Helper class for IRC-related testing operations."""
 
-    def __init__(self, host: str = "localhost", port: int = 6667):
+    def __init__(self, host: str = "localhost", port: int = 6697):
         self.host = host
         self.port = port
 
@@ -489,7 +488,7 @@ def _inject_controller_if_needed(request):
             # Set up connection details
             container_ports = controller.get_container_ports()
             request.instance.hostname = "localhost"
-            request.instance.port = container_ports.get("6667/tcp", 6667)
+            request.instance.port = container_ports.get("6697/tcp", 6697)
 
 
 @pytest.fixture(autouse=True)

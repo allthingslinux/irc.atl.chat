@@ -63,7 +63,7 @@ class UnrealircdController(BaseServerController, DirectoryBasedController, Docke
         # Set port from container if available
         if self.container:
             container_ports = self.get_container_ports()
-            self.port = container_ports.get("6667/tcp", 6667)
+            self.port = container_ports.get("6697/tcp", 6697)
 
     def create_config(self) -> None:
         """Create the configuration directory and basic files."""
@@ -93,7 +93,7 @@ class UnrealircdController(BaseServerController, DirectoryBasedController, Docke
         # The container is already running via pytest-docker-tools
         # Get the actual mapped ports from the container
         container_ports = self.get_container_ports()
-        self.port = container_ports.get("6667/tcp", port)
+        self.port = container_ports.get("6697/tcp", port)
         if ssl:
             self.tls_port = container_ports.get("6697/tcp", port + 30)
 

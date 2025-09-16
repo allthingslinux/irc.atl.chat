@@ -16,7 +16,7 @@ from ..utils.specifications import mark_services, mark_specifications
 class IRCIntegrationClient:
     """Enhanced IRC client for service integration testing."""
 
-    def __init__(self, host: str = "localhost", port: int = 6667, use_ssl: bool = False):
+    def __init__(self, host: str = "localhost", port: int = 6697, use_ssl: bool = True):
         self.host = host
         self.port = port
         self.use_ssl = use_ssl

@@ -6,7 +6,7 @@ from typing import Any
 IRC_SERVER_CONFIGS = {
     "basic": {
         "host": "localhost",
-        "port": 6667,
+        "port": 6697,
         "ssl_port": 6697,
         "network": "TestNet",
         "description": "Basic test IRC server",

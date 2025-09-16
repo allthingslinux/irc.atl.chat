@@ -37,15 +37,28 @@ def controller(unrealircd_container, prepared_config_dir):
 class TestConnectionProtocol(BaseServerTestCase):
     """Test basic IRC connection and registration protocols."""
 
-    def setup_method(self, method, controller):
+    def setup_method(self, method):
         """Override setup to use controller fixture."""
-        self.controller = controller
+        # Controller will be injected via autouse fixture
+        if hasattr(self, "controller") and self.controller is not None:
+            # Set default test parameters
+            self.password = None
+            self.ssl = True  # Port 6697 is TLS-only
+            self.run_services = False
+            self.faketime = None
+            self.server_support = None
+
+            # Run the controller (hostname/port already set by inject_controller fixture)
+            self.controller.run(
+                self.hostname,
+                self.port,
+                password=self.password,
+                ssl=self.ssl,
+                run_services=self.run_services,
+                faketime=self.faketime,
+            )
+
         self.clients = {}
-        self.server_support = None
-        # Set up connection details from controller
-        container_ports = self.controller.get_container_ports()
-        self.hostname = "localhost"
-        self.port = container_ports.get("6667/tcp", 6667)
 
     @mark_specifications("RFC1459", "RFC2812")
     @pytest.mark.integration
@@ -134,7 +147,7 @@ class TestChannelProtocol(BaseServerTestCase):
         if hasattr(self, "controller") and self.controller is not None:
             # Set default test parameters
             self.password = None
-            self.ssl = False
+            self.ssl = True  # Port 6697 is TLS-only
             self.run_services = False
             self.faketime = None
             self.server_support = None
@@ -209,7 +222,7 @@ class TestMessagingProtocol(BaseServerTestCase):
         if hasattr(self, "controller") and self.controller is not None:
             # Set default test parameters
             self.password = None
-            self.ssl = False
+            self.ssl = True  # Port 6697 is TLS-only
             self.run_services = False
             self.faketime = None
             self.server_support = None
@@ -324,7 +337,7 @@ class TestMultipleClients(BaseServerTestCase):
         if hasattr(self, "controller") and self.controller is not None:
             # Set default test parameters
             self.password = None
-            self.ssl = False
+            self.ssl = True  # Port 6697 is TLS-only
             self.run_services = False
             self.faketime = None
             self.server_support = None
@@ -411,7 +424,7 @@ class TestEdgeCases(BaseServerTestCase):
         if hasattr(self, "controller") and self.controller is not None:
             # Set default test parameters
             self.password = None
-            self.ssl = False
+            self.ssl = True  # Port 6697 is TLS-only
             self.run_services = False
             self.faketime = None
             self.server_support = None
