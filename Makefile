@@ -28,12 +28,12 @@ help:
 	@echo ""
 	@echo "🧪 TESTING:"
 	@echo "  make test           - Run comprehensive test suite"
-	@echo "  make test-unit      - Run unit tests only"
-	@echo "  make test-integration - Run integration tests only"
-	@echo "  make test-e2e       - Run end-to-end tests only"
-	@echo "  make test-protocol  - Run IRC protocol tests only"
-	@echo "  make test-performance - Run performance tests only"
-	@echo "  make test-services  - Run service integration tests only"
+	@echo "  make test-unit      - Run fast unit tests (no Docker)"
+	@echo "  make test-integration - Run integration tests (requires Docker)"
+	@echo "  make test-e2e       - Run end-to-end tests (requires Docker)"
+	@echo "  make test-protocol  - Run IRC protocol tests (integration)"
+	@echo "  make test-performance - Run performance tests (marker-based)"
+	@echo "  make test-services  - Run Atheme service tests"
 	@echo "  make test-env       - Test environment setup only"
 	@echo "  make test-irc       - Test IRC functionality only"
 	@echo "  make test-docker    - Run Docker-related tests"
@@ -209,8 +209,8 @@ test-irc:
 
 test-unit:
 	@echo -e "$(PURPLE)=== Unit Tests ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Running unit tests and protocol tests..."
-	@uv run pytest tests/unit/ tests/protocol/ -v
+	@echo -e "$(BLUE)[INFO]$(NC) Running pure unit tests (no Docker required)..."
+	@uv run pytest tests/unit/ -v
 
 test-integration:
 	@echo -e "$(PURPLE)=== Integration Tests ===$(NC)"
@@ -230,12 +230,12 @@ test-protocol:
 test-performance:
 	@echo -e "$(PURPLE)=== Performance Tests ===$(NC)"
 	@echo -e "$(BLUE)[INFO]$(NC) Running performance tests..."
-	@uv run pytest tests/performance/ -v
+	@uv run pytest -m performance -v
 
 test-services:
 	@echo -e "$(PURPLE)=== Service Tests ===$(NC)"
-	@echo -e "$(BLUE)[INFO]$(NC) Running service integration tests..."
-	@uv run pytest tests/services/ -v
+	@echo -e "$(BLUE)[INFO]$(NC) Running Atheme service integration tests..."
+	@uv run pytest -m atheme -v
 
 
 test-docker:
