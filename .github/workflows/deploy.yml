@@ -42,14 +42,14 @@ jobs:
             # Use specified version or latest for manual deployments
             IMAGE_VERSION="${{ github.event.inputs.version || 'latest' }}"
           fi
-          
+
           REGISTRY="ghcr.io/allthingslinux"
-          
+
           echo "unrealircd_image=$REGISTRY/irc.atl.chat-unrealircd:$IMAGE_VERSION" >> "$GITHUB_OUTPUT"
           echo "atheme_image=$REGISTRY/irc.atl.chat-atheme:$IMAGE_VERSION" >> "$GITHUB_OUTPUT"
           echo "webpanel_image=$REGISTRY/irc.atl.chat-unrealircd-webpanel:$IMAGE_VERSION" >> "$GITHUB_OUTPUT"
           echo "version=$IMAGE_VERSION" >> "$GITHUB_OUTPUT"
-          
+
           echo "Deploying IRC.atl.chat version: $IMAGE_VERSION"
           echo "UnrealIRCd: $REGISTRY/irc.atl.chat-unrealircd:$IMAGE_VERSION"
           echo "Atheme: $REGISTRY/irc.atl.chat-atheme:$IMAGE_VERSION"
@@ -59,7 +59,7 @@ jobs:
         run: |
           ENV="${{ github.event.inputs.environment || 'production' }}"
           VERSION="${{ steps.images.outputs.version }}"
-          
+
           echo "🚀 Deploying IRC.atl.chat $VERSION to $ENV environment"
           echo ""
           echo "## Deployment Summary"
@@ -69,35 +69,35 @@ jobs:
           echo "- **Atheme**: ${{ steps.images.outputs.atheme_image }}"
           echo "- **WebPanel**: ${{ steps.images.outputs.webpanel_image }}"
           echo ""
-          
+
           # This is where you'd integrate with your deployment system
           # Examples for different deployment targets:
-          
+
           # For Kubernetes deployments:
           # kubectl set image deployment/unrealircd unrealircd=${{ steps.images.outputs.unrealircd_image }} -n $ENV
           # kubectl set image deployment/atheme atheme=${{ steps.images.outputs.atheme_image }} -n $ENV
           # kubectl set image deployment/webpanel webpanel=${{ steps.images.outputs.webpanel_image }} -n $ENV
-          
+
           # For Docker Swarm:
           # docker service update --image ${{ steps.images.outputs.unrealircd_image }} irc_unrealircd
           # docker service update --image ${{ steps.images.outputs.atheme_image }} irc_atheme
           # docker service update --image ${{ steps.images.outputs.webpanel_image }} irc_webpanel
-          
+
           # For direct server deployment:
           # ssh deploy@server "cd /opt/irc.atl.chat && docker compose pull && docker compose up -d"
-          
+
           # For cloud platforms (AWS ECS, Azure Container Instances, etc.):
           # aws ecs update-service --cluster irc-cluster --service unrealircd --force-new-deployment
           # aws ecs update-service --cluster irc-cluster --service atheme --force-new-deployment
           # aws ecs update-service --cluster irc-cluster --service webpanel --force-new-deployment
-          
+
           # For now, simulate deployment with proper logging
           echo "✅ Deployment simulation completed successfully"
           echo ""
           echo "### Next Steps:"
           echo "1. Verify all services are running: \`docker compose ps\`"
           echo "2. Check service logs: \`docker compose logs -f\`"
-          echo "3. Test IRC connectivity: \`telnet irc.atl.chat 6667\`"
+          echo "3. Test IRC connectivity: \`openssl s_client -connect irc.atl.chat:6697\`"
           echo "4. Test SSL connection: \`openssl s_client -connect irc.atl.chat:6697\`"
           echo "5. Verify web panel: \`curl -I http://irc.atl.chat:8080\`"
           echo ""
@@ -115,27 +115,27 @@ jobs:
           echo "### Service Verification"
           echo "Checking if all required services are accessible..."
           echo ""
-          
+
           # Simulate health checks
-          echo "✅ UnrealIRCd IRC daemon - Port 6667"
+          echo "✅ UnrealIRCd IRC daemon - Port 6697 (TLS only)"
           echo "✅ UnrealIRCd SSL/TLS - Port 6697"
           echo "✅ UnrealIRCd Server Links - Port 6900"
           echo "✅ UnrealIRCd RPC API - Port 8600"
           echo "✅ Atheme Services - Connected to UnrealIRCd"
           echo "✅ WebPanel - Port 8080"
           echo ""
-          
+
           echo "### SSL Certificate Status"
           echo "✅ Let's Encrypt certificates configured"
           echo "✅ Cloudflare DNS integration active"
           echo ""
-          
+
           echo "### IRC Services"
           echo "✅ NickServ - User registration and authentication"
           echo "✅ ChanServ - Channel management"
           echo "✅ OperServ - Administrative services"
           echo ""
-          
+
           echo "### Monitoring"
           echo "✅ SSL certificate monitoring active"
           echo "✅ Service health checks configured"
@@ -145,7 +145,7 @@ jobs:
         run: |-
           ENV="${{ github.event.inputs.environment || 'production' }}"
           VERSION="${{ steps.images.outputs.version }}"
-          
+
           {
             echo "## 📢 Deployment Notification"
             echo ""
@@ -159,7 +159,7 @@ jobs:
               echo "- **Timestamp**: $(date -u)"
               echo ""
               echo "### Access Information:"
-              echo "- **IRC Server**: irc.atl.chat:6667 (plain) / irc.atl.chat:6697 (SSL)"
+              echo "- **IRC Server**: irc.atl.chat:6697 (TLS only)"
               echo "- **WebPanel**: ${{ steps.deploy.outputs.url }}"
               echo "- **SSL Status**: Active with Let's Encrypt certificates"
               echo ""
@@ -169,7 +169,7 @@ jobs:
               echo "irc irc.atl.chat 6697"
               echo ""
               echo "# Or use telnet for testing"
-              echo "telnet irc.atl.chat 6667"
+              echo "openssl s_client -connect irc.atl.chat:6697"
               echo "\`\`\`"
             else
               echo "❌ **Deployment to $ENV failed**"
