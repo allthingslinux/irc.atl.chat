@@ -51,7 +51,7 @@ jobs:
           INSERT_ISSUE_URLS: true
           AUTO_ASSIGN: true
           IDENTIFIERS: |
-            [{"name": "TODO", "labels": ["enhancement"]}, {"name": "FIXME", "labels": ["bug"]}, {"name": "NOTE", "labels": ["documentation"]}, {"name": "HACK", "labels": ["refactor", "hack"]}, {"name": "XXX", "labels": ["refactor", "hack"]}]
+            [{"name": "TODO", "labels": ["enhancement"]}, {"name": "FIXME", "labels": ["bug"]}, {"name": "HACK", "labels": ["refactor", "hack"]}, {"name": "XXX", "labels": ["refactor", "hack"]}]
           ESCAPE: true
           IGNORE: |
             .github/,node_modules/,dist/,build/,vendor/,data/,logs/
