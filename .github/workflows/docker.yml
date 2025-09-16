@@ -82,7 +82,7 @@ jobs:
         timeout-minutes: 10
         with:
           context: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel' || matrix.service == 'unrealircd' && 'src/backend/unrealircd' || matrix.service == 'atheme' && 'src/backend/atheme' }}
-          file: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel/Containerfile' || format('{0}/Containerfile', matrix.service) }}
+          file: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel/Containerfile' || matrix.service == 'unrealircd' && 'src/backend/unrealircd/Containerfile' || matrix.service == 'atheme' && 'src/backend/atheme/Containerfile' }}
           push: false
           load: false
           cache-from: type=gha,scope=${{ matrix.service }}
@@ -103,7 +103,7 @@ jobs:
         with:
           github_token: ${{ github.token }}
           trivy_command: config
-          trivy_target: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel/Containerfile' || format('{0}/Containerfile', matrix.service) }}
+          trivy_target: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel/Containerfile' || matrix.service == 'unrealircd' && 'src/backend/unrealircd/Containerfile' || matrix.service == 'atheme' && 'src/backend/atheme/Containerfile' }}
           level: warning
           reporter: github-pr-review
           tool_name: trivy-dockerfile-${{ matrix.service }}
@@ -162,7 +162,7 @@ jobs:
         timeout-minutes: 15
         with:
           context: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel' || matrix.service == 'unrealircd' && 'src/backend/unrealircd' || matrix.service == 'atheme' && 'src/backend/atheme' }}
-          file: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel/Containerfile' || format('{0}/Containerfile', matrix.service) }}
+          file: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel/Containerfile' || matrix.service == 'unrealircd' && 'src/backend/unrealircd/Containerfile' || matrix.service == 'atheme' && 'src/backend/atheme/Containerfile' }}
           push: true
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,mode=max,scope=${{ matrix.service }}
