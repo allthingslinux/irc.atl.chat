@@ -381,6 +381,12 @@ set {
 		"899874eda706ee805bd34792bfd7bd62711f1938dea920c8bdf8396fe136ab6a83785a3ce54eB298";
 		"d8936d8fff38eace5c379c94578abfa802088bd241329c64506513fe8e4de3e2304f7dd00355A8d6";
 	}
+
+	/* Hidden host prefix - must match cloak-prefix on all servers */
+	hiddenhost-prefix "${IRC_CLOAK_PREFIX}";
+
+	/* Cloaking method - use IP style for better privacy (optional but recommended) */
+	cloak-method ip;
 }
 
 /* Operator Configuration */
@@ -453,6 +459,9 @@ set {
 	modes-on-connect "+ixw"; /* when users connect, they will get these user modes */
 	modes-on-oper "+xws"; /* when someone becomes IRCOp they'll get these modes */
 	modes-on-join "+nt"; /* default channel modes when a new channel is created */
+
+	/* Restrict user modes - prevent users from disabling cloaking for security */
+	restrict-usermodes "x"; /* Users cannot remove +x (cloaking) */
 	oper-auto-join "#mod-chat"; /* IRCOps are auto-joined to this channel */
 	options {
 		hide-ulines; /* hide U-lines in /MAP and /LINKS */
