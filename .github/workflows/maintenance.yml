@@ -29,8 +29,7 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
-env:
-  ADMIN_PAT: ${{ secrets.ADMIN_PAT }}
+
 jobs:
   todos:
     name: TODOs
@@ -52,11 +51,10 @@ jobs:
           INSERT_ISSUE_URLS: true
           AUTO_ASSIGN: true
           IDENTIFIERS: |
-            [{"name": "TODO", "labels": ["enhancement"]}, {"name": "FIXME", "labels": ["bug"]}, {"name": "NOTE", "labels": ["documentation"]}]
+            [{"name": "TODO", "labels": ["enhancement"]}, {"name": "FIXME", "labels": ["bug"]}, {"name": "NOTE", "labels": ["documentation"]}, {"name": "HACK", "labels": ["refactor", "hack"]}, {"name": "XXX", "labels": ["refactor", "hack"]}]
           ESCAPE: true
           IGNORE: |
             .github/,node_modules/,dist/,build/,vendor/,data/,logs/
-          PROJECTS_SECRET: ${{ env.ADMIN_PAT }}
         env:
           MANUAL_COMMIT_REF: ${{ github.event.inputs.manual_commit_ref }}
           MANUAL_BASE_REF: ${{ github.event.inputs.manual_base_ref }}
@@ -169,7 +167,7 @@ jobs:
             echo "### 🐳 Docker Compose Health Check"
             echo "Validating compose configuration with DCLint..."
           } >> "$GITHUB_STEP_SUMMARY"
-          
+
           # Run DCLint to check Docker Compose configuration
           if docker run --rm -v "$(pwd):/workspace" -w /workspace \
             docker.io/dockercomposelinter/dclint:latest . --formatter json 2>/dev/null; then
@@ -184,19 +182,19 @@ jobs:
             echo "### 📦 Containerfile Health Check"
             echo "Checking Containerfiles for common issues..."
           } >> "$GITHUB_STEP_SUMMARY"
-          
+
           for containerfile in $(find . -name "Containerfile" -o -name "Dockerfile"); do
             echo "**Checking**: $containerfile" >> "$GITHUB_STEP_SUMMARY"
-            
+
             # Check for common security issues
             if grep -q "RUN.*apt-get.*update.*&&.*apt-get.*install" "$containerfile"; then
               echo "✅ Uses combined RUN commands for apt-get" >> "$GITHUB_STEP_SUMMARY"
             fi
-            
+
             if grep -q "USER.*root" "$containerfile"; then
               echo "⚠️ Uses root user - consider non-root user" >> "$GITHUB_STEP_SUMMARY"
             fi
-            
+
             if grep -q "EXPOSE.*80\|EXPOSE.*443\|EXPOSE.*22" "$containerfile"; then
               echo "✅ Properly exposes common ports" >> "$GITHUB_STEP_SUMMARY"
             fi
@@ -231,22 +229,22 @@ jobs:
             if command -v gh >/dev/null 2>&1; then
               TOTAL_SIZE=0
               TOTAL_VERSIONS=0
-              
+
               for service in unrealircd atheme unrealircd-webpanel; do
                 # Get package info
                 PACKAGE_INFO=$(gh api user/packages/container/irc-atl-chat-$service 2>/dev/null || echo '{"size_in_bytes": 0, "version_count": 0}')
                 SIZE_BYTES=$(echo "$PACKAGE_INFO" | jq -r '.size_in_bytes // 0')
                 VERSION_COUNT=$(echo "$PACKAGE_INFO" | jq -r '.version_count // 0')
                 SIZE_GB=$(echo "scale=2; $SIZE_BYTES / 1024 / 1024 / 1024" | bc -l 2>/dev/null || echo "0")
-                
+
                 echo "**$service**: ${SIZE_GB}GB, $VERSION_COUNT versions"
                 TOTAL_SIZE=$(echo "$TOTAL_SIZE + $SIZE_GB" | bc -l)
                 TOTAL_VERSIONS=$((TOTAL_VERSIONS + VERSION_COUNT))
               done
-              
+
               echo "**Total Registry Size**: ${TOTAL_SIZE}GB"
               echo "**Total Version Count**: $TOTAL_VERSIONS"
-              
+
               if (( $(echo "$TOTAL_SIZE > 10" | bc -l) )); then
                 echo "⚠️ **Warning**: Total registry size exceeds 10GB"
               else
@@ -274,13 +272,13 @@ jobs:
           {
             echo "### 🔒 SSL Certificate Health Check"
             echo "Checking for SSL-related files and configurations..."
-            
+
             if [ -f "scripts/ssl-manager.sh" ]; then
               echo "✅ SSL management script exists"
             else
               echo "⚠️ SSL management script not found"
             fi
-            
+
             if [ -d "data/letsencrypt" ]; then
               echo "✅ Let's Encrypt data directory exists"
               CERT_COUNT=$(find data/letsencrypt -name "*.pem" 2>/dev/null | wc -l)
@@ -288,12 +286,12 @@ jobs:
             else
               echo "⚠️ Let's Encrypt data directory not found"
             fi
-            
+
             if [ -f "cloudflare-credentials.ini.template" ]; then
               echo "✅ Cloudflare credentials template exists"
             else
               echo "⚠️ Cloudflare credentials template not found"
             fi
-            
+
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
