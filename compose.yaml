@@ -18,10 +18,7 @@ services:
     # Container configuration
     container_name: unrealircd
     hostname: unrealircd
-    init: true 
-
-    # Dependencies
-    # (none - this is the primary service)
+    init: true
 
     # Volume mounts - aligned with Containerfile paths
     volumes:
@@ -37,9 +34,10 @@ services:
 
     # Port mappings
     ports:
-      - '${IRC_PORT:-6667}:6667'              # Standard IRC port
+      # - '${IRC_PORT:-6667}:6667'              # Standard IRC port (disabled - TLS only)
       - '${IRC_TLS_PORT:-6697}:6697'          # IRC over SSL/TLS
       - '${IRC_SERVER_PORT:-6900}:6900'       # Server-to-server TLS
+      - '${ATHEME_UPLINK_PORT:-6901}:6901'    # Atheme services connection (plaintext)
       - '${IRC_RPC_PORT:-8600}:8600'          # JSON-RPC API
       - '${IRC_WEBSOCKET_PORT:-8000}:8000'    # WebSocket for web IRC clients
 
@@ -52,7 +50,7 @@ services:
 
     # Health monitoring
     healthcheck:
-      test: ['CMD', 'nc', '-z', 'localhost', '6667']
+      test: ['CMD', 'nc', '-z', 'localhost', '6697']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -75,7 +73,7 @@ services:
 
     # Container configuration
     container_name: atheme
-    hostname: atheme
+    # hostname: atheme  # Removed when using network_mode
 
     # Dependencies
     depends_on:
@@ -95,9 +93,8 @@ services:
       - PUID=${PUID:-1000}
       - PGID=${PGID:-1000}
 
-    # Network configuration
-    networks:
-      - irc-network
+    # Network configuration - Share network with UnrealIRCd for localhost services connection
+    network_mode: service:unrealircd
 
     # Restart policy
     restart: unless-stopped

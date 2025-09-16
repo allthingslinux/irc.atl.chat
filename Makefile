@@ -49,7 +49,7 @@ help:
 	@echo "  make ssl-status     - Check SSL status"
 	@echo ""
 	@echo "🗂️ ACCESS POINTS:"
-	@echo "  📡 IRC:      localhost:6667 (standard) / localhost:6697 (SSL)"
+	@echo "  📡 IRC:      localhost:6697 (TLS only)"
 	@echo "  🌐 WebPanel: http://localhost:8080"
 	@echo "  📝 Logs:     tail -f logs/unrealircd/ircd.log"
 	@echo "  📋 JSON:     tail -f logs/unrealircd/ircd.json.log"
@@ -96,7 +96,7 @@ up:
 	@./scripts/prepare-config.sh
 	@docker compose up -d
 	@echo -e "$(GREEN)[SUCCESS]$(NC) Services started!"
-	@echo -e "$(BLUE)[INFO]$(NC) IRC Server: localhost:6667"
+	@echo -e "$(BLUE)[INFO]$(NC) IRC Server: localhost:6697 (TLS only)"
 	@echo -e "$(BLUE)[INFO]$(NC) WebPanel: http://localhost:8080"
 	@echo -e "$(BLUE)[INFO]$(NC) Log files accessible at: logs/unrealircd/"
 
@@ -172,7 +172,7 @@ modules-installed:
 webpanel:
 	@echo -e "$(PURPLE)=== WebPanel Access ===$(NC)"
 	@echo "WebPanel URL: http://localhost:8080"
-	@echo "IRC Server: localhost:6667 (standard) / localhost:6697 (SSL)"
+	@echo "IRC Server: localhost:6697 (TLS only)"
 	@echo ""
 	@echo "To access webpanel:"
 	@echo "  1. Start services: make up"

@@ -48,7 +48,7 @@ Copy `env.example` to `.env` and configure:
 ```bash
 # Server Settings
 IRC_DOMAIN=irc.atl.chat
-IRC_PORT=6667
+# IRC_PORT=6667                    # Disabled - TLS only
 IRC_TLS_PORT=6697
 IRC_RPC_PORT=8600
 
@@ -139,9 +139,10 @@ irc.atl.chat/
 
 | Port | Protocol | Service | Purpose |
 |------|----------|---------|---------|
-| 6667 | IRC | UnrealIRCd | Standard IRC |
+| ~~6667~~ | ~~IRC~~ | ~~UnrealIRCd~~ | ~~Standard IRC~~ (disabled - TLS only) |
 | 6697 | IRC+TLS | UnrealIRCd | Encrypted IRC |
 | 6900 | IRC+TLS | UnrealIRCd | Server links |
+| 6901 | IRC | UnrealIRCd | Atheme services (localhost) |
 | 8600 | HTTP | UnrealIRCd | JSON-RPC API |
 | 8000 | WebSocket | UnrealIRCd | WebSocket IRC |
 | 8080 | HTTP | WebPanel | Admin interface |
@@ -151,11 +152,11 @@ irc.atl.chat/
 ### Connect to IRC
 
 ```bash
-# Standard connection
-irc irc.atl.chat:6667
-
-# SSL connection
+# TLS connection (required)
 irc irc.atl.chat:6697
+
+# Note: Plaintext connections are disabled for security
+# All clients must use SSL/TLS on port 6697
 ```
 
 ### WebPanel
