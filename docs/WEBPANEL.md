@@ -49,39 +49,6 @@ The WebPanel is automatically configured through Docker. Key settings:
 - Module management
 - Log viewing
 
-## Authentication
-
-### File-Based Authentication (Default)
-
-Users are stored in `data/unrealircd-webpanel-data/users.php`:
-
-```php
-<?php
-$users = [
-    'admin' => [
-        'password' => '$2y$10$hashedpasswordhere',
-        'level' => 100,  // 0-100 permission level
-        'realname' => 'IRC Administrator'
-    ]
-];
-```
-
-**Create admin user:**
-```bash
-# Generate password hash
-docker exec unrealircd-webpanel php -r "
-\$password = password_hash('your_secure_password', PASSWORD_DEFAULT);
-echo \"Password hash: \$password\n\";
-"
-```
-
-### Permission Levels
-- **0**: No access
-- **25**: Read-only access
-- **50**: Basic user management
-- **75**: Channel and ban management
-- **100**: Full administrative access
-
 ## Troubleshooting
 
 ### Connection Issues
@@ -101,23 +68,6 @@ echo \"Password hash: \$password\n\";
 3. **Verify RPC configuration:**
    ```bash
    grep -A5 "listen.*rpc" src/backend/unrealircd/conf/unrealircd.conf
-   ```
-
-### Authentication Issues
-
-**Unable to log in:**
-
-1. **Check user file:**
-   ```bash
-   cat data/unrealircd-webpanel-data/users.php
-   ```
-
-2. **Verify password hash:**
-   ```bash
-   docker exec unrealircd-webpanel php -r "
-   \$hash = '$2y$10\$...';  // Your hash
-   var_dump(password_verify('your_password', \$hash));
-   "
    ```
 
 ### Performance Issues
