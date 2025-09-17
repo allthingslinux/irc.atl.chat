@@ -1,6 +1,6 @@
 # UnrealIRCd Modules
 
-This guide covers the module system in UnrealIRCd, including core modules, third-party modules, and custom module development for IRC.atl.chat.
+This guide covers the module system in UnrealIRCd for IRC.atl.chat, focusing on third-party module management and configuration.
 
 ## Overview
 
@@ -10,7 +10,7 @@ UnrealIRCd uses a modular architecture where functionality is provided by loadab
 
 - **Core Modules**: Built-in functionality (user modes, channel modes, etc.)
 - **Third-Party Modules**: Community-developed extensions
-- **Custom Modules**: Site-specific modifications
+- **Module Management**: Automated installation and configuration via Docker
 
 ### Module Categories
 
@@ -25,241 +25,96 @@ Modules/
 └── backend/           # Database backends
 ```
 
-## Module Management
+## Third-Party Modules Configuration
 
-### Module Loading
+### Automatic Installation
 
-Modules are loaded in configuration files:
+Third-party modules are automatically installed during container build using the `third-party-modules.list` file:
 
-#### Default Modules (`modules.default.conf`)
-```c
-// Core functionality - always loaded
-loadmodule "cloak_sha256";
-loadmodule "usermodes/secureonlymsg";
-loadmodule "chanmodes/ban";
+```bash
+# Edit the modules list
+vim src/backend/unrealircd/third-party-modules.list
+
+# Add modules (one per line)
+third/showwebirc
+third/geoip
+
+# Rebuild container to install modules
+make rebuild
 ```
 
-#### Custom Modules (`modules.custom.conf`)
-```c
-// Site-specific modules
-loadmodule "third/showwebirc";
-loadmodule "third/geoip";
+### Module List File Format
+
+```bash
+# Comments start with #
+# Empty lines are ignored
+# One module per line
+
+# WebIRC/WebSocket information in WHOIS
+third/showwebirc
+
+# Add more modules here as needed:
+# third/example-module
 ```
 
-#### Optional Modules (`modules.optional.conf`)
-```c
-// Feature modules - loaded as needed
-// loadmodule "chanmodes/auditorium";
+### Installation Process
+
+1. **Build Time**: Modules listed in `third-party-modules.list` are installed during container build
+2. **First Run**: Installation script runs automatically on first container startup
+3. **Persistence**: Installed modules persist across container restarts
+4. **Flag File**: `.modules_installed` prevents re-installation
+
+## Module Management Commands
+
+### Using Make Commands
+```bash
+# List available third-party modules
+make modules-list
+
+# Show installed modules
+make modules-installed
 ```
 
-### Module Dependencies
-
-Some modules require others to function:
-
-```c
-// SASL requires crypto modules
-loadmodule "crypto/pbkdf2v2";
-loadmodule "extensions/sasl";
-
-// IRCv3 requires specific extensions
-loadmodule "extensions/ircv3";
-loadmodule "extensions/ircv3-cap";
-```
-
-## Core Modules
-
-### User Mode Modules
-
-#### Authentication & Security
-```c
-loadmodule "usermodes/secureonlymsg";    // +Z: SSL-only messaging
-loadmodule "usermodes/regonlymsg";      // +R: Registered users only
-loadmodule "usermodes/privdeaf";        // +D: Block private messages
-loadmodule "usermodes/noctcp";          // +T: Block CTCP
-```
-
-#### Privacy & Control
-```c
-loadmodule "usermodes/bot";             // +B: Bot identification
-loadmodule "usermodes/censor";          // +G: Content filtering
-loadmodule "usermodes/hide-idle-time"; // +I: Hide idle time
-loadmodule "usermodes/privacy";         // +p: Hide channel list
-```
-
-#### Administrative
-```c
-loadmodule "usermodes/nokick";          // +q: Unkickable (services)
-loadmodule "usermodes/servicebot";      // +S: Services bot
-loadmodule "usermodes/showwhois";       // +W: See who does /WHOIS
-```
-
-### Channel Mode Modules
-
-#### Access Control
-```c
-loadmodule "chanmodes/admin";           // +a: Admin status
-loadmodule "chanmodes/ban";             // +b: Ban list
-loadmodule "chanmodes/inviteonly";      // +i: Invite-only
-loadmodule "chanmodes/key";             // +k: Channel key
-```
-
-#### Moderation
-```c
-loadmodule "chanmodes/limit";           // +l: User limit
-loadmodule "chanmodes/moderated";       // +m: Moderated
-loadmodule "chanmodes/no-external";     // +n: No external messages
-loadmodule "chanmodes/private";         // +p: Private channel
-```
-
-#### Special Features
-```c
-loadmodule "chanmodes/auditorium";      // +A: Auditorium mode
-loadmodule "chanmodes/operonly";        // +O: IRCops only
-loadmodule "chanmodes/permanent";       // +P: Permanent channel
-loadmodule "chanmodes/secret";          // +s: Secret channel
-```
-
-### Extension Modules
-
-#### IRCv3 Support
-```c
-loadmodule "extensions/ircv3";          // IRCv3 protocol support
-loadmodule "extensions/ircv3-cap";      // Capability negotiation
-loadmodule "extensions/ircv3-echo";     // Message echo
-loadmodule "extensions/sasl";           // SASL authentication
-```
-
-#### Web Integration
-```c
-loadmodule "extensions/webirc";         // WebIRC support
-loadmodule "third/showwebirc";          // Display WebIRC usage
-```
-
-#### Security Extensions
-```c
-loadmodule "extensions/restrict-usermode"; // Restrict user modes
-loadmodule "extensions/restrict-channelmode"; // Restrict channel modes
-```
-
-## Third-Party Modules
-
-### Available Modules
-
-IRC.atl.chat includes several third-party modules:
-
+### Using Management Scripts
 ```bash
 # List available modules
-cat src/backend/unrealircd/third-party-modules.list
+docker compose exec unrealircd manage-modules.sh list
 
-# Currently available:
-# - geoip: IP geolocation
-# - showwebirc: WebIRC logging
-# - antirandom: Anti-random nick protection
-# - antirandom-channel: Channel anti-random protection
-# - jointhrottle: Join throttling
-# - antirandom-ident: Ident anti-random
+# Show module information
+docker compose exec unrealircd manage-modules.sh info webpanel
+
+# Install a module
+docker compose exec unrealircd manage-modules.sh install webpanel
+
+# Uninstall a module
+docker compose exec unrealircd manage-modules.sh uninstall webpanel
+
+# Show installed modules
+docker compose exec unrealircd manage-modules.sh installed
 ```
 
-### Installing Third-Party Modules
-
+### Configuration Management
 ```bash
-# Install all available modules
-./src/backend/unrealircd/scripts/install-modules.sh
+# Add module to configuration
+docker compose exec unrealircd module-config.sh add webpanel
 
-# Install specific module
-./src/backend/unrealircd/scripts/install-modules.sh geoip
+# Remove module from configuration
+docker compose exec unrealircd module-config.sh remove webpanel
+
+# List loaded modules in config
+docker compose exec unrealircd module-config.sh list
 ```
 
-### Module Configuration
-
-#### GeoIP Module
-```c
-loadmodule "third/geoip";
-
-geoip {
-    ipv4-database "/path/to/GeoLite2-Country.mmdb";
-    ipv6-database "/path/to/GeoLite2-Country.mmdb";
-}
-```
-
-#### WebIRC Logging
-```c
-loadmodule "third/showwebirc";
-
-showwebirc {
-    oper-only no;              // Show to all users
-    log yes;                   // Log WebIRC usage
-}
-```
-
-## Module Development
-
-### Creating Custom Modules
-
-#### Module Structure
-```c
-#include "unrealircd.h"
-
-ModuleHeader Mod_Header = {
-    "mymodule",                // Module name
-    "1.0",                     // Version
-    "My custom module",        // Description
-    "Author Name",             // Author
-    "unrealircd-6"             // UnrealIRCd version
-};
-
-MOD_INIT(mymodule) {
-    // Initialization code
-    return MOD_SUCCESS;
-}
-
-MOD_LOAD(mymodule) {
-    // Load-time code
-    return MOD_SUCCESS;
-}
-
-MOD_UNLOAD(mymodule) {
-    // Cleanup code
-    return MOD_SUCCESS;
-}
-```
-
-#### Hook System
-
-Modules can hook into IRC events:
-
-```c
-HookAdd(modinfo, HOOKTYPE_PRE_USERMSG, 0, my_usermsg_hook);
-
-static int my_usermsg_hook(Cmdoverride *ovr, aClient *cptr, aClient *sptr, int parc, char *parv[]) {
-    // Process user messages
-    return 0; // Continue processing
-}
-```
-
-#### User Mode Implementation
-```c
-UMODE_FUNC(mymode) {
-    // Handle +mymode/-mymode
-    if (what == MODE_ADD) {
-        // Add mode logic
-    } else {
-        // Remove mode logic
-    }
-}
-```
-
-### Building Modules
-
+### Runtime Module Management
 ```bash
-# Compile module
-gcc -shared -fPIC -I/usr/include/unrealircd mymodule.c -o mymodule.so
+# List loaded modules
+MODULE LIST
 
-# Install module
-cp mymodule.so /home/unrealircd/unrealircd/modules/
+# Load module at runtime
+MODULE LOAD mymodule
 
-# Load in configuration
-loadmodule "mymodule";
+# Unload module
+MODULE UNLOAD mymodule
 ```
 
 ## Module Configuration
@@ -302,18 +157,9 @@ Optional features:
 // loadmodule "usermodes/censor";
 ```
 
-### Runtime Module Management
+## Currently Installed Modules
 
-```bash
-# List loaded modules
-MODULE LIST
-
-# Load module at runtime
-MODULE LOAD mymodule
-
-# Unload module
-MODULE UNLOAD mymodule
-```
+- **third/showwebirc**: Adds WebIRC and WebSocket information to WHOIS queries
 
 ## Troubleshooting
 
@@ -322,157 +168,110 @@ MODULE UNLOAD mymodule
 #### Module Not Loading
 ```bash
 # Check module file exists
-ls -la /home/unrealircd/unrealircd/modules/mymodule.so
-
-# Check dependencies
-ldd /home/unrealircd/unrealircd/modules/mymodule.so
+docker compose exec unrealircd ls -la /home/unrealircd/unrealircd/modules/third/
 
 # Check logs for errors
-grep "mymodule" logs/unrealircd/ircd.log
-```
-
-#### Missing Dependencies
-```bash
-# Install required libraries
-apt-get install libssl-dev libgeoip-dev
-
-# Rebuild module
-make clean && make
-
-# Check library paths
-pkg-config --libs openssl geoip
+make logs-ircd | grep -i module
 ```
 
 #### Configuration Errors
 ```bash
 # Validate configuration
-unrealircd -c /path/to/unrealircd.conf
+docker compose exec unrealircd unrealircd -c /home/unrealircd/unrealircd/conf/unrealircd.conf
 
 # Check syntax errors
-grep "error" logs/unrealircd/ircd.log
+make logs-ircd | grep -i error
 ```
 
-#### Version Compatibility
-```bash
-# Check UnrealIRCd version
-unrealircd -v
+#### Force Reinstallation
+If you need to force reinstallation of modules:
 
-# Verify module compatibility
-strings mymodule.so | grep "unrealircd"
+```bash
+# Remove the installation flag
+docker compose exec unrealircd rm -f /home/unrealircd/.modules_installed
+
+# Restart the container
+docker compose restart unrealircd
 ```
 
 ### Debug Information
 
 ```bash
-# Enable module debugging
-set {
-    log-level debug;
-};
-
 # Check module status
-MODULE INFO mymodule
+docker compose exec unrealircd unrealircdctl module list
+
+# Enable debug logging
+# Add to unrealircd.conf:
+# set { log-level debug; };
 ```
 
-## Performance Considerations
+## Finding Available Modules
 
-### Module Overhead
+### Online Repository
+Browse available modules at: https://modules.unrealircd.org/
 
-- **Core modules**: Minimal overhead, essential functionality
-- **Third-party modules**: Variable overhead, test performance impact
-- **Custom modules**: Depends on implementation complexity
-
-### Memory Usage
-
+### Command Line
+List available modules from within a running container:
 ```bash
-# Monitor module memory
-ps aux | grep unrealircd
-
-# Check module allocations
-valgrind --tool=massif unrealircd
+docker compose exec unrealircd ./unrealircd module list
 ```
 
-### CPU Usage
+## Adding New Modules
+
+1. **Edit the configuration file**:
+   ```bash
+   nano src/backend/unrealircd/third-party-modules.list
+   ```
+
+2. **Add the module name** (one per line):
+   ```bash
+   third/new-module-name
+   ```
+
+3. **Rebuild the container**:
+   ```bash
+   make rebuild
+   ```
+
+## Removing Modules
+
+1. **Remove from the configuration file**:
+   ```bash
+   nano src/backend/unrealircd/third-party-modules.list
+   ```
+
+2. **Comment out or delete the line**:
+   ```bash
+   # third/old-module-name
+   ```
+
+3. **Rebuild the container**:
+   ```bash
+   make rebuild
+   ```
+
+## Manual Installation
+
+If you need to install additional modules after the container is running:
 
 ```bash
-# Profile module performance
-perf record -p $(pidof unrealircd)
+# Enter the container
+docker compose exec unrealircd sh
 
-# Analyze performance data
-perf report
+# Install a module manually
+cd /home/unrealircd/unrealircd
+./unrealircd module install third/module-name
+
+# Rehash to load the module
+./bin/unrealircdctl rehash
 ```
 
 ## Security Considerations
 
-### Module Security
-
-#### Trust Levels
-- **Official modules**: Fully trusted, security audited
-- **Third-party modules**: Use at own risk, review source code
-- **Custom modules**: Full responsibility for security
-
-#### Best Practices
-```c
-// Input validation
-if (parc < 2) return 0;
-
-// Buffer bounds checking
-strlcpy(buffer, parv[1], sizeof(buffer));
-
-// Privilege checking
-if (!IsOper(sptr)) return 0;
-```
-
-### Access Controls
-
-```c
-// Restrict module commands to operators
-if (!ValidatePermissions(sptr, "admin")) {
-    sendto_one(sptr, ":%s NOTICE %s :Permission denied",
-               me.name, sptr->name);
-    return 0;
-}
-```
-
-## Maintenance
-
-### Module Updates
-
-```bash
-# Check for updates
-./scripts/check-module-updates.sh
-
-# Update modules
-./scripts/update-modules.sh
-
-# Restart to load new versions
-make restart
-```
-
-### Backup and Recovery
-
-```bash
-# Backup module configurations
-cp src/backend/unrealircd/conf/modules.*.conf backup/
-
-# Backup custom modules
-cp src/backend/unrealircd/modules/*.so backup/
-
-# Recovery
-cp backup/modules.custom.conf src/backend/unrealircd/conf/
-```
-
-### Monitoring
-
-```bash
-# Module health checks
-./scripts/monitor-modules.sh
-
-# Log analysis
-grep "module" logs/unrealircd/ircd.log
-
-# Performance monitoring
-./scripts/profile-modules.sh
-```
+- Third-party modules are not officially supported by the UnrealIRCd team
+- Review module source code if security is a concern
+- Only install modules from trusted sources
+- Regularly update modules for security patches
 
 ## Related Documentation
 

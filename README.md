@@ -243,7 +243,6 @@ make build
 - [Atheme Services](./docs/ATHEME.md) - IRC services (NickServ, ChanServ, etc.)
 - [Modules](./docs/MODULES.md) - UnrealIRCd module system and third-party extensions
 - [WebPanel](./docs/WEBPANEL.md) - Web-based administration interface
-- [Gamja Client](./docs/GAMJA.md) - Modern web IRC client
 
 ### 🐳 Infrastructure
 - [Docker Setup](./docs/DOCKER.md) - Containerization, volumes, and networking
@@ -257,7 +256,6 @@ make build
 - [Secret Management](./docs/SECRET_MANAGEMENT.md) - Passwords, API tokens, and security practices
 - [User Modes](./docs/USERMODES.md) - IRC user mode reference and configuration
 - [Backup & Recovery](./docs/BACKUP_RECOVERY.md) - Data protection and disaster recovery
-- [Monitoring](./docs/MONITORING.md) - Health checks, metrics, logging, and alerting
 
 ### 🔌 APIs & Integration
 - [API Reference](./docs/API.md) - JSON-RPC API and WebSocket support

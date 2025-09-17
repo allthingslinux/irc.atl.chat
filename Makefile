@@ -159,11 +159,11 @@ logs-webpanel:
 
 modules-list:
 	@echo -e "$(PURPLE)=== Available Modules ===$(NC)"
-	$(DOCKER_COMPOSE) exec ircd manage-modules list
+	$(DOCKER_COMPOSE) exec unrealircd manage-modules.sh list
 
 modules-installed:
 	@echo -e "$(PURPLE)=== Installed Modules ===$(NC)"
-	$(DOCKER_COMPOSE) exec ircd manage-modules installed
+	$(DOCKER_COMPOSE) exec unrealircd manage-modules.sh installed
 
 # ============================================================================
 # WEBPANEL COMMANDS

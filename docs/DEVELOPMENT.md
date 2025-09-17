@@ -79,7 +79,6 @@ make status
 
 - **IRC Server**: `localhost:6697` (TLS)
 - **WebPanel**: `http://localhost:8080`
-- **Gamja Client**: `http://localhost:8081`
 - **JSON-RPC API**: `localhost:8600`
 - **WebSocket**: `localhost:8000`
 

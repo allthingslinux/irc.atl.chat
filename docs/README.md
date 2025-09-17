@@ -23,7 +23,7 @@ Welcome to the IRC.atl.chat documentation! This directory contains comprehensive
 - **[SSL.md](./SSL.md)** - Let's Encrypt automation, certificate management, and TLS configuration
 - **[SECRET_MANAGEMENT.md](./SECRET_MANAGEMENT.md)** - Password management, API tokens, and security best practices
 - **[BACKUP_RECOVERY.md](./BACKUP_RECOVERY.md)** - Data protection, backup strategies, and disaster recovery procedures
-- **[MONITORING.md](./MONITORING.md)** - Health checks, metrics collection, logging, and alerting setup
+ setup
 
 ## 🛠️ Development & Testing
 
