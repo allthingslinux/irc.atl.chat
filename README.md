@@ -233,9 +233,38 @@ make build
 
 ## Documentation
 
-- [SSL Setup](./docs/SSL.md)
-- [Secret Management](./docs/SECRET_MANAGEMENT.md)
-- [User Modes](./docs/user-modes.md)
+### 🚀 Getting Started
+- [Quick Start](README.md#quick-start) - Basic installation and setup
+- [Configuration](README.md#configuration) - Environment variables and settings
+- [Troubleshooting](./docs/TROUBLESHOOTING.md) - Common issues and solutions
+
+### 🏗️ Core Components
+- [UnrealIRCd Server](./docs/UNREALIRCD.md) - IRC server configuration and management
+- [Atheme Services](./docs/ATHEME.md) - IRC services (NickServ, ChanServ, etc.)
+- [Modules](./docs/MODULES.md) - UnrealIRCd module system and third-party extensions
+- [WebPanel](./docs/WEBPANEL.md) - Web-based administration interface
+- [Gamja Client](./docs/GAMJA.md) - Modern web IRC client
+
+### 🐳 Infrastructure
+- [Docker Setup](./docs/DOCKER.md) - Containerization, volumes, and networking
+- [Makefile Commands](./docs/MAKE.md) - Build automation and management commands
+- [Configuration](./docs/CONFIG.md) - Template system and environment variables
+- [CI/CD Pipeline](./docs/CI_CD.md) - GitHub Actions workflows and automation
+- [Testing](./docs/TESTING.md) - Comprehensive test suite and framework
+
+### 🔒 Security & Operations
+- [SSL Certificates](./docs/SSL.md) - Let's Encrypt automation and certificate management
+- [Secret Management](./docs/SECRET_MANAGEMENT.md) - Passwords, API tokens, and security practices
+- [User Modes](./docs/USERMODES.md) - IRC user mode reference and configuration
+- [Backup & Recovery](./docs/BACKUP_RECOVERY.md) - Data protection and disaster recovery
+- [Monitoring](./docs/MONITORING.md) - Health checks, metrics, logging, and alerting
+
+### 🔌 APIs & Integration
+- [API Reference](./docs/API.md) - JSON-RPC API and WebSocket support
+- [Scripts](./docs/SCRIPTS.md) - Management and utility scripts
+
+### 🛠️ Development
+- [Development Guide](./docs/DEVELOPMENT.md) - Local setup, contribution guidelines, and workflow
 
 ## License
 

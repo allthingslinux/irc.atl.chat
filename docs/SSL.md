@@ -1,256 +1,336 @@
-# SSL Setup - Enterprise-Grade & Automatic! 🚀
+# SSL/TLS Certificate Management
 
-## What You Get
+This guide covers the automated SSL certificate management system for IRC.atl.chat, which uses Let's Encrypt with Cloudflare DNS-01 challenge for secure certificate provisioning and renewal.
 
-✅ **One-command setup**: `make ssl-setup`
-✅ **Automatic renewal**: Every day at 2 AM
-✅ **Enterprise logging**: Debug/verbose modes with full error handling
-✅ **Safety first**: Confirmation prompts for dangerous operations
-✅ **Docker-based monitoring**: No host cron jobs needed
-✅ **Zero maintenance**: Just works forever
+## Overview
 
-## Quick Start (3 Steps)
+IRC.atl.chat enforces **TLS-only connections** for security. All IRC clients must connect via SSL/TLS on port 6697. Plaintext connections on port 6667 are disabled.
+
+### Architecture
+
+- **Certificate Authority**: Let's Encrypt (free, automated certificates)
+- **Challenge Method**: DNS-01 via Cloudflare API
+- **Automation**: Custom SSL manager script with Docker integration
+- **Storage**: Certificates stored in `data/letsencrypt/` and copied to UnrealIRCd
+- **Renewal**: Automatic renewal with service restart
+
+## Prerequisites
+
+### 1. Domain and DNS Setup
+
+- Domain must be managed by Cloudflare
+- DNS records must exist for your domain and `*.yourdomain.com`
+- DNS must be propagated (verify with `dig yourdomain.com`)
+
+### 2. Cloudflare API Token
+
+1. Log into [Cloudflare Dashboard](https://dash.cloudflare.com/)
+2. Go to **My Profile** → **API Tokens**
+3. Create a new token with these permissions:
+   - **Zone:DNS:Edit** permission for your domain
+4. Copy the token (keep it secure!)
+
+### 3. Environment Configuration
+
+Ensure your `.env` file has the required SSL variables:
 
 ```bash
-# 1. Setup credentials
+# Required for SSL
+IRC_ROOT_DOMAIN=yourdomain.com
+LETSENCRYPT_EMAIL=admin@yourdomain.com
+```
+
+## SSL Setup Process
+
+### Step 1: Configure Cloudflare Credentials
+
+```bash
+# Copy the template
 cp cloudflare-credentials.ini.template cloudflare-credentials.ini
-vim cloudflare-credentials.ini  # Add your API token
 
-# 2. Configure your domain (already set in .env)
-# IRC_ROOT_DOMAIN=atl.dev
-# LETSENCRYPT_EMAIL=admin@allthingslinux.org
+# Edit with your API token
+vim cloudflare-credentials.ini
+# Add: dns_cloudflare_api_token = your-actual-token-here
 
-# 3. One command does everything
+# Secure the file
+chmod 600 cloudflare-credentials.ini
+```
+
+### Step 2: Initial SSL Certificate Issuance
+
+```bash
+# Issue initial certificates
 make ssl-setup
+
+# This runs the SSL manager script which:
+# 1. Validates configuration
+# 2. Issues certificates via Let's Encrypt
+# 3. Copies certificates to UnrealIRCd
+# 4. Restarts services
 ```
 
-## Advanced Usage & Debugging
+**Important**: SSL setup must complete before starting services. UnrealIRCd configuration expects certificates to exist.
+
+### Step 3: Start Services
 
 ```bash
-# Basic commands
-make ssl-status        # Check SSL status
-make ssl-logs          # View monitoring logs
-
-# Advanced troubleshooting
-./scripts/ssl-manager.sh --verbose check    # Detailed output
-./scripts/ssl-manager.sh --debug issue      # Full debugging
-./scripts/ssl-manager.sh --help             # Complete help
-
-# Force operations
-make ssl-renew         # Force certificate renewal
-make ssl-stop          # Stop SSL monitoring
-make ssl-clean         # Remove certificates (with confirmation)
+# Start all services (SSL certificates must exist first)
+make up
 ```
 
-## How It Works
+## Certificate Management
 
-The system is built with **enterprise-grade reliability**:
+### Checking Certificate Status
 
-### 🔄 Automatic Monitoring (ssl-monitor container)
-- **Checks certificates** every 4 hours
-- **Renews automatically** at 2 AM when certificates expire within 30 days
-- **Validates configurations** before operations
-- **Comprehensive logging** with color-coded output
-- **Smart error handling** with specific troubleshooting
-
-### 🛡️ Safety Features
-- **Input validation**: Domain and email format checking
-- **File permission checks**: Ensures proper access rights
-- **Automatic permission fixes**: Handles Docker permission issues automatically
-- **Docker availability**: Validates Docker environment
-- **Confirmation prompts**: Prevents accidental certificate deletion
-- **Graceful degradation**: Continues working despite minor issues
-
-### 📊 Enhanced Logging System
 ```bash
-# Different log levels
-INFO:   General operations and success messages
-WARN:   Non-critical issues and upcoming expirations
-ERROR:  Failures and configuration problems
-DEBUG:  Detailed technical information (--debug flag)
-VERBOSE: Enhanced operational details (--verbose flag)
+# Quick status check
+make ssl-status
+
+# Detailed certificate information
+./scripts/ssl-manager.sh check --verbose
 ```
 
-## Files & Directories
+### Manual Certificate Operations
 
-### Core Files
-- `scripts/ssl-manager.sh`: Enhanced SSL management script with full error handling
-- `compose.yaml`: SSL monitoring container configuration
-- `Makefile`: Complete SSL management targets
-
-### Certificate Storage
-- `src/backend/unrealircd/conf/tls/server.cert.pem`: SSL certificate for IRCd
-- `src/backend/unrealircd/conf/tls/server.key.pem`: SSL private key for IRCd
-- `data/letsencrypt/`: Let's Encrypt ACME challenge data
-
-### Configuration Files
-- `cloudflare-credentials.ini`: Cloudflare API token (keep secure!)
-- `.env`: Environment variables (IRC_ROOT_DOMAIN, LETSENCRYPT_EMAIL)
-
-## Environment Variables
-
-From your `.env` file:
-- `IRC_ROOT_DOMAIN`: Your domain (e.g., `atl.dev`) - **required**
-- `LETSENCRYPT_EMAIL`: Contact email for Let's Encrypt - **required**
-
-## Complete Command Reference
-
-### Makefile Targets
 ```bash
-make ssl-setup      # Complete SSL setup with monitoring
-make ssl-status     # Check certificate status and monitoring
-make ssl-renew      # Force certificate renewal (with safety checks)
-make ssl-logs       # View SSL monitoring logs
-make ssl-stop       # Stop SSL monitoring container
-make ssl-clean      # Remove certificates and monitoring (CAUTION!)
+# Check certificates
+./scripts/ssl-manager.sh check
+
+# Issue new certificates (force renewal)
+./scripts/ssl-manager.sh issue
+
+# Renew if needed (checks expiry first)
+./scripts/ssl-manager.sh renew
+
+# Copy certificates to UnrealIRCd
+./scripts/ssl-manager.sh copy
+
+# Restart services after certificate update
+./scripts/ssl-manager.sh restart
 ```
 
-### Script Direct Commands
-```bash
-./scripts/ssl-manager.sh check       # Check certificate validity
-./scripts/ssl-manager.sh issue       # Issue new certificates
-./scripts/ssl-manager.sh renew       # Renew existing certificates
-./scripts/ssl-manager.sh copy        # Copy certificates to IRCd
-./scripts/ssl-manager.sh restart     # Restart certificate-dependent services
+### Certificate Locations
+
+```
+data/letsencrypt/
+├── live/yourdomain.com/
+│   ├── fullchain.pem    # Certificate chain
+│   ├── privkey.pem      # Private key
+│   └── cert.pem         # Certificate only
+
+src/backend/unrealircd/conf/tls/
+├── server.cert.pem     # Certificate for UnrealIRCd
+├── server.key.pem      # Private key for UnrealIRCd
+└── curl-ca-bundle.crt  # CA bundle for SSL validation
 ```
 
-### Debug Options
+## Automation and Monitoring
+
+### Automatic Renewal
+
+Certificates are automatically renewed when:
+- Expiry is within 30 days (warning threshold)
+- Expiry is within 7 days (critical threshold)
+
+The renewal process:
+1. Checks certificate expiry
+2. Renews via Let's Encrypt if needed
+3. Copies new certificates to UnrealIRCd
+4. Restarts affected services
+
+### Monitoring Commands
+
 ```bash
---help, -h           # Show comprehensive help
---verbose, -v        # Enhanced operational logging
---debug, -d          # Maximum debugging output
+# Check SSL status
+make ssl-status
+
+# View SSL logs
+make ssl-logs
+
+# Check overall service health
+make status
 ```
 
-## Troubleshooting Guide
+## Troubleshooting
 
-### Common Issues & Solutions
+### Common Issues
 
-#### ❌ "Cloudflare credentials not found"
+#### "Cloudflare credentials not found"
 ```bash
-# Check credentials file exists
+# Check if credentials file exists
 ls -la cloudflare-credentials.ini
 
-# Verify format (should contain one line)
+# Verify file permissions (should be 600)
+chmod 600 cloudflare-credentials.ini
+
+# Check file format
 cat cloudflare-credentials.ini
-# Expected: dns_cloudflare_api_token = YOUR_TOKEN_HERE
+# Should contain: dns_cloudflare_api_token = your-token
 ```
 
-#### ❌ "Certificate file is not readable" or "Permission denied"
+#### "DNS challenge failed"
 ```bash
-# The script now automatically fixes Docker permission issues
-# But if you encounter problems, check file permissions:
+# Verify DNS records exist
+dig TXT _acme-challenge.yourdomain.com
+dig TXT _acme-challenge.*.yourdomain.com
+
+# Check Cloudflare DNS settings
+# Ensure records exist and are not proxied (orange cloud off)
+
+# Wait for DNS propagation (can take 24+ hours)
+```
+
+#### "Certificate expiry warnings"
+```bash
+# Check current certificate details
+./scripts/ssl-manager.sh check --verbose
+
+# Force renewal if needed
+./scripts/ssl-manager.sh issue
+```
+
+#### "Services won't start after certificate update"
+```bash
+# Check certificate file permissions
 ls -la src/backend/unrealircd/conf/tls/
 
-# If needed, the script will automatically fix Let's Encrypt permissions
-# Manual fix (usually not needed):
-sudo chown -R $(id -u):$(id -g) data/letsencrypt/
+# Manually restart services
+docker restart unrealircd unrealircd-webpanel
+
+# Check service logs
+make logs
 ```
 
-#### ❌ "Domain validation failed"
+### Debug Mode
+
+Enable detailed logging for troubleshooting:
+
 ```bash
-# Check .env file has correct values
-cat .env | grep -E "(IRC_ROOT_DOMAIN|LETSENCRYPT_EMAIL)"
-
-# Verify domain format (no http:// or trailing slashes)
-# Correct: IRC_ROOT_DOMAIN=atl.dev
-# Wrong:   IRC_ROOT_DOMAIN=https://atl.dev/
-```
-
-#### ❌ "Docker socket not accessible"
-```bash
-# Check Docker is running
-docker --version
-docker ps
-
-# Check socket permissions (Linux)
-ls -la /var/run/docker.sock
-
-# Try with sudo if permission denied
-sudo make ssl-setup
-```
-
-### Debug Commands
-```bash
-# Maximum debugging output
+# Debug SSL operations
+./scripts/ssl-manager.sh --debug check
 ./scripts/ssl-manager.sh --debug issue
 
-# Check certificate expiry manually
-openssl x509 -in src/backend/unrealircd/conf/tls/server.cert.pem -noout -enddate
-
-# Verify certificate validity
-./scripts/ssl-manager.sh --verbose check
-
-# Check Docker container status
-docker compose ps ssl-monitor
+# Verbose output
+./scripts/ssl-manager.sh --verbose renew
 ```
 
-## Best Practices
+### Certificate Validation
 
-### 🔒 Security
-- Never commit `cloudflare-credentials.ini` to git
-- Keep `.env` secure and don't share API tokens
-- Use strong, unique API tokens with minimal permissions
-- Regularly rotate Cloudflare API tokens
-
-### 📊 Monitoring
-- Check `make ssl-status` regularly
-- Monitor logs with `make ssl-logs`
-- Set up alerts for certificate expiry warnings
-- Keep an eye on Let's Encrypt rate limits (20 certificates per domain/week)
-
-### 🔄 Maintenance
-- Let automatic renewal handle most tasks
-- Use `make ssl-renew` only when needed
-- Clean up old certificates periodically if needed
-- Backup certificates before major changes
-
-### 🚨 Emergency Procedures
 ```bash
-# If certificates expire unexpectedly
-make ssl-renew
+# Verify certificate chain
+openssl verify -CAfile src/backend/unrealircd/conf/tls/curl-ca-bundle.crt \
+               src/backend/unrealircd/conf/tls/server.cert.pem
 
-# If monitoring stops working
-docker compose restart ssl-monitor
+# Check certificate details
+openssl x509 -in src/backend/unrealircd/conf/tls/server.cert.pem -text -noout
 
-# Complete reset (CAUTION!)
-make ssl-clean
-make ssl-setup
+# Test SSL connection
+openssl s_client -connect yourdomain.com:6697 -servername yourdomain.com
 ```
+
+## Security Considerations
+
+### Certificate Security
+
+- **Private keys**: Stored with 644 permissions (readable by UnrealIRCd)
+- **File permissions**: Credentials file must be 600 (owner read/write only)
+- **API tokens**: Never commit to version control
+- **Certificate validation**: Full chain validation with trusted CA bundle
+
+### Network Security
+
+- **TLS-only policy**: Plaintext IRC connections disabled
+- **Modern TLS**: Configured for security (see UnrealIRCd config)
+- **Perfect Forward Secrecy**: Supported cipher suites
+- **HSTS**: HTTP Strict Transport Security headers
+
+### Monitoring and Alerts
+
+- **Certificate expiry**: Monitored automatically
+- **Renewal failures**: Logged with error details
+- **Service restarts**: Automatic after certificate updates
+- **Health checks**: Certificate validity included in service health
 
 ## Advanced Configuration
 
 ### Custom Certificate Paths
-The script uses these default paths (defined in ssl-manager.sh):
+
+The SSL manager uses these default paths (configurable in the script):
+
 ```bash
 TLS_DIR="./src/backend/unrealircd/conf/tls"
 LETSENCRYPT_DIR="./data/letsencrypt"
 CREDENTIALS_FILE="./cloudflare-credentials.ini"
 ```
 
-### Custom Domains
-For multiple domains or wildcards:
+### Multiple Domains
+
+The current setup issues certificates for:
+- `yourdomain.com`
+- `*.yourdomain.com`
+
+For additional domains, modify the certbot command in `ssl-manager.sh`.
+
+### Rate Limiting
+
+Let's Encrypt has rate limits:
+- **Certificates per domain**: 5 per week
+- **Failed validations**: 5 per hour
+- **Duplicate certificates**: 1 per week
+
+## Maintenance
+
+### Regular Tasks
+
 ```bash
-# The script automatically handles:
-# - yourdomain.com
-# - *.yourdomain.com (wildcard)
+# Weekly: Check certificate status
+make ssl-status
+
+# Monthly: Verify automation works
+./scripts/ssl-manager.sh renew --verbose
+
+# Quarterly: Review SSL configuration
+# Check UnrealIRCd TLS settings
+# Verify Cloudflare DNS settings
 ```
 
-### Docker Network Considerations
-The ssl-monitor container runs on the same network as your IRC services, ensuring proper certificate deployment.
+### Emergency Procedures
 
-## Migration from Manual Setup
+If certificates expire unexpectedly:
 
-If you're migrating from a manual SSL setup:
+1. **Immediate action**: Check why renewal failed
+   ```bash
+   make ssl-logs
+   ./scripts/ssl-manager.sh check --debug
+   ```
 
-1. **Backup existing certificates** (if any)
-2. **Stop existing renewal processes**
-3. **Run `make ssl-setup`** to establish automated management
-4. **Remove old cron jobs or renewal scripts**
-5. **Verify with `make ssl-status`**
+2. **Manual renewal**: Force certificate issuance
+   ```bash
+   ./scripts/ssl-manager.sh issue --verbose
+   ```
 
-## That's It!
+3. **Service restart**: Ensure services use new certificates
+   ```bash
+   make restart
+   ```
 
-No complex configuration, no host dependencies, no manual management.
-SSL certificates are now **completely automatic**, **enterprise-grade**, and **Docker-native**.
+### Backup and Recovery
 
-**Need help?** Run `./scripts/ssl-manager.sh --help` or check the logs with `make ssl-logs`! 🎉
+Certificates are automatically backed up in `data/letsencrypt/`. To restore:
+
+```bash
+# Copy from Let's Encrypt backup
+./scripts/ssl-manager.sh copy
+
+# Restart services
+./scripts/ssl-manager.sh restart
+```
+
+## Related Documentation
+
+- [README.md](../README.md) - Quick start guide
+- [SECRET_MANAGEMENT.md](SECRET_MANAGEMENT.md) - API token and password management
+- [USERMODES.md](USERMODES.md) - IRC user mode reference
+- [UnrealIRCd Documentation](https://www.unrealircd.org/docs/) - Server configuration
+- [Let's Encrypt Documentation](https://letsencrypt.org/docs/) - Certificate authority
+- [Cloudflare API Documentation](https://developers.cloudflare.com/api/) - DNS management
