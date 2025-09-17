@@ -606,67 +606,29 @@ make ssl-status
 df -h | grep -E "(data|logs)"
 ```
 
-## Advanced Topics
+## Production Considerations
 
-### Docker Swarm
+### Resource Management
 
-#### Stack Deployment
-```bash
-# Deploy to swarm
-docker stack deploy -c compose.yaml irc
-
-# Scale services
-docker service scale irc_unrealircd=2
-
-# Rolling updates
-docker service update --image unrealircd:new irc_unrealircd
-```
-
-### Kubernetes
-
-#### Deployment Manifest
+#### Container Limits
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: unrealircd
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: unrealircd
-  template:
-    metadata:
-      labels:
-        app: unrealircd
-    spec:
-      containers:
-      - name: unrealircd
-        image: unrealircd:latest
-        ports:
-        - containerPort: 6697
+deploy:
+  resources:
+    limits:
+      memory: 512M
+      cpus: '1.0'
+    reservations:
+      memory: 256M
+      cpus: '0.5'
 ```
 
-### CI/CD Integration
-
-#### Automated Builds
-```yaml
-# GitHub Actions example
-- name: Build and push
-  uses: docker/build-push-action@v3
-  with:
-    context: .
-    push: true
-    tags: unrealircd:latest
-```
-
-#### Testing in Containers
+#### Monitoring
 ```bash
-# Run tests in container
-docker run --rm -v $(pwd):/app unrealircd make test
+# Monitor resource usage
+docker stats
 
-# Integration testing
-docker compose -f docker-compose.test.yml up --abort-on-container-exit
+# Check container health
+docker ps --filter "health=healthy"
 ```
 
 ## Related Documentation

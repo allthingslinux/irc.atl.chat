@@ -17,7 +17,6 @@ Welcome to the IRC.atl.chat documentation! This directory contains comprehensive
 - **[MODULES.md](./MODULES.md)** - UnrealIRCd module system, third-party extensions, and customization
 - **[USERMODES.md](./USERMODES.md)** - IRC user mode reference and configuration options
 - **[WEBPANEL.md](./WEBPANEL.md)** - Web-based administration interface setup and usage
-- **[GAMJA.md](./GAMJA.md)** - Modern web IRC client configuration and features
 
 ## 🔒 Security & Operations
 
