@@ -239,7 +239,7 @@ This document outlines the comprehensive checklist for preparing IRC.atl.chat fo
   - [ ] Performance metrics collection (CPU, memory, network)
   - [ ] Error tracking and alerting capabilities
   - [x] Service status monitoring automated
-  - [ ] Prometheus metrics endpoints (if applicable)
+  - [ ] Basic metrics collection endpoints (if applicable)
 
 - [ ] **Data Persistence & Backup**
   - [x] Data volumes properly configured and persistent
