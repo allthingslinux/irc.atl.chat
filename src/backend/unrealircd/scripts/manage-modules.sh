@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # UnrealIRCd Contrib Modules Management Script
 # Provides an easy interface to install, manage, and configure 3rd party modules
 # Based on the official UnrealIRCd module manager documentation
