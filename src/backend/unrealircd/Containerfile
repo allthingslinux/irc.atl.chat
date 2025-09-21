@@ -115,10 +115,12 @@ RUN if [ "${UID}" = "0" ]; then \
 COPY --from=builder /home/unrealircd/unrealircd /home/unrealircd/unrealircd
 COPY --from=builder /tmp/unrealircd-${UNREALIRCD_VERSION} /tmp/unrealircd-${UNREALIRCD_VERSION}
 
-# Copy third-party modules configuration and installation script
+# Copy third-party modules configuration, installation and management scripts
 COPY third-party-modules.list /home/unrealircd/third-party-modules.list
 COPY scripts/install-modules.sh /usr/local/bin/install-modules.sh
+COPY scripts/manage-modules.sh /usr/local/bin/manage-modules.sh
 RUN chmod +x /usr/local/bin/install-modules.sh
+RUN chmod +x /usr/local/bin/manage-modules.sh
 
 # Set ownership based on UID/GID arguments
 RUN if [ "${UID}" = "0" ]; then \
