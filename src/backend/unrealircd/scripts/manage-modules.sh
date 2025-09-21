@@ -29,8 +29,8 @@ print_header() { echo -e "${PURPLE}=== $1 ===${NC}"; }
 
 # Check if we're running as the correct user
 check_user() {
-    if [ "$(id -u)" != "1001" ]; then
-        print_error "This script must run as the ircd user (UID 1001)"
+    if [ "$(id -u)" != "1000" ]; then
+        print_error "This script must run as the unrealircd user (UID 1000)"
         print_error "Current user: $(id -un) (UID $(id -u))"
         exit 1
     fi
