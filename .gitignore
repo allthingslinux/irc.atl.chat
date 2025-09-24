@@ -58,3 +58,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .uv_cache/
+
+# Unrealircd module compilation logs
+src/backend/unrealircd/conf/compilation.log
