@@ -14,3 +14,12 @@ third/showwebirc
 # Add more modules here as needed:
 # third/example-module
 # third/another-module
+
+third/anticaps
+third/joinmute
+third/kickjoindelay
+third/denyban
+third/textshun
+third/clones
+third/commandsno
+# third/qline <- still broken as of 24.09
