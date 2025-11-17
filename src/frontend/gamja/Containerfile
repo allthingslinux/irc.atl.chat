@@ -1,5 +1,5 @@
 # Setup phase
-FROM node:current-alpine3.22@sha256:3e843c608bb5232f39ecb2b25e41214b958b0795914707374c8acc28487dea17 AS base
+FROM node:current-alpine3.22@sha256:26ded7f450a0ad37241d2ae97ea521a59cb551a1785c8a950f74b0a291ad3aea AS base
 
 LABEL maintainer="AllThingsLinux IRC Infrastructure" \
     description="Gamja - Lightweight IRC web client" \
