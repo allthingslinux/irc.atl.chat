@@ -2,7 +2,7 @@
 # BUILD STAGE - Compile UnrealIRCd from source
 # ============================================================================
 # This stage compiles UnrealIRCd and preserves the source code for module management
-FROM alpine:3.22 AS builder
+FROM alpine:3.22@sha256:4b7ce07002c69e8f3d704a9c5d6fd3053be500b7f1c69fc0d80990c2ad8dd412 AS builder
 
 # Build arguments
 ARG UNREALIRCD_VERSION=6.2.0.1
@@ -67,7 +67,7 @@ RUN make install
 # ============================================================================
 # This stage includes the compiled UnrealIRCd plus source code and build tools
 # to enable third-party module installation and management
-FROM alpine:3.22
+FROM alpine:3.22@sha256:4b7ce07002c69e8f3d704a9c5d6fd3053be500b7f1c69fc0d80990c2ad8dd412
 
 # Runtime arguments (inherit from builder stage)
 ARG UNREALIRCD_VERSION=6.2.0.1

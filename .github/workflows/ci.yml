@@ -26,11 +26,11 @@ jobs:
       any: ${{ steps.yaml_changes.outputs.any_changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
       - name: Check Docker
-        uses: tj-actions/changed-files@v47
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         id: docker_changes
         with:
           files: |
@@ -40,7 +40,7 @@ jobs:
             docker-compose*.yml
             .dockerignore
       - name: Check Shell
-        uses: tj-actions/changed-files@v47
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         id: shell_changes
         with:
           files: |
@@ -49,12 +49,12 @@ jobs:
             **/*.zsh
             scripts/**
       - name: Check Workflows
-        uses: tj-actions/changed-files@v47
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         id: workflow_changes
         with:
           files: .github/workflows/**
       - name: Check YAML
-        uses: tj-actions/changed-files@v47
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         id: yaml_changes
         with:
           files: |
@@ -89,9 +89,9 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Lint
-        uses: reviewdog/action-shellcheck@v1.32
+        uses: reviewdog/action-shellcheck@4c07458293ac342d477251099501a718ae5ef86e # v1.32
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           level: ${{ env.REVIEWDOG_LEVEL }}
@@ -99,7 +99,7 @@ jobs:
           filter_mode: ${{ env.REVIEWDOG_FILTER_MODE }}
           fail_level: ${{ env.REVIEWDOG_FAIL_LEVEL }}
       - name: Format
-        uses: reviewdog/action-shfmt@v1.0.4
+        uses: reviewdog/action-shfmt@d8f080930b9be5847b4f97e9f4122b81a82aaeac # v1.0.4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           level: ${{ env.REVIEWDOG_LEVEL }}
@@ -115,7 +115,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Validate
         uses: reviewdog/action-actionlint@f00ad0691526c10be4021a91b2510f0a769b14d0 # v1.68.0
         with:
@@ -134,9 +134,9 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Lint
-        uses: reviewdog/action-hadolint@v1.50.2
+        uses: reviewdog/action-hadolint@fc7ee4a9f71e521bc43e370819247b70e5327540 # v1.50.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           level: ${{ env.REVIEWDOG_LEVEL }}
@@ -155,9 +155,9 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Lint
-        uses: reviewdog/action-yamllint@v1.21.0
+        uses: reviewdog/action-yamllint@f01d8a48fd8d89f89895499fca2cff09f9e9e8c0 # v1.21.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           level: ${{ env.REVIEWDOG_LEVEL }}
@@ -174,9 +174,9 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Lint
-        uses: docker-compose-linter/dclint-github-action/reviewdog-action@v1.6.0
+        uses: docker-compose-linter/dclint-github-action/reviewdog-action@18659f6a7956706cb67cf9c1ad5e55f4352cbc17 # v1.6.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tool_name: dclint
@@ -195,9 +195,9 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Scan
-        uses: reviewdog/action-gitleaks@v1.8
+        uses: reviewdog/action-gitleaks@2b7b5685e3e3eecddab5d30cfa04f18123031421 # v1.8
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           level: error
