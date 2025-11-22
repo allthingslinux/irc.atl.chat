@@ -24,11 +24,11 @@ jobs:
       docker: ${{ steps.docker_changes.outputs.any_changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
       - name: Check Docker
-        uses: tj-actions/changed-files@v47
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         id: docker_changes
         with:
           files: |
@@ -52,12 +52,12 @@ jobs:
         service: [unrealircd, atheme, unrealircd-webpanel]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5
         with:
           images: irc-atl-chat-${{ matrix.service }}
           tags: |
@@ -78,7 +78,7 @@ jobs:
           echo "version=$PR_VERSION" >> "$GITHUB_OUTPUT"
           echo "Generated PR version: $PR_VERSION"
       - name: Build ${{ matrix.service }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         timeout-minutes: 10
         with:
           context: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel' || matrix.service == 'unrealircd' && 'src/backend/unrealircd' || matrix.service == 'atheme' && 'src/backend/atheme' }}
@@ -98,7 +98,7 @@ jobs:
           echo "✅ Docker build validation for ${{ matrix.service }} completed successfully"
           echo "🔍 Build cache updated for faster future builds"
       - name: Scan Containerfile ${{ matrix.service }}
-        uses: reviewdog/action-trivy@v1.14.0
+        uses: reviewdog/action-trivy@a1e6d7dd5520369c076d7ce639a16442938535d8 # v1.14.0
         continue-on-error: true
         with:
           github_token: ${{ github.token }}
@@ -123,18 +123,18 @@ jobs:
         service: [unrealircd, atheme, unrealircd-webpanel]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
       - name: Login to Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@318604b99e75e41977312d83839a89be02ca4893 # v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{ matrix.service }}
           tags: |
@@ -158,7 +158,7 @@ jobs:
           echo "version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
           echo "Generated release version: $RELEASE_VERSION"
       - name: Build & Push ${{ matrix.service }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         timeout-minutes: 15
         with:
           context: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel' || matrix.service == 'unrealircd' && 'src/backend/unrealircd' || matrix.service == 'atheme' && 'src/backend/atheme' }}
@@ -174,7 +174,7 @@ jobs:
             BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
       - name: Scan Final Image ${{ matrix.service }}
         if: always()
-        uses: reviewdog/action-trivy@v1.14.0
+        uses: reviewdog/action-trivy@a1e6d7dd5520369c076d7ce639a16442938535d8 # v1.14.0
         continue-on-error: true
         with:
           github_token: ${{ github.token }}
@@ -198,9 +198,9 @@ jobs:
         service: [unrealircd, atheme, unrealircd-webpanel]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Clean Old Images ${{ matrix.service }}
-        uses: actions/delete-package-versions@v5
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5
         with:
           package-name: irc-atl-chat-${{ matrix.service }}
           package-type: container

@@ -20,11 +20,11 @@ jobs:
       yaml: ${{ steps.yaml_changes.outputs.any_changed }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
       - name: Check Docker
-        uses: tj-actions/changed-files@v47
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         id: docker_changes
         with:
           files: |
@@ -33,14 +33,14 @@ jobs:
             compose.yaml
             docker-compose*.yml
       - name: Check Shell
-        uses: tj-actions/changed-files@v47
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         id: shell_changes
         with:
           files: |
             **/*.sh
             scripts/**
       - name: Check YAML
-        uses: tj-actions/changed-files@v47
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         id: yaml_changes
         with:
           files: |
@@ -66,14 +66,14 @@ jobs:
             build-mode: none
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Initialize
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@c3d42c5d08633d8b33635fbd94b000a0e2585b3c # v3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
       - name: Analyze
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@c3d42c5d08633d8b33635fbd94b000a0e2585b3c # v3
         with:
           category: /language:${{ matrix.language }}
   dependencies:
@@ -85,9 +85,9 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@3c4e3dcb1aa7874d2c16be7d79418e9b7efd6261 # v4
         with:
           fail-on-severity: high
           comment-summary-in-pr: always
@@ -105,11 +105,11 @@ jobs:
         service: [unrealircd, atheme, unrealircd-webpanel]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Setup Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
       - name: Build for Security Scan
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         with:
           context: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel' || matrix.service == 'unrealircd' && 'src/backend/unrealircd' || matrix.service == 'atheme' && 'src/backend/atheme' }}
           file: ./${{ matrix.service == 'unrealircd-webpanel' && 'src/frontend/webpanel/Containerfile' || matrix.service == 'unrealircd' && 'src/backend/unrealircd/Containerfile' || matrix.service == 'atheme' && 'src/backend/atheme/Containerfile' }}
@@ -117,7 +117,7 @@ jobs:
           load: true
           tags: irc-atl-chat-${{ matrix.service }}:security-scan
       - name: Scan Container Image
-        uses: reviewdog/action-trivy@v1.14.0
+        uses: reviewdog/action-trivy@a1e6d7dd5520369c076d7ce639a16442938535d8 # v1.14.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           trivy_command: image
@@ -138,7 +138,7 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Shell Script Security Analysis
         run: |
           echo "## 🔍 Shell Script Security Analysis"
