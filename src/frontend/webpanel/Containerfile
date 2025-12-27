@@ -1,5 +1,5 @@
 # hadolint ignore=DL3006
-FROM composer/composer AS builder
+FROM composer/composer@sha256:969fb900253c0e71645cf74257d6c9206304573e8b246d1bc57f8ac1d64e12f4 AS builder
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ RUN git clone --depth 1 https://github.com/unrealircd/unrealircd-webpanel.git . 
     composer install --no-dev --optimize-autoloader
 
 # hadolint ignore=DL3006
-FROM trafex/php-nginx
+FROM trafex/php-nginx@sha256:7ef75931c04cbafdca2edcb2c28d3e7c43994d4cf6d0389eb3689c0a082b397c
 
 USER root
 
